@@ -1,0 +1,55 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+// トップページ（/）にアクセスした場合は管理画面ログインへリダイレクト
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+// ============================================================
+// 顧客向け口コミページ
+// ============================================================
+Route::get('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'show']);
+Route::post('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'store']);
+Route::post('/review/{slug}/suggest', [\App\Http\Controllers\ReviewController::class, 'suggest']);
+
+
+// ============================================================
+// 管理画面 認証
+// ============================================================
+Route::get('/admin/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/admin/login', [\App\Http\Controllers\Auth\LoginController::class, 'login']);
+Route::post('/admin/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout']);
+
+// ============================================================
+// 管理画面（認証必須）
+// ============================================================
+Route::middleware('auth')->prefix('admin')->group(function () {
+    // ダッシュボード（店舗一覧へリダイレクト）
+    Route::get('/', function () {
+        return redirect('/admin/stores');
+    });
+
+    // 店舗管理 CRUD
+    Route::get('/stores', [\App\Http\Controllers\Admin\StoreController::class, 'index']);
+    Route::get('/stores/create', [\App\Http\Controllers\Admin\StoreController::class, 'create']);
+    Route::post('/stores', [\App\Http\Controllers\Admin\StoreController::class, 'store']);
+    Route::get('/stores/{store}/edit', [\App\Http\Controllers\Admin\StoreController::class, 'edit']);
+    Route::put('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'update']);
+    Route::delete('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'destroy']);
+
+    // QRコード
+    Route::get('/stores/{store}/qrcode', [\App\Http\Controllers\Admin\QrCodeController::class, 'show']);
+    Route::get('/stores/{store}/qrcode/download', [\App\Http\Controllers\Admin\QrCodeController::class, 'download']);
+
+    // 口コミ一覧
+    Route::get('/reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index']);
+    Route::get('/reviews/export', [\App\Http\Controllers\Admin\ReviewController::class, 'export']);
+});
