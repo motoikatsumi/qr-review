@@ -9,12 +9,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 // トップページ（/）にアクセスした場合は管理画面ログインへリダイレクト
-Route::get('/', function () {
+Route::middleware('ip.restrict')->get('/', function () {
     return redirect()->route('login');
 });
 
 // ============================================================
-// 顧客向け口コミページ
+// 顧客向け口コミページ（IP制限なし）
 // ============================================================
 Route::get('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'show']);
 Route::post('/review/{slug}/confirm', [\App\Http\Controllers\ReviewController::class, 'confirm']);
@@ -23,16 +23,18 @@ Route::post('/review/{slug}/suggest', [\App\Http\Controllers\ReviewController::c
 
 
 // ============================================================
-// 管理画面 認証
+// 管理画面 認証（IP制限あり）
 // ============================================================
-Route::get('/admin/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/admin/login', [\App\Http\Controllers\Auth\LoginController::class, 'login']);
-Route::post('/admin/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout']);
+Route::middleware('ip.restrict')->group(function () {
+    Route::get('/admin/login', [\App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/admin/login', [\App\Http\Controllers\Auth\LoginController::class, 'login']);
+    Route::post('/admin/logout', [\App\Http\Controllers\Auth\LoginController::class, 'logout']);
+});
 
 // ============================================================
-// 管理画面（認証必須）
+// 管理画面（認証必須 + IP制限あり）
 // ============================================================
-Route::middleware('auth')->prefix('admin')->group(function () {
+Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     // ダッシュボード（統計）
     Route::get('/', function () {
         return redirect('/admin/dashboard');
