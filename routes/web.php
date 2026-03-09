@@ -16,6 +16,17 @@ Route::middleware('ip.restrict')->get('/', function () {
 // ============================================================
 // 顧客向け口コミページ（IP制限なし）
 // ============================================================
+// デバッグ用：IP確認（原因特定後に削除）
+Route::get('/debug-ip', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'request_ip' => $request->ip(),
+        'x_forwarded_for' => $request->header('X-Forwarded-For'),
+        'x_real_ip' => $request->header('X-Real-IP'),
+        'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? 'N/A',
+        'all_forwarded' => $request->header('Forwarded'),
+    ]);
+});
+
 Route::get('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'show']);
 Route::post('/review/{slug}/confirm', [\App\Http\Controllers\ReviewController::class, 'confirm']);
 Route::post('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'store']);
