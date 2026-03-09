@@ -273,12 +273,9 @@
             <p class="google-section-desc">Googleマップへの口コミ投稿にご協力ください</p>
 
             <div id="googleButtons">
-                <div id="googleSignInContainer" style="display:flex;justify-content:center;min-height:44px;margin-bottom:4px;">
-                    <span style="color:#999;font-size:0.82rem;">Google認証を読み込み中...</span>
-                </div>
-                <button type="button" class="google-signin-btn" id="googleManualBtn" style="display:none;" onclick="manualGoogleConfirm()">
+                <button type="button" class="google-signin-btn" onclick="selectGoogleAccount()">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    <span>Googleアカウントを持っている</span>
+                    <span>持っている</span>
                 </button>
                 <button type="button" class="google-no-account" onclick="selectNoGoogle()">
                     持っていない
@@ -359,42 +356,6 @@
 <script>
     var rating = {{ $rating }};
     var googleSelected = false;
-    var gsiReady = false;
-
-    // Google Sign-In 初期化（renderButton方式：モバイル対応）
-    function initGoogleSignIn() {
-        if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
-            return false;
-        }
-        google.accounts.id.initialize({
-            client_id: '{{ config("services.google.client_id") }}',
-            callback: handleCredentialResponse,
-        });
-        var container = document.getElementById('googleSignInContainer');
-        container.innerHTML = '';
-        google.accounts.id.renderButton(container, {
-            theme: 'outline',
-            size: 'large',
-            text: 'signin_with',
-            shape: 'rectangular',
-            width: 300,
-        });
-        gsiReady = true;
-        return true;
-    }
-
-    // Google認証成功コールバック
-    function handleCredentialResponse(response) {
-        if (response.credential) {
-            selectGoogleAccount();
-        }
-    }
-
-    // SDK読み込み失敗時のフォールバック
-    function manualGoogleConfirm() {
-        selectGoogleAccount();
-    }
-
     // Google アカウントあり選択
     function selectGoogleAccount() {
         googleSelected = true;
@@ -508,24 +469,7 @@
         document.getElementById('loadingSpinner').style.display = 'block';
     });
 
-    // 初期化：SDK読み込み完了を待って初期化
-    if (rating >= 4) {
-        var script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.onload = function() {
-            if (!initGoogleSignIn()) {
-                // SDK読み込み成功だが初期化失敗 → 手動ボタン表示
-                document.getElementById('googleSignInContainer').style.display = 'none';
-                document.getElementById('googleManualBtn').style.display = 'flex';
-            }
-        };
-        script.onerror = function() {
-            // SDK読み込み失敗 → 手動ボタン表示
-            document.getElementById('googleSignInContainer').style.display = 'none';
-            document.getElementById('googleManualBtn').style.display = 'flex';
-        };
-        document.head.appendChild(script);
-    }
+
 </script>
 <style>
     @keyframes spin { to { transform: rotate(360deg); } }
