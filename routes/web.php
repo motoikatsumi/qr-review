@@ -16,18 +16,6 @@ Route::middleware('ip.restrict')->get('/', function () {
 // ============================================================
 // 顧客向け口コミページ（IP制限なし）
 // ============================================================
-// デバッグ用：IP確認（原因特定後に削除）
-Route::get('/debug-ip', function (\Illuminate\Http\Request $request) {
-    $allowedIps = array_filter(array_map('trim', explode(',', env('ALLOWED_IPS', ''))));
-    $clientIp = $request->ip();
-    return response()->json([
-        'client_ip' => $clientIp,
-        'is_allowed' => in_array($clientIp, $allowedIps),
-        'allowed_ips' => $allowedIps,
-        'env_raw' => env('ALLOWED_IPS', '(not set)'),
-    ]);
-});
-
 Route::get('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'show']);
 Route::post('/review/{slug}/confirm', [\App\Http\Controllers\ReviewController::class, 'confirm']);
 Route::post('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'store']);
