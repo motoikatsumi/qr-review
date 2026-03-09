@@ -76,13 +76,7 @@ class ReviewController extends Controller
             'submit_token' => 'required|string',
         ]);
 
-        // 二重送信防止チェック
-        $sessionToken = session()->pull('review_submit_token');
-        if (!$sessionToken || $sessionToken !== $validated['submit_token']) {
-            return view('review.thankyou', compact('store'));
-        }
-
-        // Google口コミポリシー違反チェック（高評価・低評価に関わらず全件チェック）
+        // Google口コミポリシー違反チェック（二重送信防止トークン消費前に実行）
         $gemini = new GeminiService();
         $policyError = $gemini->validateGooglePolicy($validated['comment']);
         
@@ -90,6 +84,12 @@ class ReviewController extends Controller
             return back()
                 ->withInput()
                 ->withErrors(['comment' => $policyError]);
+        }
+
+        // 二重送信防止チェック（ポリシーチェック通過後にトークンを消費）
+        $sessionToken = session()->pull('review_submit_token');
+        if (!$sessionToken || $sessionToken !== $validated['submit_token']) {
+            return view('review.thankyou', compact('store'));
         }
 
         // 高評価（4〜5星）→ Googleアカウント有無で分岐
