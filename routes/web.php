@@ -18,12 +18,13 @@ Route::middleware('ip.restrict')->get('/', function () {
 // ============================================================
 // デバッグ用：IP確認（原因特定後に削除）
 Route::get('/debug-ip', function (\Illuminate\Http\Request $request) {
+    $allowedIps = array_filter(array_map('trim', explode(',', env('ALLOWED_IPS', ''))));
+    $clientIp = $request->ip();
     return response()->json([
-        'request_ip' => $request->ip(),
-        'x_forwarded_for' => $request->header('X-Forwarded-For'),
-        'x_real_ip' => $request->header('X-Real-IP'),
-        'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? 'N/A',
-        'all_forwarded' => $request->header('Forwarded'),
+        'client_ip' => $clientIp,
+        'is_allowed' => in_array($clientIp, $allowedIps),
+        'allowed_ips' => $allowedIps,
+        'env_raw' => env('ALLOWED_IPS', '(not set)'),
     ]);
 });
 
