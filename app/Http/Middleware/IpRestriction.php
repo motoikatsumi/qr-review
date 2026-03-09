@@ -31,6 +31,15 @@ class IpRestriction
             $clientIp = trim($realIp);
         }
 
+        // デバッグ用：IPをログに記録（原因特定後に削除）
+        \Log::info('IpRestriction', [
+            'request_ip' => $request->ip(),
+            'x_forwarded_for' => $forwarded,
+            'x_real_ip' => $realIp,
+            'resolved_ip' => $clientIp,
+            'server_remote_addr' => $_SERVER['REMOTE_ADDR'] ?? 'N/A',
+        ]);
+
         if (!in_array($clientIp, $allowedIps)) {
             abort(403, 'アクセスが許可されていません。');
         }
