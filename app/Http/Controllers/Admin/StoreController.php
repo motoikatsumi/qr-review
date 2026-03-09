@@ -18,7 +18,7 @@ class StoreController extends Controller
     {
         $stores = Store::withCount('reviews')
             ->withAvg('reviews', 'rating')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get();
         return view('admin.stores.index', compact('stores'));
     }
