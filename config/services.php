@@ -35,4 +35,8 @@ return [
         'api_key' => env('GEMINI_API_KEY'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
 ];

@@ -65,14 +65,6 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
-        .btn-google {
-            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
-            color: white;
-        }
-        .btn-google:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(66, 133, 244, 0.4);
-        }
         .btn-secondary {
             background: #f0f0f0;
             color: #555;

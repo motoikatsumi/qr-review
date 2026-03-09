@@ -8,6 +8,7 @@ use App\Services\GeminiService;
 use App\Mail\LowRatingNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class ReviewController extends Controller
 {
@@ -32,7 +33,6 @@ class ReviewController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|max:2000',
             'is_ai_generated' => 'nullable|boolean',
-            'has_google_account' => 'nullable|in:,0,1',
             'gender' => 'nullable|string|max:10',
             'age' => 'nullable|string|max:10',
         ]);
@@ -40,8 +40,12 @@ class ReviewController extends Controller
         // 「修正する」ボタンからの戻り
         if ($request->has('_back')) {
             return redirect('/review/' . $slug)
-                ->withInput($request->only('rating', 'comment', 'is_ai_generated', 'has_google_account', 'gender', 'age'));
+                ->withInput($request->only('rating', 'comment', 'is_ai_generated', 'gender', 'age'));
         }
+
+        // 確認画面用の二重送信防止トークン
+        $submitToken = Str::random(40);
+        session(['review_submit_token' => $submitToken]);
 
         // 確認画面を表示
         return view('review.confirm', [
@@ -49,9 +53,9 @@ class ReviewController extends Controller
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
             'is_ai_generated' => $validated['is_ai_generated'] ?? 0,
-            'has_google_account' => $validated['has_google_account'] ?? '',
             'gender' => $validated['gender'] ?? '',
             'age' => $validated['age'] ?? '',
+            'submitToken' => $submitToken,
         ]);
     }
 
@@ -69,7 +73,14 @@ class ReviewController extends Controller
             'has_google_account' => 'nullable|in:0,1',
             'gender' => 'nullable|string|max:10',
             'age' => 'nullable|string|max:10',
+            'submit_token' => 'required|string',
         ]);
+
+        // 二重送信防止チェック
+        $sessionToken = session()->pull('review_submit_token');
+        if (!$sessionToken || $sessionToken !== $validated['submit_token']) {
+            return view('review.thankyou', compact('store'));
+        }
 
         // Google口コミポリシー違反チェック（高評価・低評価に関わらず全件チェック）
         $gemini = new GeminiService();
@@ -86,7 +97,7 @@ class ReviewController extends Controller
             $hasGoogleAccount = ($validated['has_google_account'] ?? '') === '1';
 
             if ($hasGoogleAccount) {
-                // Googleアカウントあり → Google口コミ誘導
+                // Googleアカウントあり → DB保存（confirmページでGoogleマップ誘導済み）
                 $review = Review::create([
                     'store_id' => $store->id,
                     'rating' => $validated['rating'],
@@ -97,11 +108,7 @@ class ReviewController extends Controller
                     'age' => $validated['age'] ?? null,
                 ]);
 
-                return view('review.google-redirect', [
-                    'store' => $store,
-                    'review' => $review,
-                    'aiText' => $validated['comment'],
-                ]);
+                return view('review.thankyou', compact('store'));
             } else {
                 // Googleアカウントなし → DB保存 + メール通知 + サンキューページ
                 $review = Review::create([

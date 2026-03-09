@@ -232,104 +232,6 @@
         display: none;
     }
 
-    /* Googleアカウント質問セクション */
-    .google-account-section {
-        display: none;
-        margin: 20px 0;
-        padding: 20px;
-        background: linear-gradient(135deg, #f0f4ff 0%, #fef3f2 100%);
-        border-radius: 14px;
-        border: 2px solid #e0e7ff;
-        text-align: center;
-        animation: fadeSlideIn 0.4s ease;
-    }
-    @keyframes fadeSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    .google-account-section.visible {
-        display: block;
-    }
-    .google-question {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 6px;
-    }
-    .google-question-hint {
-        font-size: 0.78rem;
-        color: #888;
-        margin-bottom: 16px;
-    }
-    .google-account-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
-    .google-account-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 20px;
-        border: 2px solid #d1d5db;
-        background: white;
-        border-radius: 12px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        font-family: inherit;
-        flex: 1;
-        justify-content: center;
-        max-width: 160px;
-    }
-    .google-account-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .google-account-btn.selected-yes {
-        background: linear-gradient(135deg, #4285f4, #34a853);
-        color: white;
-        border-color: transparent;
-        box-shadow: 0 4px 14px rgba(66,133,244,0.4);
-    }
-    .google-account-btn.selected-no {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        border-color: transparent;
-        box-shadow: 0 4px 14px rgba(102,126,234,0.4);
-    }
-    .google-next-notice {
-        display: none;
-        margin-top: 14px;
-        padding: 12px 16px;
-        background: linear-gradient(135deg, #dbeafe, #ede9fe);
-        border: 2px solid #93c5fd;
-        border-radius: 10px;
-        text-align: center;
-        animation: fadeSlideIn 0.4s ease;
-    }
-    .google-next-notice p {
-        margin: 0;
-        font-size: 0.85rem;
-        color: #1e40af;
-        font-weight: 600;
-        line-height: 1.6;
-    }
-    .google-next-notice .notice-icon {
-        font-size: 1.4rem;
-        display: block;
-        margin-bottom: 4px;
-    }
-    .google-next-notice.visible {
-        display: block;
-    }
 </style>
 @endpush
 
@@ -342,7 +244,6 @@
     <form method="POST" action="{{ url('/review/' . $store->slug . '/confirm') }}" id="reviewForm">
         @csrf
         <input type="hidden" name="is_ai_generated" id="is_ai_generated" value="{{ old('is_ai_generated', 0) }}">
-        <input type="hidden" name="has_google_account" id="has_google_account" value="{{ old('has_google_account', '') }}">
         <input type="hidden" name="gender" id="genderHidden" value="{{ old('gender', '') }}">
         <input type="hidden" name="age" id="ageHidden" value="{{ old('age', '') }}">
 
@@ -418,31 +319,10 @@
             <p class="ai-error" id="aiError">文章の生成に失敗しました。もう一度お試しください。</p>
         </div>
 
-        {{-- Googleアカウント質問セクション --}}
-        <div class="google-account-section" id="googleAccountSection">
-            <p class="google-question">📱 Googleアカウントをお持ちですか？</p>
-            <p class="google-question-hint">Googleマップへの口コミ投稿に必要です</p>
-            <div class="google-account-buttons">
-                <button type="button" class="google-account-btn" id="btnGoogleYes" onclick="selectGoogleAccount(true)">
-                    ✅ はい
-                </button>
-                <button type="button" class="google-account-btn" id="btnGoogleNo" onclick="selectGoogleAccount(false)">
-                    ❌ いいえ
-                </button>
-            </div>
-            <div class="google-next-notice" id="googleNextNotice">
-                <p>
-                    <span class="notice-icon">📍</span>
-                    この後、<strong>Googleマップ</strong>の口コミ投稿画面へご案内します。<br>
-                    口コミ文はAIが自動で作成しますのでご安心ください！
-                </p>
-            </div>
-        </div>
-
         <div class="comment-section">
             <label for="comment">コメント</label>
-            <textarea name="comment" id="comment" placeholder="上のボタンでテーマを選ぶか、直接ご感想をお書きください...">{{ old('comment') }}</textarea>
             <p class="ai-hint" id="aiHint">※ AIが生成した文章は自由に編集できます</p>
+            <textarea name="comment" id="comment" placeholder="上のボタンでテーマを選ぶか、直接ご感想をお書きください...">{{ old('comment') }}</textarea>
             @error('comment')
                 <p class="error-msg">{{ $message }}</p>
             @enderror
@@ -472,36 +352,8 @@
         radio.addEventListener('change', function() {
             document.getElementById('ratingText').textContent =
                 this.value + '星 - ' + ratingLabels[this.value];
-            // 4星以上でGoogleアカウント質問を表示
-            var section = document.getElementById('googleAccountSection');
-            if (parseInt(this.value) >= 4) {
-                section.classList.add('visible');
-            } else {
-                section.classList.remove('visible');
-                // 非表示時はリセット
-                document.getElementById('has_google_account').value = '';
-                document.getElementById('btnGoogleYes').classList.remove('selected-yes');
-                document.getElementById('btnGoogleNo').classList.remove('selected-no');
-            }
         });
     });
-
-    // Googleアカウント選択
-    function selectGoogleAccount(hasAccount) {
-        document.getElementById('has_google_account').value = hasAccount ? '1' : '0';
-        var btnYes = document.getElementById('btnGoogleYes');
-        var btnNo = document.getElementById('btnGoogleNo');
-        var notice = document.getElementById('googleNextNotice');
-        if (hasAccount) {
-            btnYes.classList.add('selected-yes');
-            btnNo.classList.remove('selected-no');
-            notice.classList.add('visible');
-        } else {
-            btnYes.classList.remove('selected-yes');
-            btnNo.classList.add('selected-no');
-            notice.classList.remove('visible');
-        }
-    }
 
     // ページ読み込み時の状態復元（修正して戻った場合）
     (function() {
@@ -509,15 +361,6 @@
         if (checkedRating) {
             document.getElementById('ratingText').textContent =
                 checkedRating.value + '星 - ' + ratingLabels[checkedRating.value];
-            if (parseInt(checkedRating.value) >= 4) {
-                document.getElementById('googleAccountSection').classList.add('visible');
-            }
-        }
-        var googleVal = document.getElementById('has_google_account').value;
-        if (googleVal === '1') {
-            selectGoogleAccount(true);
-        } else if (googleVal === '0') {
-            selectGoogleAccount(false);
         }
     })();
     const suggestUrl = '{{ url("/review/" . $store->slug . "/suggest") }}';
@@ -581,15 +424,6 @@
             e.preventDefault();
             alert('評価を選択してください');
             return;
-        }
-        // 高評価の場合、Googleアカウント質問に回答必須
-        if (parseInt(rating.value) >= 4) {
-            var googleVal = document.getElementById('has_google_account').value;
-            if (googleVal === '') {
-                e.preventDefault();
-                alert('Googleアカウントをお持ちかどうかを選択してください');
-                return;
-            }
         }
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
