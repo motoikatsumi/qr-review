@@ -23,14 +23,14 @@
     .stars {
         display: flex;
         justify-content: center;
-        gap: 8px;
+        gap: 4px;
         direction: rtl;
     }
     .stars input {
         display: none;
     }
     .stars label {
-        font-size: 2.8rem;
+        font-size: 2.4rem;
         color: #ddd;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -63,9 +63,16 @@
     }
     .persona-selects {
         display: flex;
+        flex-direction: column;
         justify-content: center;
-        gap: 12px;
+        gap: 8px;
         margin-bottom: 12px;
+    }
+    @media (min-width: 380px) {
+        .persona-selects {
+            flex-direction: row;
+            gap: 12px;
+        }
     }
     .persona-selects select {
         padding: 8px 12px;
@@ -75,7 +82,10 @@
         color: #4b5563;
         background-color: white;
         flex: 1;
+        min-width: 0;
         outline: none;
+        -webkit-appearance: none;
+        appearance: none;
     }
     .persona-selects select:focus {
         border-color: #667eea;
@@ -101,6 +111,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        justify-content: center;
     }
     .suggestion-btn {
         display: inline-flex;
@@ -111,12 +122,13 @@
         background: white;
         color: #667eea;
         border-radius: 24px;
-        font-size: 0.88rem;
+        font-size: 0.85rem;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
         font-family: inherit;
         white-space: nowrap;
+        max-width: 100%;
     }
     .suggestion-btn:hover {
         background: linear-gradient(135deg, #667eea, #764ba2);
@@ -173,6 +185,7 @@
         resize: vertical;
         transition: border-color 0.3s ease;
         outline: none;
+        -webkit-appearance: none;
     }
     .comment-section textarea:focus {
         border-color: #667eea;
@@ -257,21 +270,24 @@
     .google-account-buttons {
         display: flex;
         justify-content: center;
-        gap: 14px;
+        gap: 10px;
     }
     .google-account-btn {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 12px 28px;
+        gap: 6px;
+        padding: 10px 20px;
         border: 2px solid #d1d5db;
         background: white;
         border-radius: 12px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.25s ease;
         font-family: inherit;
+        flex: 1;
+        justify-content: center;
+        max-width: 160px;
     }
     .google-account-btn:hover {
         transform: translateY(-2px);

@@ -16,18 +16,20 @@
             font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: 20px;
+            padding: 20px 12px;
         }
         .card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 32px 24px;
+            padding: 28px 18px;
             max-width: 420px;
             width: 100%;
+            margin: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
         .card h1 {
