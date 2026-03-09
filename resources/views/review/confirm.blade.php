@@ -273,12 +273,12 @@
             <p class="google-section-desc">Googleマップへの口コミ投稿にご協力ください</p>
 
             <div id="googleButtons">
-                <button type="button" class="google-signin-btn" id="googleSignInBtn" onclick="tryGoogleSignIn()">
+                <button type="button" class="google-signin-btn" onclick="selectGoogleAccount()">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    Googleアカウントで確認
+                    持っている
                 </button>
-                <button type="button" class="google-no-account" id="googleNoBtn" onclick="selectNoGoogle()">
-                    Googleアカウントを持っていない
+                <button type="button" class="google-no-account" onclick="selectNoGoogle()">
+                    持っていない
                 </button>
             </div>
 
@@ -353,45 +353,9 @@
 @endsection
 
 @push('scripts')
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
     var rating = {{ $rating }};
-    var googleClientId = '{{ config("services.google.client_id") }}';
     var googleSelected = false;
-
-    // Google Sign-In 初期化
-    function initGoogleClient() {
-        if (typeof google === 'undefined' || !google.accounts) {
-            setTimeout(initGoogleClient, 200);
-            return;
-        }
-        google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleGoogleResponse,
-            auto_select: false,
-            cancel_on_tap_outside: true
-        });
-    }
-
-    // Google Sign-In 試行
-    function tryGoogleSignIn() {
-        if (typeof google === 'undefined' || !google.accounts) {
-            selectGoogleAccount();
-            return;
-        }
-        google.accounts.id.prompt(function(notification) {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                selectGoogleAccount();
-            }
-        });
-    }
-
-    // Google レスポンス処理
-    function handleGoogleResponse(response) {
-        if (response.credential) {
-            selectGoogleAccount();
-        }
-    }
 
     // Google アカウントあり選択
     function selectGoogleAccount() {
@@ -507,9 +471,7 @@
     });
 
     // 初期化
-    if (rating >= 4) {
-        initGoogleClient();
-    }
+    // 特になし
 </script>
 <style>
     @keyframes spin { to { transform: rotate(360deg); } }
