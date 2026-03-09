@@ -353,17 +353,16 @@
 @endsection
 
 @push('scripts')
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
     var rating = {{ $rating }};
     var googleSelected = false;
     var tokenClient = null;
+    var gsiReady = false;
 
     // Google OAuth2 Token Client 初期化
     function initTokenClient() {
         if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-            setTimeout(initTokenClient, 300);
-            return;
+            return false;
         }
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: '{{ config("services.google.client_id") }}',
@@ -371,7 +370,6 @@
             callback: function(response) {
                 if (response.access_token) {
                     // ログイン成功 → Googleアカウント確認済み
-                    // トークンを即座に失効化（権限を保持しない）
                     google.accounts.oauth2.revoke(response.access_token);
                     selectGoogleAccount();
                 }
@@ -383,20 +381,29 @@
                 document.getElementById('googleSignInText').textContent = 'Googleでログインして確認';
             }
         });
+        gsiReady = true;
+        return true;
     }
 
-    // Googleログインポップアップを開く
+    // Googleログインポップアップを開く（ユーザークリックから直接呼ばれる）
     function tryGoogleSignIn() {
-        if (!tokenClient) {
-            // SDK未読み込みの場合は少し待ってリトライ
+        // SDK未初期化なら今すぐ初期化を試みる
+        if (!gsiReady) {
             initTokenClient();
-            setTimeout(tryGoogleSignIn, 500);
-            return;
         }
-        var btn = document.getElementById('googleSignInBtn');
-        btn.disabled = true;
-        document.getElementById('googleSignInText').textContent = '認証中...';
-        tokenClient.requestAccessToken();
+
+        if (tokenClient) {
+            // SDK準備OK → ポップアップを開く（ユーザー操作の直接コールなのでブロックされない）
+            var btn = document.getElementById('googleSignInBtn');
+            btn.disabled = true;
+            document.getElementById('googleSignInText').textContent = '認証中...';
+            tokenClient.requestAccessToken();
+        } else {
+            // SDK読み込み失敗 → 自己申告にフォールバック
+            if (confirm('Google認証の読み込みに失敗しました。\nGoogleアカウントをお持ちですか？')) {
+                selectGoogleAccount();
+            }
+        }
     }
 
     // Google アカウントあり選択
@@ -512,9 +519,15 @@
         document.getElementById('loadingSpinner').style.display = 'block';
     });
 
-    // 初期化
+    // 初期化：SDK読み込み完了を待って初期化
     if (rating >= 4) {
-        initTokenClient();
+        // GIS SDKを動的に読み込み
+        var script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.onload = function() {
+            initTokenClient();
+        };
+        document.head.appendChild(script);
     }
 </script>
 <style>
