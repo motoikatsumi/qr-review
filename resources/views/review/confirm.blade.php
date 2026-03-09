@@ -273,9 +273,9 @@
             <p class="google-section-desc">Googleマップへの口コミ投稿にご協力ください</p>
 
             <div id="googleButtons">
-                <button type="button" class="google-signin-btn" onclick="selectGoogleAccount()">
+                <button type="button" class="google-signin-btn" id="googleSignInBtn" onclick="tryGoogleSignIn()">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    持っている
+                    <span id="googleSignInText">Googleでログインして確認</span>
                 </button>
                 <button type="button" class="google-no-account" onclick="selectNoGoogle()">
                     持っていない
@@ -353,9 +353,51 @@
 @endsection
 
 @push('scripts')
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
     var rating = {{ $rating }};
     var googleSelected = false;
+    var tokenClient = null;
+
+    // Google OAuth2 Token Client 初期化
+    function initTokenClient() {
+        if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+            setTimeout(initTokenClient, 300);
+            return;
+        }
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: '{{ config("services.google.client_id") }}',
+            scope: 'email',
+            callback: function(response) {
+                if (response.access_token) {
+                    // ログイン成功 → Googleアカウント確認済み
+                    // トークンを即座に失効化（権限を保持しない）
+                    google.accounts.oauth2.revoke(response.access_token);
+                    selectGoogleAccount();
+                }
+            },
+            error_callback: function(error) {
+                // ポップアップが閉じられた等
+                var btn = document.getElementById('googleSignInBtn');
+                btn.disabled = false;
+                document.getElementById('googleSignInText').textContent = 'Googleでログインして確認';
+            }
+        });
+    }
+
+    // Googleログインポップアップを開く
+    function tryGoogleSignIn() {
+        if (!tokenClient) {
+            // SDK未読み込みの場合は少し待ってリトライ
+            initTokenClient();
+            setTimeout(tryGoogleSignIn, 500);
+            return;
+        }
+        var btn = document.getElementById('googleSignInBtn');
+        btn.disabled = true;
+        document.getElementById('googleSignInText').textContent = '認証中...';
+        tokenClient.requestAccessToken();
+    }
 
     // Google アカウントあり選択
     function selectGoogleAccount() {
@@ -471,7 +513,9 @@
     });
 
     // 初期化
-    // 特になし
+    if (rating >= 4) {
+        initTokenClient();
+    }
 </script>
 <style>
     @keyframes spin { to { transform: rotate(360deg); } }
