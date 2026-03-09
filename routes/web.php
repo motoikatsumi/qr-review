@@ -17,6 +17,7 @@ Route::get('/', function () {
 // 顧客向け口コミページ
 // ============================================================
 Route::get('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'show']);
+Route::post('/review/{slug}/confirm', [\App\Http\Controllers\ReviewController::class, 'confirm']);
 Route::post('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'store']);
 Route::post('/review/{slug}/suggest', [\App\Http\Controllers\ReviewController::class, 'suggest']);
 
@@ -32,10 +33,11 @@ Route::post('/admin/logout', [\App\Http\Controllers\Auth\LoginController::class,
 // 管理画面（認証必須）
 // ============================================================
 Route::middleware('auth')->prefix('admin')->group(function () {
-    // ダッシュボード（店舗一覧へリダイレクト）
+    // ダッシュボード（統計）
     Route::get('/', function () {
-        return redirect('/admin/stores');
+        return redirect('/admin/dashboard');
     });
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
 
     // 店舗管理 CRUD
     Route::get('/stores', [\App\Http\Controllers\Admin\StoreController::class, 'index']);

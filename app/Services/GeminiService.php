@@ -13,30 +13,35 @@ class GeminiService
     public function __construct()
     {
         $this->apiKey = config('services.gemini.api_key');
-        $this->apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+        $this->apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+
+
     }
 
     /**
-     * 顧客の評価とコメントからGoogleマップ用の口コミ文を生成
+     * 送信された口コミ文がGoogleマップのポリシーに違反していないかチェックする
+     * 違反がある場合はエラーメッセージを返し、問題なければnullを返す
      */
-    public function generateReviewText(string $storeName, int $rating, string $comment): ?string
+    public function validateGooglePolicy(string $comment): ?string
     {
-        $starText = str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
-
         $prompt = <<<EOT
-あなたはGoogleマップの口コミを代筆するアシスタントです。
-以下の情報を元に、Googleマップに投稿する自然で丁寧な口コミ文を日本語で生成してください。
+あなたはGoogleマップの口コミポリシー審査員です。
+以下の口コミ文が、Googleマップの「禁止および制限されているコンテンツ」ポリシーに違反しているかどうかを審査してください。
 
-【店舗名】{$storeName}
-【評価】{$starText}（{$rating}星）
-【お客様のコメント】{$comment}
+【対象の口コミ文】
+{$comment}
 
-ルール：
-- 100〜200文字程度で簡潔にまとめる
-- お客様のコメントの内容を自然に反映する
-- 実際に来店した人が書いたような自然な文体にする
-- 絵文字は使わない
-- 口コミ文のみを出力し、余計な説明は不要
+【審査基準となる主なポリシー違反】
+1. スパムと虚偽のエンゲージメント（意味のない文字列、URLのみなど）
+2. 関連性のないコンテンツ（質屋のサービスや体験と無関係な政治的・個人的な主張など）
+3. 不適切なコンテンツ（ヘイトスピーチ、嫌がらせ、個人攻撃、卑猥な言葉、差別的な発言など）
+4. 露骨な性的表現
+5. 冒涜的な言葉
+
+判定ルール：
+- もし上記ポリシーのいずれかに【明確に違反している】場合は、その理由を日本語で簡潔に指摘してください（例：「不適切な言葉が含まれているため投稿できません」など）。
+- 違反しておらず、通常の口コミとして【問題ない】場合は、必ず「OK」という2文字だけを出力してください。
+- 多少の誤字脱字やネガティブな意見（例えば「買取価格が安かった」など）はポリシー違反ではないため「OK」としてください。
 EOT;
 
         try {
@@ -51,24 +56,36 @@ EOT;
                     ]
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.7,
-                    'maxOutputTokens' => 500,
+                    'temperature' => 0.1, // 判定なので低く設定
+                    'maxOutputTokens' => 150,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
                 ],
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                $result = trim($data['candidates'][0]['content']['parts'][0]['text'] ?? '');
+                
+                // 「OK」なら違反なし
+                if ($result === 'OK' || strpos($result, 'OK') === 0) {
+                    return null;
+                }
+                
+                // それ以外は違反理由として返す
+                return $result ?: '申し訳ありません。ポリシー違反の可能性があるため送信できませんでした。';
             }
 
-            Log::error('Gemini API error', [
+            Log::error('Gemini API error (policy check)', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
 
+            // APIエラー時はユーザーの入力を阻害しないようnullを返す
             return null;
         } catch (\Exception $e) {
-            Log::error('Gemini API exception', ['message' => $e->getMessage()]);
+            Log::error('Gemini API exception (policy check)', ['message' => $e->getMessage()]);
             return null;
         }
     }
@@ -76,25 +93,56 @@ EOT;
     /**
      * キーワードボタンからGoogleマップ用の口コミ提案文を生成
      */
-    public function generateSuggestion(string $storeName, string $keyword): ?string
+    public function generateSuggestion(string $storeName, string $keyword, string $gender = '', string $age = ''): ?string
     {
-        $randomSeed = rand(1, 9999);
+        // 書き手のペルソナ：ユーザー入力があれば使用、なければランダム
+        if ($gender && $age) {
+            $persona = "{$age}代の{$gender}";
+        } else {
+            $personas = ['30代の女性', '40代の男性', '20代の方', '50代の方', '60代の方'];
+            $persona  = $personas[array_rand($personas)];
+        }
+
+        // 文章のトーン（ランダム）
+        $tones = [
+            'あっさりと落ち着いた口調',
+            '少し感動した様子の口調',
+            '友人に話しかけるような親しみやすい口調',
+            'シンプルで率直な口調',
+            '安心感を伝える口調',
+        ];
+
+        // 文章の切り口（ランダム）
+        $focuses = [
+            'お店の雰囲気や居心地も交えて',
+            '結果（査定額や対応）を中心に',
+            '来店前の不安が解消されたことを中心に',
+            'また来たいという気持ちを中心に',
+            'スタッフへの感謝を中心に',
+        ];
+
+        $tone  = $tones[array_rand($tones)];
+        $focus = $focuses[array_rand($focuses)];
 
         $prompt = <<<EOT
-あなたはGoogleマップの口コミを代筆するアシスタントです。
-以下の情報を元に、Googleマップに投稿する自然で丁寧な口コミ文を日本語で生成してください。
+Googleマップに投稿する口コミ文を1つ生成してください。
 
 【店舗名】{$storeName}
-【お客様が伝えたいこと】{$keyword}
-【シード番号】{$randomSeed}
+【テーマ】{$keyword}
+【書き手のペルソナ】{$persona}
+【文章のトーン】{$tone}
+【文章の切り口】{$focus}
 
-ルール：
-- 100〜200文字程度で簡潔にまとめる
-- 質屋に実際に来店した人が書いたような自然な文体にする
-- 毎回少し異なる表現・文章構成にする（シード番号を参考に）
-- 絵文字は使わない
-- 口コミ文のみを出力し、余計な説明は不要
+条件：
+- 50〜80文字程度の短い文章にする
+- 最後は「。」または「！」のどちらか一つのみで終わる。「。！」「！。」のような句読を連続で使わない
+- 「」（カギ括弧）は一切使わない
+- 指定されたペルソナ・トーン・切り口を反映した自然な口語体にする
+- 【重要】フランクになりすぎず、最低限の敬語や丁寧な言葉遣い（です/ます調）を守る
+- 【重要】お客様自身を下げるような発言（卑下など）や、不快感を与えるネガティブ・おかしい文章は絶対に含めない
+- 絵文字・説明文・前置き不要。口コミ文のみ出力
 EOT;
+
 
         try {
             $response = Http::withHeaders([
@@ -108,14 +156,18 @@ EOT;
                     ]
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.9,
-                    'maxOutputTokens' => 500,
+                    'temperature' => 1.0,
+                    'maxOutputTokens' => 150,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
                 ],
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
-                return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                return $text ? $this->cleanSuggestionText($text) : null;
             }
 
             Log::error('Gemini API error (suggestion)', [
@@ -128,5 +180,28 @@ EOT;
             Log::error('Gemini API exception (suggestion)', ['message' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * AI生成テキストの後処理クリーニング
+     */
+    private function cleanSuggestionText(string $text): string
+    {
+        // 前後の空白・改行を除去
+        $text = trim($text);
+
+        // 「」カギ括弧で囲まれていたら中身だけ取り出す
+        $text = preg_replace('/^「(.+)」$/us', '$1', $text);
+
+        // 「」が文中に残っていても除去
+        $text = str_replace(['「', '」'], '', $text);
+
+        // 。！ や ！。 の連続句読点を正規化（！ or 。 どちらか一方に統一）
+        $text = preg_replace('/。！+/', '。', $text);
+        $text = preg_replace('/！。+/', '！', $text);
+        $text = preg_replace('/。{2,}/', '。', $text);
+        $text = preg_replace('/！{2,}/', '！', $text);
+
+        return trim($text);
     }
 }

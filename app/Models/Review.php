@@ -15,6 +15,8 @@ class Review extends Model
         'comment',
         'ai_generated_text',
         'status',
+        'gender',
+        'age',
     ];
 
     public function store()

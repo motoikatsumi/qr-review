@@ -128,10 +128,15 @@
 
 @section('content')
 <div class="card">
-    <div class="success-icon">✨</div>
+    <div class="success-icon">📍</div>
     <p class="store-name">{{ $store->name }}</p>
-    <h1>ありがとうございます！</h1>
-    <p class="subtitle">AIが口コミ文を作成しました</p>
+    <h1>あと少しで完了です！</h1>
+    <p class="subtitle">Googleマップに口コミを投稿してください</p>
+
+    <div style="margin: 16px 0; padding: 12px 16px; background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 10px; text-align: center;">
+        <p style="margin: 0; font-size: 0.9rem; color: #92400e; font-weight: 700;">⚠️ まだ口コミは投稿されていません</p>
+        <p style="margin: 4px 0 0; font-size: 0.78rem; color: #92400e;">下のボタンからGoogleマップを開いて投稿を完了してください</p>
+    </div>
 
     <div class="ai-section">
         <p class="ai-label">
@@ -162,9 +167,15 @@
     </div>
 
     <div class="btn-group">
-        <a href="{{ $store->google_review_url }}" target="_blank" class="btn btn-google" id="googleBtn">
-            Googleマップで口コミを投稿する →
+        <a href="{{ $store->google_review_url }}" target="_blank" class="btn btn-google" id="googleBtn" style="background: linear-gradient(135deg, #4285f4, #34a853); font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px; animation: pulseBtn 2s ease-in-out infinite;">
+            📍 Googleマップを開いて投稿する →
         </a>
+        <style>
+            @keyframes pulseBtn {
+                0%, 100% { box-shadow: 0 4px 15px rgba(66,133,244,0.4); }
+                50% { box-shadow: 0 4px 25px rgba(66,133,244,0.7); }
+            }
+        </style>
     </div>
 </div>
 @endsection

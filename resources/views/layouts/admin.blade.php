@@ -264,6 +264,7 @@
     <nav class="navbar">
         <a href="/admin/stores" class="navbar-brand">📊 QRレビュー管理</a>
         <ul class="navbar-nav">
+            <li><a href="/admin/dashboard" class="{{ request()->is('admin/dashboard*') ? 'active' : '' }}">📊 統計</a></li>
             <li><a href="/admin/stores" class="{{ request()->is('admin/stores*') ? 'active' : '' }}">🏪 店舗管理</a></li>
             <li><a href="/admin/reviews" class="{{ request()->is('admin/reviews*') ? 'active' : '' }}">📝 口コミ一覧</a></li>
         </ul>

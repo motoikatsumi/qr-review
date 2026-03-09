@@ -16,7 +16,10 @@ class StoreController extends Controller
 
     public function index()
     {
-        $stores = Store::withCount('reviews')->orderBy('created_at', 'desc')->get();
+        $stores = Store::withCount('reviews')
+            ->withAvg('reviews', 'rating')
+            ->orderBy('created_at', 'desc')
+            ->get();
         return view('admin.stores.index', compact('stores'));
     }
 

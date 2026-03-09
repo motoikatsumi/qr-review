@@ -16,6 +16,7 @@
                 <th>スラッグ</th>
                 <th>通知先メール</th>
                 <th>口コミ数</th>
+                <th>平均評価</th>
                 <th>ステータス</th>
                 <th>操作</th>
             </tr>
@@ -28,6 +29,14 @@
                 <td style="font-size:0.85rem;">{{ $store->notify_email }}</td>
                 <td>{{ $store->reviews_count }}</td>
                 <td>
+                    @if($store->reviews_count > 0)
+                        <span class="stars">{{ number_format($store->reviews_avg_rating, 1) }}</span>
+                        <span style="font-size:0.75rem;color:#888;">/ 5.0</span>
+                    @else
+                        <span style="color:#ccc;">-</span>
+                    @endif
+                </td>
+                <td>
                     @if($store->is_active)
                         <span class="badge badge-green">有効</span>
                     @else
@@ -38,11 +47,6 @@
                     <div class="btn-group">
                         <a href="/admin/stores/{{ $store->id }}/qrcode" class="btn btn-info btn-sm">QR</a>
                         <a href="/admin/stores/{{ $store->id }}/edit" class="btn btn-secondary btn-sm">編集</a>
-                        <form method="POST" action="/admin/stores/{{ $store->id }}" style="display:inline;" onsubmit="return confirm('本当に削除しますか？')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm">削除</button>
-                        </form>
                     </div>
                 </td>
             </tr>

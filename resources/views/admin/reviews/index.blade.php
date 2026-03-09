@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="page-header">
-    <h1>📝 口コミ一覧</h1>
+    <h1>📝 口コミ一覧 <span style="font-size:0.6em;color:#888;font-weight:400;">（総件数: {{ $totalCount }}件）</span></h1>
     <a href="/admin/reviews/export?{{ http_build_query(request()->query()) }}" class="btn btn-secondary">📥 CSVエクスポート</a>
 </div>
 
@@ -34,61 +34,92 @@
     </div>
 </div>
 
-<div class="card">
-    <table>
-        <thead>
-            <tr>
-                <th>日時</th>
-                <th>店舗</th>
-                <th>評価</th>
-                <th>コメント</th>
-                <th>ステータス</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($reviews as $review)
-            <tr>
-                <td style="white-space:nowrap;font-size:0.8rem;color:#888;">
-                    {{ $review->created_at->format('m/d H:i') }}
-                </td>
-                <td><strong>{{ $review->store->name }}</strong></td>
-                <td>
-                    <span class="stars">
-                        {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}
-                    </span>
-                </td>
-                <td style="max-width:300px;">
-                    <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                        {{ $review->comment }}
-                    </div>
-                    @if($review->ai_generated_text)
-                        <div style="font-size:0.75rem;color:#667eea;margin-top:4px;">
-                            🤖 AI生成文あり
-                        </div>
-                    @endif
-                </td>
-                <td>
-                    @if($review->status === 'email_sent')
-                        <span class="badge badge-red">メール送信</span>
-                    @else
-                        <span class="badge badge-green">Google誘導</span>
-                    @endif
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="5" style="text-align:center;padding:40px;color:#888;">
-                    口コミはまだありません。
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
+<style>
+    .review-list { display: flex; flex-direction: column; gap: 12px; }
+    .review-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; display: flex; gap: 16px; align-items: flex-start; transition: box-shadow 0.15s; }
+    .review-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .review-meta { min-width: 120px; flex-shrink: 0; }
+    .review-meta .date { font-size: 0.78rem; color: #9ca3af; }
+    .review-meta .store-name { font-weight: 700; font-size: 0.9rem; margin-top: 4px; }
+    .review-meta .stars { font-size: 1rem; margin-top: 4px; display: block; }
+    .review-meta .persona { font-size: 0.78rem; color: #6b7280; margin-top: 6px; }
+    .review-meta .persona span { display: inline-block; border-radius: 4px; padding: 1px 6px; margin-right: 4px; font-weight: 600; }
+    .persona-male { background: #dbeafe; color: #2563eb; }
+    .persona-female { background: #fce7f3; color: #db2777; }
+    .persona-other { background: #f3f4f6; color: #6b7280; }
+    .persona-age-10 { background: #fef9c3; color: #a16207; }
+    .persona-age-20 { background: #d1fae5; color: #059669; }
+    .persona-age-30 { background: #dbeafe; color: #2563eb; }
+    .persona-age-40 { background: #e0e7ff; color: #4338ca; }
+    .persona-age-50 { background: #ede9fe; color: #7c3aed; }
+    .persona-age-60 { background: #fce7f3; color: #be185d; }
+    .persona-age-default { background: #f3f4f6; color: #6b7280; }
+    .review-body { flex: 1; min-width: 0; }
+    .review-comment { font-size: 0.9rem; line-height: 1.7; color: #374151; white-space: pre-wrap; word-break: break-word; }
+    .review-footer { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    .review-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .review-badge-red { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .review-badge-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .review-badge-gray { background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb; }
+    .review-badge-ai { background: #eef2ff; color: #667eea; border: 1px solid #c7d2fe; }
+    .rating-bar { display: inline-block; width: 4px; height: 28px; border-radius: 2px; margin-right: 12px; flex-shrink: 0; }
+    .rating-low { background: #ef4444; }
+    .rating-high { background: #22c55e; }
+    .rating-mid { background: #f59e0b; }
+</style>
+
+<div class="review-list">
+    @forelse($reviews as $review)
+    <div class="review-item">
+        <span class="rating-bar {{ $review->rating <= 2 ? 'rating-low' : ($review->rating <= 3 ? 'rating-mid' : 'rating-high') }}"></span>
+        <div class="review-meta">
+            <div class="date">{{ $review->created_at->format('Y/m/d H:i') }}</div>
+            <div class="store-name">{{ $review->store->name }}</div>
+            <span class="stars" style="color: {{ $review->rating <= 3 ? '#ef4444' : '#f59e0b' }};">
+                {{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}
+            </span>
+            <div class="persona">
+                <span class="{{ $review->gender === '男性' ? 'persona-male' : ($review->gender === '女性' ? 'persona-female' : 'persona-other') }}">{{ $review->gender ?: '-' }}</span>
+                @php $ageClass = match($review->age) { '10' => 'persona-age-10', '20' => 'persona-age-20', '30' => 'persona-age-30', '40' => 'persona-age-40', '50' => 'persona-age-50', '60' => 'persona-age-60', default => 'persona-age-default' }; @endphp
+                <span class="{{ $ageClass }}">{{ $review->age ? $review->age . '代' : '-' }}</span>
+            </div>
+        </div>
+        <div class="review-body">
+            <div class="review-comment">{{ trim($review->comment) }}</div>
+            <div class="review-footer">
+                @if($review->status === 'email_sent')
+                    <span class="review-badge review-badge-red">📧 メール送信</span>
+                @elseif($review->status === 'redirected_to_google')
+                    <span class="review-badge review-badge-green">🔗 Google誘導</span>
+                    <span class="review-badge review-badge-green">📱 アカウント有</span>
+                @elseif($review->status === 'no_google_account')
+                    <span class="review-badge review-badge-gray">📱 Googleアカウント無</span>
+                @endif
+                @if($review->ai_generated_text)
+                    <span class="review-badge review-badge-ai">🤖 AI生成</span>
+                @endif
+            </div>
+        </div>
+    </div>
+    @empty
+    <div class="card" style="text-align:center;padding:40px;color:#888;">
+        口コミはまだありません。
+    </div>
+    @endforelse
 </div>
 
 @if($reviews->hasPages())
-<div style="margin-top:20px;">
-    {{ $reviews->appends(request()->query())->links() }}
+<div style="margin-top:20px; display:flex; justify-content:center;">
+    <style>
+        nav[role="navigation"] { width: 100%; }
+        nav[role="navigation"] p { display: none; }
+        .pagination { display: flex; list-style: none; padding: 0; margin: 0; justify-content: center; gap: 5px; }
+        .pagination li a, .pagination li span { display: block; padding: 8px 12px; border: 1px solid #ddd; background: #fff; color: #667eea; text-decoration: none; border-radius: 4px; font-size: 0.9rem; }
+        .pagination li.active span { background: #667eea; color: #fff; border-color: #667eea; }
+        .pagination li.disabled span { color: #aaa; background: #f9f9f9; }
+        .pagination li a:hover { background: #f3f4f6; }
+    </style>
+    {{ $reviews->appends(request()->query())->links('pagination::bootstrap-4') }}
 </div>
 @endif
 @endsection
