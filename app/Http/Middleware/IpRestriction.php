@@ -15,7 +15,23 @@ class IpRestriction
             return $next($request);
         }
 
-        if (!in_array($request->ip(), $allowedIps)) {
+        // リバースプロキシ経由の実際のクライアントIPを取得
+        $clientIp = $request->ip();
+
+        // X-Forwarded-For ヘッダがある場合は最初のIPを使用
+        $forwarded = $request->header('X-Forwarded-For');
+        if ($forwarded) {
+            $ips = array_map('trim', explode(',', $forwarded));
+            $clientIp = $ips[0];
+        }
+
+        // X-Real-IP ヘッダがある場合はそちらを優先
+        $realIp = $request->header('X-Real-IP');
+        if ($realIp) {
+            $clientIp = trim($realIp);
+        }
+
+        if (!in_array($clientIp, $allowedIps)) {
             abort(403, 'アクセスが許可されていません。');
         }
 
