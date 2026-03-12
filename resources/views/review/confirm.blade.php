@@ -116,7 +116,7 @@
         <div class="google-post-section">
             <div class="google-post-notice">
                 <p>📍 下のボタンを押すと口コミ文が<strong>自動コピー</strong>され、<strong>Googleマップ</strong>が開きます</p>
-                <p style="margin-top: 6px; font-size: 0.75rem; color: #666;"><strong>※ Googleアカウントがない場合は弊社システムに口コミが送信されます</strong></p>
+                <p style="margin-top: 6px; font-size: 0.75rem; color: #000;"><strong>※ Googleアカウントがない場合は弊社システムに口コミが送信されます</strong></p>
             </div>
         </div>
         @endif
