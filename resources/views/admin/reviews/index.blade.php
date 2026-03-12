@@ -98,6 +98,13 @@
                 @if($review->ai_generated_text)
                     <span class="review-badge review-badge-ai">🤖 AI生成</span>
                 @endif
+                @if(Auth::user()->isAdmin())
+                <form action="/admin/reviews/{{ $review->id }}" method="POST" style="display:inline;margin-left:auto;" onsubmit="return confirm('この口コミを削除しますか？');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding:2px 10px;font-size:0.75rem;">🗑 削除</button>
+                </form>
+                @endif
             </div>
         </div>
     </div>

@@ -15,6 +15,7 @@ class AdminSeeder extends Seeder
             [
                 'name' => '管理者',
                 'password' => Hash::make('A$s1st#Qr!2026xZ'),
+                'role' => 'admin',
             ]
         );
     }

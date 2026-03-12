@@ -41,13 +41,12 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     });
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
 
-    // 店舗管理 CRUD
+    // 店舗管理
     Route::get('/stores', [\App\Http\Controllers\Admin\StoreController::class, 'index']);
     Route::get('/stores/create', [\App\Http\Controllers\Admin\StoreController::class, 'create']);
     Route::post('/stores', [\App\Http\Controllers\Admin\StoreController::class, 'store']);
     Route::get('/stores/{store}/edit', [\App\Http\Controllers\Admin\StoreController::class, 'edit']);
     Route::put('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'update']);
-    Route::delete('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'destroy']);
 
     // QRコード
     Route::get('/stores/{store}/qrcode', [\App\Http\Controllers\Admin\QrCodeController::class, 'show']);
@@ -56,4 +55,16 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     // 口コミ一覧
     Route::get('/reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index']);
     Route::get('/reviews/export', [\App\Http\Controllers\Admin\ReviewController::class, 'export']);
+
+    // 管理者専用：ユーザー管理 + 削除系操作
+    Route::middleware('admin')->group(function () {
+        Route::delete('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'destroy']);
+        Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index']);
+        Route::get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create']);
+        Route::post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store']);
+        Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit']);
+        Route::put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update']);
+        Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy']);
+        Route::delete('/reviews/{review}', [\App\Http\Controllers\Admin\ReviewController::class, 'destroy']);
+    });
 });

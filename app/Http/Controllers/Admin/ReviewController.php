@@ -83,4 +83,10 @@ class ReviewController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function destroy(Review $review)
+    {
+        $review->delete();
+        return redirect('/admin/reviews')->with('success', '口コミを削除しました。');
+    }
 }

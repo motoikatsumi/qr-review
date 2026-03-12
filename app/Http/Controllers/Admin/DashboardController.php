@@ -18,7 +18,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $storeId = $request->input('store_id');
-        $stores = Store::orderBy('name')->get();
+        $stores = Store::orderBy('id')->get();
 
         $query = Review::query();
         if ($storeId) {
