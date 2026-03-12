@@ -19,6 +19,11 @@ class ReviewController extends Controller
     {
         $store = Store::where('slug', $slug)->where('is_active', true)->firstOrFail();
 
+        // 投稿済みの場合はサンキューページへ
+        if (session('review_submitted_' . $slug)) {
+            return redirect('/review/' . $slug . '/thankyou');
+        }
+
         return view('review.form', compact('store'));
     }
 
@@ -38,6 +43,11 @@ class ReviewController extends Controller
     public function confirm(Request $request, $slug)
     {
         $store = Store::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        // 投稿済みの場合はサンキューページへ
+        if (session('review_submitted_' . $slug)) {
+            return redirect('/review/' . $slug . '/thankyou');
+        }
 
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
@@ -76,6 +86,11 @@ class ReviewController extends Controller
     {
         $store = Store::where('slug', $slug)->where('is_active', true)->firstOrFail();
 
+        // 投稿済みの場合はサンキューページへ
+        if (session('review_submitted_' . $slug)) {
+            return view('review.thankyou', compact('store'));
+        }
+
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|max:2000',
@@ -113,6 +128,7 @@ class ReviewController extends Controller
                 'age' => $validated['age'] ?? null,
             ]);
 
+            session(['review_submitted_' . $slug => true]);
             return view('review.thankyou', compact('store'));
         }
 
@@ -134,6 +150,7 @@ class ReviewController extends Controller
             \Log::error('メール送信エラー: ' . $e->getMessage());
         }
 
+        session(['review_submitted_' . $slug => true]);
         return view('review.thankyou', compact('store'));
     }
 
