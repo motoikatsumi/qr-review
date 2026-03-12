@@ -315,6 +315,7 @@
                     金額に満足
                 </button>
             </div>
+            <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">上記のテーマを選択すると自動でコメントが生成されます</p>
             <p class="ai-error" id="aiError">文章の生成に失敗しました。もう一度お試しください。</p>
         </div>
 
