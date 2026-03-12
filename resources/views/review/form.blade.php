@@ -108,27 +108,26 @@
         vertical-align: middle;
     }
     .suggestion-buttons {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
-        justify-content: center;
     }
     .suggestion-btn {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 5px;
-        padding: 8px 14px;
+        padding: 8px 10px;
         border: 2px solid #667eea;
         background: white;
         color: #667eea;
         border-radius: 24px;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
         font-family: inherit;
         white-space: nowrap;
-        max-width: 100%;
     }
     .suggestion-btn:hover {
         background: linear-gradient(135deg, #667eea, #764ba2);
@@ -363,6 +362,18 @@
                 checkedRating.value + '星 - ' + ratingLabels[checkedRating.value];
         }
     })();
+
+    // 提案ボタンの並び順をランダムにシャッフル
+    (function() {
+        var container = document.querySelector('.suggestion-buttons');
+        var buttons = Array.from(container.children);
+        for (var i = buttons.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            container.appendChild(buttons[j]);
+            buttons.splice(j, 1, buttons[i]);
+        }
+    })();
+
     const suggestUrl = '{{ url("/review/" . $store->slug . "/suggest") }}';
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
