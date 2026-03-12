@@ -57,164 +57,9 @@
         transform: translateY(-1px);
     }
 
-    /* Google アカウント確認セクション */
-    .google-section {
-        margin-top: 16px;
-        padding: 18px 16px;
-        background: linear-gradient(135deg, #f0f7ff, #f0fdf4);
-        border: 2px solid #93c5fd;
-        border-radius: 14px;
-    }
-    .google-section-title {
-        font-size: 0.92rem;
-        font-weight: 700;
-        color: #1e40af;
-        text-align: center;
-        margin-bottom: 4px;
-    }
-    .google-section-desc {
-        font-size: 0.78rem;
-        color: #555;
-        text-align: center;
-        margin-bottom: 14px;
-        line-height: 1.5;
-    }
-    .google-signin-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding: 14px;
-        background: white;
-        border: 2px solid #4285f4;
-        border-radius: 12px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #333;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .google-signin-btn:hover {
-        background: #f8faff;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba(66, 133, 244, 0.25);
-    }
-    .google-signin-btn img {
-        width: 22px;
-        height: 22px;
-    }
-    .google-no-account {
-        display: block;
-        text-align: center;
-        margin-top: 10px;
-        font-size: 0.82rem;
-        color: #666;
-        cursor: pointer;
-        text-decoration: underline;
-        background: none;
-        border: none;
-        width: 100%;
-    }
-    .google-no-account:hover {
-        color: #764ba2;
-    }
-    .google-confirmed {
-        display: none;
-        text-align: center;
-        padding: 12px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-    .google-confirmed.yes {
-        background: linear-gradient(135deg, #dcfce7, #dbeafe);
-        color: #166534;
-        border: 2px solid #86efac;
-    }
-    .google-confirmed.no {
-        background: linear-gradient(135deg, #f3e8ff, #fce7f3);
-        color: #6b21a8;
-        border: 2px solid #d8b4fe;
-    }
-    .google-change-btn {
-        display: none;
-        margin: 8px auto 0;
-        font-size: 0.78rem;
-        color: #888;
-        cursor: pointer;
-        text-decoration: underline;
-        background: none;
-        border: none;
-    }
-    .google-change-btn:hover {
-        color: #764ba2;
-    }
-    .google-validation-error {
-        display: none;
-        color: #dc2626;
-        font-size: 0.82rem;
-        text-align: center;
-        margin-top: 8px;
-        font-weight: 600;
-    }
-
-    /* Google投稿セクション（アカウント確認後に表示） */
+    /* Google投稿セクション */
     .google-post-section {
-        display: none;
         margin-top: 16px;
-    }
-    .ai-section {
-        margin-bottom: 16px;
-    }
-    .ai-label {
-        font-size: 0.85rem;
-        color: #888;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .ai-label .badge {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        font-size: 0.7rem;
-        padding: 2px 8px;
-        border-radius: 20px;
-        font-weight: 600;
-    }
-    .ai-text {
-        background: #f8f9ff;
-        border: 2px solid #e8ebf8;
-        border-radius: 12px;
-        padding: 16px;
-        font-size: 0.95rem;
-        line-height: 1.7;
-        color: #333;
-    }
-    .copy-btn {
-        display: block;
-        width: 100%;
-        margin-top: 10px;
-        padding: 12px;
-        background: #f0f0f0;
-        border: 2px dashed #ccc;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        color: #555;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-family: inherit;
-    }
-    .copy-btn:hover {
-        background: #e8ebf8;
-        border-color: #667eea;
-        color: #667eea;
-    }
-    .copy-btn.copied {
-        background: #d1fae5;
-        border-color: #34d399;
-        color: #059669;
     }
     .google-post-notice {
         margin-top: 12px;
@@ -266,52 +111,12 @@
             <p class="confirm-value">{{ $comment }}</p>
         </div>
 
-        {{-- 高評価の場合のみ Google アカウント確認セクション表示 --}}
+        {{-- 高評価の場合：口コミ文コピー＋Googleマップ誘導セクション --}}
         @if ($rating >= 4)
-        <div class="google-section" id="googleSection">
-            <p class="google-section-title">📱 Googleアカウントをお持ちですか？</p>
-            <p class="google-section-desc">Googleマップへの口コミ投稿にご協力ください</p>
-
-            <div id="googleButtons">
-                <button type="button" class="google-signin-btn" onclick="selectGoogleAccount()">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    <span>持っている</span>
-                </button>
-                <button type="button" class="google-no-account" onclick="selectNoGoogle()">
-                    持っていない
-                </button>
-            </div>
-
-            <div class="google-confirmed yes" id="googleYesConfirmed">
-                ✅ Googleアカウント確認済み
-            </div>
-            <div class="google-confirmed no" id="googleNoConfirmed">
-                Googleアカウントなしで送信します
-            </div>
-            <button type="button" class="google-change-btn" id="googleChangeBtn" onclick="resetGoogleSelection()">
-                選択を変更する
-            </button>
-
-            <p class="google-validation-error" id="googleError">
-                Googleアカウントの確認を選択してください
-            </p>
-        </div>
-
-        {{-- Googleアカウント確認後に表示：口コミ文コピーセクション --}}
-        <div class="google-post-section" id="googlePostSection">
-            <div class="ai-section">
-                <p class="ai-label">
-                    <span class="badge">AI生成</span>
-                    Googleマップ用の口コミ文
-                </p>
-                <div class="ai-text" id="aiText">{{ $comment }}</div>
-                <button type="button" class="copy-btn" id="copyBtn" onclick="copyText()">
-                    📋 タップしてコピー
-                </button>
-            </div>
-
+        <div class="google-post-section">
             <div class="google-post-notice">
                 <p>📍 下のボタンを押すと口コミ文が<strong>自動コピー</strong>され、<strong>Googleマップ</strong>が開きます</p>
+                <p style="margin-top: 6px; font-size: 0.75rem; color: #666;">※ Googleアカウントがない場合も口コミはシステムに登録されます</p>
             </div>
         </div>
         @endif
@@ -325,11 +130,10 @@
             <input type="hidden" name="rating" value="{{ $rating }}">
             <input type="hidden" name="comment" value="{{ $comment }}">
             <input type="hidden" name="is_ai_generated" value="{{ $is_ai_generated }}">
-            <input type="hidden" name="has_google_account" id="hasGoogleAccount" value="">
             <input type="hidden" name="gender" value="{{ $gender }}">
             <input type="hidden" name="age" value="{{ $age }}">
-            <button type="submit" class="btn btn-primary" id="submitBtn">
-                <span id="submitText">送信する →</span>
+            <button type="submit" class="btn btn-primary {{ $rating >= 4 ? 'btn-google-submit' : '' }}" id="submitBtn">
+                <span id="submitText">{{ $rating >= 4 ? '📍 コピーしてGoogleマップへ →' : '送信する →' }}</span>
                 <div class="loading-spinner" id="loadingSpinner" style="display:none;width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
             </button>
         </form>
@@ -355,98 +159,27 @@
 @push('scripts')
 <script>
     var rating = {{ $rating }};
-    var googleSelected = false;
-    // Google アカウントあり選択
-    function selectGoogleAccount() {
-        googleSelected = true;
-        document.getElementById('hasGoogleAccount').value = '1';
-        document.getElementById('googleButtons').style.display = 'none';
-        document.getElementById('googleYesConfirmed').style.display = 'block';
-        document.getElementById('googleNoConfirmed').style.display = 'none';
-        document.getElementById('googleChangeBtn').style.display = 'block';
-        document.getElementById('googleError').style.display = 'none';
-        // Google投稿セクション表示
-        document.getElementById('googlePostSection').style.display = 'block';
-        // ボタンをGoogle用に変更
-        var btn = document.getElementById('submitBtn');
-        btn.classList.add('btn-google-submit');
-        document.getElementById('submitText').textContent = '📍 コピーしてGoogleマップへ →';
-    }
 
-    // Google アカウントなし選択
-    function selectNoGoogle() {
-        googleSelected = true;
-        document.getElementById('hasGoogleAccount').value = '0';
-        document.getElementById('googleButtons').style.display = 'none';
-        document.getElementById('googleYesConfirmed').style.display = 'none';
-        document.getElementById('googleNoConfirmed').style.display = 'block';
-        document.getElementById('googleChangeBtn').style.display = 'block';
-        document.getElementById('googleError').style.display = 'none';
-        // Google投稿セクション非表示
-        document.getElementById('googlePostSection').style.display = 'none';
-        var btn = document.getElementById('submitBtn');
-        btn.classList.remove('btn-google-submit');
-        document.getElementById('submitText').textContent = '送信する →';
-    }
+    var thankyouUrl = '{{ url("/review/" . $store->slug . "/thankyou") }}';
 
-    // 選択リセット
-    function resetGoogleSelection() {
-        googleSelected = false;
-        document.getElementById('hasGoogleAccount').value = '';
-        document.getElementById('googleButtons').style.display = 'block';
-        document.getElementById('googleYesConfirmed').style.display = 'none';
-        document.getElementById('googleNoConfirmed').style.display = 'none';
-        document.getElementById('googleChangeBtn').style.display = 'none';
-        document.getElementById('googleError').style.display = 'none';
-        // Google投稿セクション非表示
-        document.getElementById('googlePostSection').style.display = 'none';
-        var btn = document.getElementById('submitBtn');
-        btn.classList.remove('btn-google-submit');
-        document.getElementById('submitText').textContent = '送信する →';
-    }
-
-    // テキストコピー
-    function copyText() {
-        var text = document.getElementById('aiText').textContent;
-        var btn = document.getElementById('copyBtn');
-
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(function() {
-                btn.textContent = '✅ コピーしました！';
-                btn.classList.add('copied');
-            });
-        } else {
-            var textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            btn.textContent = '✅ コピーしました！';
-            btn.classList.add('copied');
+    // Googleマップから戻った時にthankyouページへリダイレクト
+    window.addEventListener('pageshow', function(event) {
+        if (sessionStorage.getItem('review_submitted')) {
+            sessionStorage.removeItem('review_submitted');
+            window.location.replace(thankyouUrl);
         }
-
-        setTimeout(function() {
-            btn.textContent = '📋 タップしてコピー';
-            btn.classList.remove('copied');
-        }, 3000);
-    }
+    });
 
     // フォーム送信処理
     document.getElementById('submitForm').addEventListener('submit', function(e) {
-        // 高評価かつ Google アカウント未選択の場合はブロック
-        if (rating >= 4 && !googleSelected) {
-            e.preventDefault();
-            document.getElementById('googleError').style.display = 'block';
-            document.getElementById('googleSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
+        var btn = document.getElementById('submitBtn');
 
-        // Googleアカウントありの場合：自動コピー＋Googleマップを別タブで開く
-        if (rating >= 4 && document.getElementById('hasGoogleAccount').value === '1') {
-            var text = document.getElementById('aiText').textContent;
+        // 高評価の場合：fetchでバックグラウンド送信し、現在のタブでGoogleマップへ遷移
+        if (rating >= 4) {
+            e.preventDefault();
+
+            // コピー処理
+            var text = document.querySelector('input[name="comment"]').value;
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text);
             } else {
@@ -459,11 +192,34 @@
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
             }
-            var url = document.getElementById('googleReviewUrl').value;
-            window.open(url, '_blank');
+
+            btn.disabled = true;
+            document.getElementById('submitText').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'block';
+
+            // fetchでフォームデータをバックグラウンド送信
+            var form = document.getElementById('submitForm');
+            var formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).finally(function() {
+                // 戻った時にthankyouへリダイレクトするためフラグをセット
+                sessionStorage.setItem('review_submitted', '1');
+
+                // 送信完了後、現在のタブでGoogleマップへ遷移
+                var url = document.getElementById('googleReviewUrl').value;
+                window.location.href = url;
+            });
+
+            return;
         }
 
-        var btn = document.getElementById('submitBtn');
+        // 低評価の場合：通常送信
         btn.disabled = true;
         document.getElementById('submitText').style.display = 'none';
         document.getElementById('loadingSpinner').style.display = 'block';

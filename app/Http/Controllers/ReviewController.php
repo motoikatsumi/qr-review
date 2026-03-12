@@ -23,6 +23,16 @@ class ReviewController extends Controller
     }
 
     /**
+     * サンキューページを表示
+     */
+    public function thankyou($slug)
+    {
+        $store = Store::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        return view('review.thankyou', compact('store'));
+    }
+
+    /**
      * 確認画面を表示（または修正のためフォームに戻る）
      */
     public function confirm(Request $request, $slug)
@@ -70,7 +80,6 @@ class ReviewController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|max:2000',
             'is_ai_generated' => 'nullable|boolean',
-            'has_google_account' => 'nullable|in:0,1',
             'gender' => 'nullable|string|max:10',
             'age' => 'nullable|string|max:10',
             'submit_token' => 'required|string',
@@ -92,37 +101,19 @@ class ReviewController extends Controller
             return view('review.thankyou', compact('store'));
         }
 
-        // 高評価（4〜5星）→ Googleアカウント有無で分岐
+        // 高評価（4〜5星）→ DB保存 + Googleマップ誘導（confirmページで別タブ遷移済み）
         if ($validated['rating'] >= 4) {
-            $hasGoogleAccount = ($validated['has_google_account'] ?? '') === '1';
+            $review = Review::create([
+                'store_id' => $store->id,
+                'rating' => $validated['rating'],
+                'comment' => $validated['comment'],
+                'ai_generated_text' => !empty($validated['is_ai_generated']) ? $validated['comment'] : null,
+                'status' => 'redirected_to_google',
+                'gender' => $validated['gender'] ?? null,
+                'age' => $validated['age'] ?? null,
+            ]);
 
-            if ($hasGoogleAccount) {
-                // Googleアカウントあり → DB保存（confirmページでGoogleマップ誘導済み）
-                $review = Review::create([
-                    'store_id' => $store->id,
-                    'rating' => $validated['rating'],
-                    'comment' => $validated['comment'],
-                    'ai_generated_text' => !empty($validated['is_ai_generated']) ? $validated['comment'] : null,
-                    'status' => 'redirected_to_google',
-                    'gender' => $validated['gender'] ?? null,
-                    'age' => $validated['age'] ?? null,
-                ]);
-
-                return view('review.thankyou', compact('store'));
-            } else {
-                // Googleアカウントなし → DB保存 + メール通知 + サンキューページ
-                $review = Review::create([
-                    'store_id' => $store->id,
-                    'rating' => $validated['rating'],
-                    'comment' => $validated['comment'],
-                    'ai_generated_text' => !empty($validated['is_ai_generated']) ? $validated['comment'] : null,
-                    'status' => 'no_google_account',
-                    'gender' => $validated['gender'] ?? null,
-                    'age' => $validated['age'] ?? null,
-                ]);
-
-                return view('review.thankyou', compact('store'));
-            }
+            return view('review.thankyou', compact('store'));
         }
 
         // 低評価（1〜3星）→ DB保存 → メール送信

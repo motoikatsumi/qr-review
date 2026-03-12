@@ -20,6 +20,7 @@ Route::get('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'sh
 Route::post('/review/{slug}/confirm', [\App\Http\Controllers\ReviewController::class, 'confirm']);
 Route::post('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 'store']);
 Route::post('/review/{slug}/suggest', [\App\Http\Controllers\ReviewController::class, 'suggest']);
+Route::get('/review/{slug}/thankyou', [\App\Http\Controllers\ReviewController::class, 'thankyou']);
 
 
 // ============================================================
