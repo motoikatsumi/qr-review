@@ -19,6 +19,7 @@
                 <th>口コミ数</th>
                 <th>平均評価</th>
                 <th>ステータス</th>
+                <th>MEO比率</th>
                 <th>操作</th>
             </tr>
         </thead>
@@ -45,6 +46,7 @@
                         <span class="badge badge-gray">無効</span>
                     @endif
                 </td>
+                <td style="font-size:0.85rem;">{{ $store->meo_ratio }}%</td>
                 <td>
                     <div class="btn-group">
                         <a href="/admin/stores/{{ $store->id }}/qrcode" class="btn btn-info btn-sm">QR</a>
@@ -54,7 +56,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" style="text-align:center;padding:40px;color:#888;">
+                <td colspan="9" style="text-align:center;padding:40px;color:#888;">
                     まだ店舗が登録されていません。<br>
                     <a href="/admin/stores/create" style="color:#667eea;">新規店舗を追加しましょう →</a>
                 </td>

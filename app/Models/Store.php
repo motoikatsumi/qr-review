@@ -12,6 +12,9 @@ class Store extends Model
     protected $fillable = [
         'name',
         'google_review_url',
+        'ludocid',
+        'meo_keywords',
+        'meo_ratio',
         'notify_email',
         'slug',
         'is_active',

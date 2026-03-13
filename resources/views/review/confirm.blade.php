@@ -117,6 +117,7 @@
             <div class="google-post-notice">
                 <p>📍 下のボタンを押すと口コミ文が<strong>自動コピー</strong>され、<strong>Googleマップ</strong>が開きます</p>
                 <p style="margin-top: 6px; font-size: 0.75rem; color: #000;"><strong>※ Googleアカウントがない場合は弊社システムに口コミが送信されます</strong></p>
+                <p id="meoGuide" style="display:none; margin-top: 6px; font-size: 0.75rem; color: #1e3a5f;">店舗が表示されたら<strong>タップ</strong>→<strong>「クチコミ」</strong>→ 貼り付けてください</p>
             </div>
         </div>
         @endif
@@ -139,6 +140,10 @@
         </form>
         @if ($rating >= 4)
         <input type="hidden" id="googleReviewUrl" value="{{ $store->google_review_url }}">
+        <input type="hidden" id="storeName" value="{{ $store->name }}">
+        <input type="hidden" id="meoKeywords" value="{{ $store->meo_keywords }}">
+        <input type="hidden" id="meoRatio" value="{{ $store->meo_ratio }}">
+        <input type="hidden" id="ludocid" value="{{ $store->ludocid }}">
         @endif
 
         {{-- 修正フォーム --}}
@@ -178,6 +183,21 @@
         if (rating >= 4) {
             e.preventDefault();
 
+            // MEO検索経由かどうかを先に決定
+            var meoData = document.getElementById('meoKeywords').value;
+            var meoKeywords = meoData ? meoData.split(',').map(function(k) { return k.trim(); }).filter(Boolean) : ['買取', '質屋', '査定', '鑑定', '宝石', 'ブランド'];
+            var shuffled = meoKeywords.sort(function() { return 0.5 - Math.random(); });
+            var picked = shuffled.slice(0, 2);
+            var meoRatioRaw = parseInt(document.getElementById('meoRatio').value);
+            var meoRatio = isNaN(meoRatioRaw) ? 30 : meoRatioRaw;
+            var useMeoSearch = Math.random() < (meoRatio / 100);
+
+            // MEO検索経由の場合は案内テキストを表示
+            if (useMeoSearch) {
+                var guide = document.getElementById('meoGuide');
+                if (guide) guide.style.display = 'block';
+            }
+
             // コピー処理
             var text = document.querySelector('input[name="comment"]').value;
             if (navigator.clipboard) {
@@ -212,7 +232,22 @@
                 sessionStorage.setItem('review_submitted', '1');
 
                 // 送信完了後、現在のタブでGoogleマップへ遷移
-                var url = document.getElementById('googleReviewUrl').value;
+                var baseUrl = document.getElementById('googleReviewUrl').value;
+                var storeName = document.getElementById('storeName').value;
+
+                var url;
+                if (useMeoSearch) {
+                    // Google検索経由（Web検索シグナル→MEO効果最大）
+                    var searchQuery = storeName + ' ' + picked.join(' ');
+                    var ludocid = document.getElementById('ludocid').value;
+                    url = 'https://www.google.com/search?q=' + encodeURIComponent(searchQuery);
+                    if (ludocid) {
+                        url += '&ludocid=' + encodeURIComponent(ludocid);
+                    }
+                } else {
+                    url = baseUrl;
+                }
+
                 window.location.href = url;
             });
 

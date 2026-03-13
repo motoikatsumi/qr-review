@@ -33,6 +33,9 @@ class StoreController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'google_review_url' => 'required|url|max:500',
+            'ludocid' => 'nullable|string|max:30',
+            'meo_keywords' => 'nullable|string|max:1000',
+            'meo_ratio' => 'required|integer|min:0|max:100',
             'notify_email' => 'required|email|max:255',
             'slug' => 'nullable|string|max:100|unique:stores,slug',
         ]);
@@ -63,6 +66,9 @@ class StoreController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'google_review_url' => 'required|url|max:500',
+            'ludocid' => 'nullable|string|max:30',
+            'meo_keywords' => 'nullable|string|max:1000',
+            'meo_ratio' => 'required|integer|min:0|max:100',
             'notify_email' => 'required|email|max:255',
             'slug' => 'required|string|max:100|unique:stores,slug,' . $store->id,
             'is_active' => 'boolean',
