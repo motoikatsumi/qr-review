@@ -314,6 +314,26 @@
                     <div class="btn-spinner"></div>
                     金額に満足
                 </button>
+                <button type="button" class="suggestion-btn" data-keyword="店内がきれいで清潔感があり、居心地が良かった">
+                    <span class="btn-icon">✨</span>
+                    <div class="btn-spinner"></div>
+                    店内がきれい
+                </button>
+                <button type="button" class="suggestion-btn" data-keyword="初めての利用でも緊張せず安心して利用できた">
+                    <span class="btn-icon">🔰</span>
+                    <div class="btn-spinner"></div>
+                    初めてでも安心
+                </button>
+                <button type="button" class="suggestion-btn" data-keyword="気軽に相談できる雰囲気で、押し売り感がなく安心だった">
+                    <span class="btn-icon">💬</span>
+                    <div class="btn-spinner"></div>
+                    相談しやすい
+                </button>
+                <button type="button" class="suggestion-btn" data-keyword="お店の雰囲気が良く、落ち着いて利用できた">
+                    <span class="btn-icon">🏠</span>
+                    <div class="btn-spinner"></div>
+                    雰囲気が良い
+                </button>
             </div>
             <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">上記のテーマを選択すると自動でコメントが生成されます</p>
             <p class="ai-error" id="aiError">文章の生成に失敗しました。もう一度お試しください。</p>
@@ -364,7 +384,7 @@
         }
     })();
 
-    // 提案ボタンの並び順をランダムにシャッフル
+    // 提案ボタンをシャッフルして6個だけ表示
     (function() {
         var container = document.querySelector('.suggestion-buttons');
         var buttons = Array.from(container.children);
@@ -373,6 +393,9 @@
             container.appendChild(buttons[j]);
             buttons.splice(j, 1, buttons[i]);
         }
+        Array.from(container.children).forEach(function(btn, index) {
+            if (index >= 6) btn.style.display = 'none';
+        });
     })();
 
     const suggestUrl = '{{ url("/review/" . $store->slug . "/suggest") }}';
