@@ -269,10 +269,6 @@
                 <span class="status-name">📧 メール送信（低評価）</span>
                 <span class="status-count">{{ $statusDistribution['email_sent'] ?? 0 }}件</span>
             </div>
-            <div class="status-item">
-                <span class="status-name">🚫 Googleアカウント無</span>
-                <span class="status-count">{{ $statusDistribution['no_google_account'] ?? 0 }}件</span>
-            </div>
         </div>
     </div>
 
