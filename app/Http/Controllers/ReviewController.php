@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Store;
 use App\Models\Review;
+use App\Models\SuggestionCategory;
 use App\Services\GeminiService;
 use App\Mail\LowRatingNotification;
 use Illuminate\Http\Request;
@@ -24,7 +25,12 @@ class ReviewController extends Controller
             return redirect('/review/' . $slug . '/thankyou');
         }
 
-        return view('review.form', compact('store'));
+        $suggestionCategories = SuggestionCategory::where('is_active', true)
+            ->with(['activeThemes'])
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('review.form', compact('store', 'suggestionCategories'));
     }
 
     /**

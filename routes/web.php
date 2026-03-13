@@ -57,6 +57,15 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     Route::get('/reviews', [\App\Http\Controllers\Admin\ReviewController::class, 'index']);
     Route::get('/reviews/export', [\App\Http\Controllers\Admin\ReviewController::class, 'export']);
 
+    // 口コミテーマ管理
+    Route::get('/suggestion-themes', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'index']);
+    Route::post('/suggestion-themes/categories', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'storeCategory']);
+    Route::put('/suggestion-themes/categories/{category}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'updateCategory']);
+    Route::delete('/suggestion-themes/categories/{category}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'destroyCategory']);
+    Route::post('/suggestion-themes/themes', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'storeTheme']);
+    Route::put('/suggestion-themes/themes/{theme}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'updateTheme']);
+    Route::delete('/suggestion-themes/themes/{theme}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'destroyTheme']);
+
     // 管理者専用：ユーザー管理 + 削除系操作
     Route::middleware('admin')->group(function () {
         Route::delete('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'destroy']);

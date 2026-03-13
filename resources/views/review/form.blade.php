@@ -284,56 +284,15 @@
             </div>
 
             <div class="suggestion-buttons">
-                <button type="button" class="suggestion-btn" data-keyword="査定価格が高くて満足、高価買取">
-                    <span class="btn-icon">💰</span>
-                    <div class="btn-spinner"></div>
-                    高価買取
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="査定が丁寧でわかりやすく親切に説明してくれた">
-                    <span class="btn-icon">📋</span>
-                    <div class="btn-spinner"></div>
-                    丁寧な査定
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="スタッフの対応が親切で感じが良かった">
-                    <span class="btn-icon">😊</span>
-                    <div class="btn-spinner"></div>
-                    スタッフが親切
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="査定がスムーズで待ち時間が短く素早く対応してもらえた">
-                    <span class="btn-icon">⚡</span>
-                    <div class="btn-spinner"></div>
-                    素早い対応
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="また利用したい、リピートしたい、おすすめできる">
-                    <span class="btn-icon">🤝</span>
-                    <div class="btn-spinner"></div>
-                    また利用したい
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="買取金額に満足した、思った以上の金額で嬉しかった、納得の価格">
-                    <span class="btn-icon">💴</span>
-                    <div class="btn-spinner"></div>
-                    金額に満足
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="店内がきれいで清潔感があり、居心地が良かった">
-                    <span class="btn-icon">✨</span>
-                    <div class="btn-spinner"></div>
-                    店内がきれい
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="初めての利用でも緊張せず安心して利用できた">
-                    <span class="btn-icon">🔰</span>
-                    <div class="btn-spinner"></div>
-                    初めてでも安心
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="気軽に相談できる雰囲気で、押し売り感がなく安心だった">
-                    <span class="btn-icon">💬</span>
-                    <div class="btn-spinner"></div>
-                    相談しやすい
-                </button>
-                <button type="button" class="suggestion-btn" data-keyword="お店の雰囲気が良く、落ち着いて利用できた">
-                    <span class="btn-icon">🏠</span>
-                    <div class="btn-spinner"></div>
-                    雰囲気が良い
-                </button>
+                @foreach ($suggestionCategories as $category)
+                    @foreach ($category->activeThemes as $theme)
+                    <button type="button" class="suggestion-btn" data-keyword="{{ $theme->keyword }}" data-category="{{ $category->id }}">
+                        <span class="btn-icon">{{ $theme->icon }}</span>
+                        <div class="btn-spinner"></div>
+                        {{ $theme->label }}
+                    </button>
+                    @endforeach
+                @endforeach
             </div>
             <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">上記のテーマを選択すると自動でコメントが生成されます</p>
             <p class="ai-error" id="aiError">文章の生成に失敗しました。もう一度お試しください。</p>
@@ -384,17 +343,55 @@
         }
     })();
 
-    // 提案ボタンをシャッフルして6個だけ表示
+    // 提案ボタンをシャッフルして6個表示（各カテゴリから最低1つ選出）
     (function() {
         var container = document.querySelector('.suggestion-buttons');
-        var buttons = Array.from(container.children);
-        for (var i = buttons.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            container.appendChild(buttons[j]);
-            buttons.splice(j, 1, buttons[i]);
+        var allBtns = Array.from(container.children);
+        var maxShow = 6;
+
+        // カテゴリごとにグループ化
+        var groups = {};
+        allBtns.forEach(function(btn) {
+            var cat = btn.dataset.category;
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(btn);
+        });
+
+        // 各グループ内をシャッフル
+        function shuffle(arr) {
+            for (var i = arr.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+            }
+            return arr;
         }
-        Array.from(container.children).forEach(function(btn, index) {
-            if (index >= 6) btn.style.display = 'none';
+
+        var selected = [];
+        var remaining = [];
+        var catKeys = shuffle(Object.keys(groups));
+
+        // 各カテゴリから1つずつ選出
+        catKeys.forEach(function(cat) {
+            var shuffled = shuffle(groups[cat].slice());
+            selected.push(shuffled[0]);
+            remaining = remaining.concat(shuffled.slice(1));
+        });
+
+        // 残り枠をランダムで埋める
+        shuffle(remaining);
+        var slotsLeft = maxShow - selected.length;
+        if (slotsLeft > 0) {
+            selected = selected.concat(remaining.slice(0, slotsLeft));
+        }
+
+        // 選ばれたボタンをシャッフルして並べ替え
+        shuffle(selected);
+        selected.forEach(function(btn) { container.appendChild(btn); });
+
+        // 全ボタンの表示/非表示を設定
+        var selectedSet = new Set(selected);
+        allBtns.forEach(function(btn) {
+            btn.style.display = selectedSet.has(btn) ? '' : 'none';
         });
     })();
 
