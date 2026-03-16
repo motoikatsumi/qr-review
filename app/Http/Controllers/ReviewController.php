@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Store;
 use App\Models\Review;
+use App\Models\SiteSetting;
 use App\Models\SuggestionCategory;
 use App\Services\GeminiService;
 use App\Mail\LowRatingNotification;
@@ -30,7 +31,9 @@ class ReviewController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return view('review.form', compact('store', 'suggestionCategories'));
+        $themeDisplayCount = (int) SiteSetting::get('suggestion_display_count', '6');
+
+        return view('review.form', compact('store', 'suggestionCategories', 'themeDisplayCount'));
     }
 
     /**

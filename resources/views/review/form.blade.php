@@ -347,7 +347,7 @@
     (function() {
         var container = document.querySelector('.suggestion-buttons');
         var allBtns = Array.from(container.children);
-        var maxShow = 6;
+        var maxShow = {{ $themeDisplayCount }};
 
         // カテゴリごとにグループ化
         var groups = {};

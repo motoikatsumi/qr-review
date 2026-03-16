@@ -201,6 +201,19 @@
     </div>
 </div>
 
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <form method="POST" action="/admin/suggestion-themes/display-count" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            @csrf
+            @method('PUT')
+            <label style="font-size:0.9rem;font-weight:600;color:#555;white-space:nowrap;">📱 フォームに表示するテーマ数</label>
+            <input type="number" name="display_count" value="{{ $displayCount }}" min="1" max="50" style="width:80px;padding:8px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;outline:none;text-align:center;">
+            <button type="submit" class="btn btn-primary btn-sm">保存</button>
+            <span style="font-size:0.75rem;color:#999;">※ 各カテゴリから最低1つ選出され、残り枠はランダムで表示されます</span>
+        </form>
+    </div>
+</div>
+
 @if($categories->isEmpty())
     <div class="card">
         <div class="empty-message">

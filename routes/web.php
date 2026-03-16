@@ -59,6 +59,7 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
 
     // 口コミテーマ管理
     Route::get('/suggestion-themes', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'index']);
+    Route::put('/suggestion-themes/display-count', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'updateDisplayCount']);
     Route::post('/suggestion-themes/categories', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'storeCategory']);
     Route::put('/suggestion-themes/categories/{category}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'updateCategory']);
     Route::delete('/suggestion-themes/categories/{category}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'destroyCategory']);

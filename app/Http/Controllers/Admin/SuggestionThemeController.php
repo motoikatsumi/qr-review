@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\SiteSetting;
 use App\Models\SuggestionCategory;
 use App\Models\SuggestionTheme;
 use Illuminate\Http\Request;
@@ -18,7 +19,23 @@ class SuggestionThemeController extends Controller
             $q->orderBy('sort_order');
         }])->orderBy('sort_order')->get();
 
-        return view('admin.suggestion-themes.index', compact('categories'));
+        $displayCount = SiteSetting::get('suggestion_display_count', '6');
+
+        return view('admin.suggestion-themes.index', compact('categories', 'displayCount'));
+    }
+
+    /**
+     * 表示テーマ数を更新
+     */
+    public function updateDisplayCount(Request $request)
+    {
+        $validated = $request->validate([
+            'display_count' => 'required|integer|min:1|max:50',
+        ]);
+
+        SiteSetting::set('suggestion_display_count', $validated['display_count']);
+
+        return redirect('/admin/suggestion-themes')->with('success', '表示テーマ数を更新しました。');
     }
 
     /**
