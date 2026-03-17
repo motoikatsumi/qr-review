@@ -145,6 +145,12 @@
         height: 100%;
         justify-content: flex-end;
     }
+    .daily-bar-count {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 2px;
+    }
     .daily-bar {
         width: 100%;
         max-width: 24px;
@@ -326,6 +332,7 @@
                     @foreach($dailyReviews as $day)
                         @php $height = max(4, ($day->count / $maxCount) * 140); @endphp
                         <div class="daily-bar-wrapper">
+                            <span class="daily-bar-count">{{ $day->count }}</span>
                             <div class="daily-bar" style="height: {{ $height }}px;">
                                 <div class="daily-tooltip">
                                     {{ \Carbon\Carbon::parse($day->date)->format('n/j') }}：{{ $day->count }}件（平均{{ number_format($day->avg_rating, 1) }}★）

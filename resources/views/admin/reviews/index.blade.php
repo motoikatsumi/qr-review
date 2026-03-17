@@ -91,9 +91,6 @@
                     <span class="review-badge review-badge-red">📧 メール送信</span>
                 @elseif($review->status === 'redirected_to_google')
                     <span class="review-badge review-badge-green">🔗 Google誘導</span>
-                    <span class="review-badge review-badge-green">📱 アカウント有</span>
-                @elseif($review->status === 'no_google_account')
-                    <span class="review-badge review-badge-gray">📱 Googleアカウント無</span>
                 @endif
                 @if($review->ai_generated_text)
                     <span class="review-badge review-badge-ai">🤖 AI生成</span>

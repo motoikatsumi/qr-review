@@ -67,6 +67,31 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     Route::put('/suggestion-themes/themes/{theme}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'updateTheme']);
     Route::delete('/suggestion-themes/themes/{theme}', [\App\Http\Controllers\Admin\SuggestionThemeController::class, 'destroyTheme']);
 
+    // Google口コミ管理
+    Route::get('/google-reviews', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'index']);
+    Route::post('/google-reviews/sync', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'sync']);
+    Route::post('/google-reviews/generate-reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'generateReply']);
+    Route::post('/google-reviews/{review}/reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'reply']);
+    Route::delete('/google-reviews/{review}/reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'deleteReply']);
+
+    // 返信カテゴリ・キーワード管理
+    Route::get('/reply-categories', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'index']);
+    Route::post('/reply-categories/categories', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'storeCategory']);
+    Route::put('/reply-categories/categories/{category}', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'updateCategory']);
+    Route::delete('/reply-categories/categories/{category}', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'destroyCategory']);
+    Route::post('/reply-categories/keywords', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'storeKeyword']);
+    Route::put('/reply-categories/keywords/{keyword}', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'updateKeyword']);
+    Route::delete('/reply-categories/keywords/{keyword}', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'destroyKeyword']);
+
+    // Google連携設定
+    Route::get('/google-settings', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'index']);
+    Route::post('/google-settings/credentials', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'saveCredentials']);
+    Route::get('/google-settings/authorize', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'redirectToGoogle']);
+    Route::get('/google-settings/callback', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'callback']);
+    Route::post('/google-settings/account', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'saveAccount']);
+    Route::post('/google-settings/location-mapping', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'saveLocationMapping']);
+    Route::post('/google-settings/disconnect', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'disconnect']);
+
     // 管理者専用：ユーザー管理 + 削除系操作
     Route::middleware('admin')->group(function () {
         Route::delete('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'destroy']);

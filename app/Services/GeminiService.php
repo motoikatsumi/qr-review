@@ -276,4 +276,83 @@ EOT;
 
         return trim($text);
     }
+
+    /**
+     * Google口コミへの返信文をAIで生成（MEO対策ワード入り）
+     */
+    public function generateReplyComment(
+        string $storeName,
+        int $rating,
+        string $reviewComment,
+        string $category,
+        array $keywords
+    ): ?string {
+        $keywordList = implode('、', $keywords);
+
+        $prompt = <<<EOT
+あなたはGoogleマップに掲載されている質屋・買取店のオーナーとして、お客様の口コミに返信します。
+MEO（マップエンジン最適化）対策として、指定された取扱商品のキーワードを返信文に自然に織り込んでください。
+
+【店舗名】{$storeName}
+【口コミの星評価】{$rating}つ星
+【口コミ内容】{$reviewComment}
+【返信に含めたい取扱商品キーワード】{$keywordList}
+
+【返信のスタイル・構成】
+以下の流れで構成してください：
+1. お客様への感謝の挨拶（ご来店・評価への感謝）
+2. 口コミ内容に触れたコメント（具体的に言及）
+3. 取扱商品のキーワードを自然に紹介する文（「当店では○○をはじめ、△△、□□など幅広いお品物の査定・買取を行っております。」のような形で）
+4. 今後の姿勢・またのご来店を促す締めの言葉
+
+【条件】
+- 丁寧で格式のあるオーナー返信にする（です・ます調、敬語）
+- 200〜400文字程度の返信にする
+- 口コミ内容が空（星評価のみ）の場合は、ご来店と評価への感謝を述べ、リピーターとしての感謝や取扱商品の紹介を含める
+- 低評価（1〜3つ星）の場合は、お詫びと改善への姿勢を示しつつ、取扱商品を紹介する
+- 高評価（4〜5つ星）の場合は、感謝を込めてまたのご来店を促す
+- 指定されたキーワードをできるだけ多く自然に返信文に含める
+- 「」（カギ括弧）は使わない
+- **（アスタリスク）などのマークダウン記法は一切使わない。プレーンテキストのみで出力する
+- 絵文字は使わない
+- 説明文・前置き不要。返信文のみ出力
+EOT;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.7,
+                    'maxOutputTokens' => 800,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                return $text ? trim($text) : null;
+            }
+
+            Log::error('Gemini API error (reply)', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Gemini API exception (reply)', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
 }

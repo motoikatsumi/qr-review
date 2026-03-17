@@ -268,9 +268,12 @@
         <ul class="navbar-nav">
             <li><a href="/admin/dashboard" class="{{ request()->is('admin/dashboard*') ? 'active' : '' }}">📊 統計</a></li>
             <li><a href="/admin/stores" class="{{ request()->is('admin/stores*') ? 'active' : '' }}">🏪 店舗管理</a></li>
+            <li><a href="/admin/google-reviews" class="{{ request()->is('admin/google-reviews*') ? 'active' : '' }}">🌐 Google口コミ</a></li>
             <li><a href="/admin/reviews" class="{{ request()->is('admin/reviews*') ? 'active' : '' }}">📝 口コミ一覧</a></li>
             <li><a href="/admin/suggestion-themes" class="{{ request()->is('admin/suggestion-themes*') ? 'active' : '' }}">🏷️ テーマ</a></li>
+            <li><a href="/admin/reply-categories" class="{{ request()->is('admin/reply-categories*') ? 'active' : '' }}">💬 返信カテゴリ</a></li>
             @if(Auth::user() && Auth::user()->isAdmin())
+            <li><a href="/admin/google-settings" class="{{ request()->is('admin/google-settings*') ? 'active' : '' }}">⚙️ Google設定</a></li>
             <li><a href="/admin/users" class="{{ request()->is('admin/users*') ? 'active' : '' }}">👥 ユーザー</a></li>
             @endif
         </ul>

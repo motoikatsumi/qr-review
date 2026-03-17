@@ -26,6 +26,8 @@
                 @error('google_review_url') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
             </div>
 
+            {{-- ludocid・MEOキーワード・MEO比率は一時的に非表示 --}}
+            <div style="display:none;">
             <div class="form-group">
                 <label for="ludocid">ludocid（Google CID）</label>
                 <input type="text" id="ludocid" name="ludocid" value="{{ old('ludocid') }}" placeholder="例：17082321696390119467">
@@ -46,9 +48,10 @@
 
             <div class="form-group">
                 <label for="meo_ratio">MEO検索URL比率（%） <span style="color:#ef4444">*</span></label>
-                <input type="number" id="meo_ratio" name="meo_ratio" value="{{ old('meo_ratio', 30) }}" min="0" max="100" required>
+                <input type="number" id="meo_ratio" name="meo_ratio" value="{{ old('meo_ratio', 30) }}" min="0" max="100">
                 <p class="form-hint">Google Maps検索URL経由でMEOシグナルを送る割合。0%＝常にレビュー直接表示、100%＝常に検索経由</p>
                 @error('meo_ratio') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
+            </div>
             </div>
 
             <div class="form-group">

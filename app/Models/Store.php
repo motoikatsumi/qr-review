@@ -13,6 +13,7 @@ class Store extends Model
         'name',
         'google_review_url',
         'ludocid',
+        'google_location_name',
         'meo_keywords',
         'meo_ratio',
         'notify_email',
@@ -27,5 +28,10 @@ class Store extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function googleReviews()
+    {
+        return $this->hasMany(GoogleReview::class);
     }
 }
