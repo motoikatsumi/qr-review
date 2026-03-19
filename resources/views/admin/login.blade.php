@@ -32,7 +32,7 @@
         .login-header .icon {
             width: 60px;
             height: 60px;
-            margin-bottom: 12px;
+            margin: 0 auto 12px;
         }
         .login-header .icon img {
             width: 100%;
