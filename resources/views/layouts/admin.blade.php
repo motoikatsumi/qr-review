@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', '管理画面') - QRレビュー管理</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('QRvoice.svg') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -30,6 +30,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        .navbar-brand img {
+            width: 28px;
+            height: 28px;
+            display: block;
         }
         .navbar-nav {
             display: flex;
@@ -264,7 +269,10 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/admin/stores" class="navbar-brand">📊 QRレビュー管理</a>
+        <a href="/admin/stores" class="navbar-brand">
+            <img src="{{ asset('QRvoice.svg') }}" alt="QRvoiceロゴ">
+            <span>QRレビュー管理</span>
+        </a>
         <ul class="navbar-nav">
             <li><a href="/admin/dashboard" class="{{ request()->is('admin/dashboard*') ? 'active' : '' }}">📊 統計</a></li>
             <li><a href="/admin/stores" class="{{ request()->is('admin/stores*') ? 'active' : '' }}">🏪 店舗管理</a></li>

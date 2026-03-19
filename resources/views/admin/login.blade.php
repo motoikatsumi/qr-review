@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ログイン - QRレビュー管理</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('QRvoice.svg') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -28,8 +30,15 @@
             margin-bottom: 32px;
         }
         .login-header .icon {
-            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
             margin-bottom: 12px;
+        }
+        .login-header .icon img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            margin: 0 auto;
         }
         .login-header h1 {
             font-size: 1.3rem;
@@ -101,7 +110,9 @@
 <body>
     <div class="login-card">
         <div class="login-header">
-            <div class="icon">📊</div>
+            <div class="icon">
+                <img src="{{ asset('QRvoice.svg') }}" alt="QRvoiceロゴ">
+            </div>
             <h1>QRレビュー管理</h1>
             <p>管理画面にログインしてください</p>
         </div>
