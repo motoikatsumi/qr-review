@@ -32,8 +32,8 @@
             gap: 8px;
         }
         .navbar-brand img {
-            width: 28px;
-            height: 28px;
+            width: 60px;
+            height: 60px;
             display: block;
         }
         .navbar-nav {
