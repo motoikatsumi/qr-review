@@ -84,9 +84,10 @@ class GoogleReviewController extends Controller
     {
         $validated = $request->validate([
             'review_id' => 'required|exists:google_reviews,id',
-            'category' => 'required|string|max:100',
-            'keywords' => 'required|array|min:1',
+            'category' => 'nullable|string|max:100',
+            'keywords' => 'nullable|array',
             'keywords.*' => 'string|max:255',
+            'customer_type' => 'required|in:new,repeater',
         ]);
 
         $review = GoogleReview::with('store')->findOrFail($validated['review_id']);
@@ -95,8 +96,10 @@ class GoogleReviewController extends Controller
             $review->store->name,
             $review->rating,
             $review->comment ?? '',
-            $validated['category'],
-            $validated['keywords']
+            $validated['category'] ?? '',
+            $validated['keywords'] ?? [],
+            $review->reviewer_name ?? '',
+            $validated['customer_type']
         );
 
         if (!$reply) {

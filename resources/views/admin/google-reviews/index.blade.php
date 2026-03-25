@@ -109,6 +109,19 @@
                 <div class="reply-form" id="reply-form-{{ $review->id }}" style="background:#f8f9ff; border-radius:10px; padding:16px; margin-top:8px;">
                     <div style="font-size:0.85rem; font-weight:600; color:#1e1b4b; margin-bottom:12px;">💬 返信を作成</div>
 
+                    {{-- 新規/リピーター選択 --}}
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">顧客タイプ</label>
+                        <div style="display:flex; gap:12px;">
+                            <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
+                                <input type="radio" name="customer_type_{{ $review->id }}" value="new" checked class="customer-type-{{ $review->id }}"> 新規
+                            </label>
+                            <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
+                                <input type="radio" name="customer_type_{{ $review->id }}" value="repeater" class="customer-type-{{ $review->id }}"> リピーター
+                            </label>
+                        </div>
+                    </div>
+
                     {{-- カテゴリ・キーワード選択（タブ式） --}}
                     <div style="margin-bottom:12px;">
                         <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">カテゴリ & キーワード（MEO対策）</label>
@@ -290,10 +303,6 @@
     // AI返信生成
     function generateReply(reviewId) {
         var checkboxes = document.querySelectorAll('.kw-checkbox-' + reviewId + ':checked');
-        if (checkboxes.length === 0) {
-            alert('キーワードを1つ以上選択してください。');
-            return;
-        }
 
         var categories = [];
         var keywords = [];
@@ -301,6 +310,13 @@
             var cat = cb.getAttribute('data-category');
             if (categories.indexOf(cat) === -1) categories.push(cat);
             keywords.push(cb.getAttribute('data-keyword'));
+        });
+
+        // 顧客タイプ取得
+        var customerType = 'new';
+        var typeRadios = document.querySelectorAll('.customer-type-' + reviewId);
+        typeRadios.forEach(function(r) {
+            if (r.checked) customerType = r.value;
         });
 
         var loading = document.getElementById('ai-loading-' + reviewId);
@@ -318,6 +334,7 @@
                 review_id: reviewId,
                 category: categories.join('、'),
                 keywords: keywords,
+                customer_type: customerType,
             })
         })
         .then(function(res) { return res.json(); })
