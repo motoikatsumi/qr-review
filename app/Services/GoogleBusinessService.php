@@ -295,7 +295,7 @@ class GoogleBusinessService
     }
 
     /**
-     * 店舗の全口コミを取得してDBに同期
+     * 店舗の全口コミを取得してDBに同期（差分同期対応）
      */
     public function syncReviews(Store $store): int
     {
@@ -309,10 +309,47 @@ class GoogleBusinessService
             }
 
             $reviews = $result['reviews'] ?? [];
+            $unchangedCount = 0;
+
             foreach ($reviews as $review) {
+                $reviewId = $review['reviewId'] ?? $review['name'] ?? null;
+                if (!$reviewId) {
+                    continue;
+                }
+
+                // 既存口コミの内容を比較し、変更がなければスキップ
+                $existing = GoogleReview::where('google_review_id', $reviewId)->first();
+                if ($existing) {
+                    $apiComment = $review['comment'] ?? null;
+                    if ($apiComment) {
+                        $apiComment = preg_replace('/\s*\(Translated by Google\).*$/us', '', $apiComment);
+                        $apiComment = trim($apiComment) ?: null;
+                    }
+                    $apiReply = $review['reviewReply']['comment'] ?? null;
+                    $ratingMap = ['STAR_RATING_UNSPECIFIED'=>0,'ONE'=>1,'TWO'=>2,'THREE'=>3,'FOUR'=>4,'FIVE'=>5];
+                    $apiRating = $ratingMap[$review['starRating'] ?? 'STAR_RATING_UNSPECIFIED'] ?? 0;
+
+                    // 評価・コメント・返信が全て同じなら変更なしと判断
+                    if ($existing->rating == $apiRating
+                        && $existing->comment === $apiComment
+                        && $existing->reply_comment === $apiReply) {
+                        $unchangedCount++;
+                        continue;
+                    }
+                }
+
                 if ($this->upsertReview($store, $review)) {
                     $synced++;
                 }
+            }
+
+            // ページ内の全口コミが既存かつ未変更なら、それ以降のページも同じなので打ち切り
+            if ($unchangedCount === count($reviews) && count($reviews) > 0) {
+                Log::info("Google sync: 既存口コミに到達、同期を打ち切り", [
+                    'store' => $store->name,
+                    'synced' => $synced,
+                ]);
+                break;
             }
 
             $pageToken = $result['nextPageToken'] ?? null;
