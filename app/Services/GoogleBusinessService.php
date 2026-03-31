@@ -352,12 +352,14 @@ class GoogleBusinessService
         }
         $reviewerName = $data['reviewer']['displayName'] ?? '匿名';
         $reviewerPhoto = $data['reviewer']['profilePhotoUrl'] ?? null;
-        $reviewedAt = isset($data['createTime']) ? Carbon::parse($data['createTime']) : now();
+        $reviewedAt = isset($data['createTime'])
+            ? Carbon::parse($data['createTime'])->setTimezone('Asia/Tokyo')
+            : now();
 
         // 返信情報
         $replyComment = $data['reviewReply']['comment'] ?? null;
         $repliedAt = isset($data['reviewReply']['updateTime'])
-            ? Carbon::parse($data['reviewReply']['updateTime'])
+            ? Carbon::parse($data['reviewReply']['updateTime'])->setTimezone('Asia/Tokyo')
             : null;
 
         $review = GoogleReview::updateOrCreate(
