@@ -95,15 +95,90 @@
 
             {{-- 既存の返信 --}}
             @if($review->reply_comment)
-                <div style="background:#f0fdf4; border-left:4px solid #10b981; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:12px;">
-                    <div style="font-size:0.75rem; color:#065f46; font-weight:600; margin-bottom:4px;">💬 オーナーからの返信（{{ $review->replied_at?->format('Y/m/d H:i') }}）</div>
-                    <p style="font-size:0.85rem; line-height:1.6; color:#333; margin:0;">{{ $review->reply_comment }}</p>
+                {{-- 表示モード --}}
+                <div id="reply-display-{{ $review->id }}">
+                    <div style="background:#f0fdf4; border-left:4px solid #10b981; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:12px;">
+                        <div style="font-size:0.75rem; color:#065f46; font-weight:600; margin-bottom:4px;">💬 オーナーからの返信（{{ $review->replied_at?->format('Y/m/d H:i') }}）</div>
+                        <p style="font-size:0.85rem; line-height:1.6; color:#333; margin:0; white-space:pre-line;">{{ $review->reply_comment }}</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditReply({{ $review->id }})">✏️ 編集</button>
+                        <form method="POST" action="/admin/google-reviews/{{ $review->id }}/reply" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <input type="hidden" name="store_id" value="{{ request('store_id') }}">
+                            <input type="hidden" name="rating" value="{{ request('rating') }}">
+                            <input type="hidden" name="reply_status" value="{{ request('reply_status') }}">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('返信を削除しますか？')">返信を削除</button>
+                        </form>
+                    </div>
                 </div>
-                <form method="POST" action="/admin/google-reviews/{{ $review->id }}/reply" style="display:inline;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('返信を削除しますか？')">返信を削除</button>
-                </form>
+
+                {{-- 編集モード --}}
+                <div id="reply-edit-{{ $review->id }}" style="display:none;">
+                    <div class="reply-form" style="background:#f8f9ff; border-radius:10px; padding:16px; margin-top:8px;">
+                        <div style="font-size:0.85rem; font-weight:600; color:#1e1b4b; margin-bottom:12px;">✏️ 返信を編集</div>
+
+                        {{-- 新規/リピーター選択 --}}
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">顧客タイプ</label>
+                            <div style="display:flex; gap:12px;">
+                                <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
+                                    <input type="radio" name="customer_type_{{ $review->id }}" value="new" checked class="customer-type-{{ $review->id }}"> 新規
+                                </label>
+                                <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
+                                    <input type="radio" name="customer_type_{{ $review->id }}" value="repeater" class="customer-type-{{ $review->id }}"> リピーター
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- カテゴリ・キーワード選択（タブ式） --}}
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">カテゴリ & キーワード（MEO対策）</label>
+                            <div class="cat-tabs" data-review="{{ $review->id }}" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+                                @foreach($categories as $cat)
+                                    <button type="button" class="cat-tab cat-tab-{{ $review->id }}" data-review="{{ $review->id }}" data-cat="{{ $cat->id }}"
+                                            style="padding:4px 10px; background:white; border:1px solid #e5e7eb; border-radius:6px; font-size:0.75rem; cursor:pointer; transition:all 0.2s; color:#555;">
+                                        {{ $cat->name }}
+                                        <span class="cat-count" style="display:none; color:#667eea; font-weight:700;"></span>
+                                    </button>
+                                @endforeach
+                            </div>
+                            @foreach($categories as $cat)
+                                <div class="kw-panel kw-panel-{{ $review->id }}" data-cat="{{ $cat->id }}" style="display:none; flex-wrap:wrap; gap:5px; padding:8px 0;">
+                                    @foreach($cat->keywords as $kw)
+                                        <label style="display:inline-flex; align-items:center; gap:3px; padding:4px 10px; background:white; border:1px solid #e5e7eb; border-radius:20px; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">
+                                            <input type="checkbox" class="kw-checkbox-{{ $review->id }}"
+                                                   data-category="{{ $cat->name }}" data-cat-id="{{ $cat->id }}"
+                                                   data-keyword="{{ $kw->keyword }}"
+                                                   style="display:none;">
+                                            <span class="kw-label">{{ $kw->label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endforeach
+                            <div class="selected-kw-{{ $review->id }}" style="min-height:0;"></div>
+                        </div>
+
+                        <form method="POST" action="/admin/google-reviews/{{ $review->id }}/reply">
+                            @csrf
+                            <input type="hidden" name="store_id" value="{{ request('store_id') }}">
+                            <input type="hidden" name="rating" value="{{ request('rating') }}">
+                            <input type="hidden" name="reply_status" value="{{ request('reply_status') }}">
+                            <textarea name="reply_comment" id="reply-text-{{ $review->id }}" rows="10"
+                                      style="width:100%; padding:10px 14px; border:2px solid #e5e7eb; border-radius:8px; font-size:0.9rem; font-family:inherit; resize:vertical; outline:none;"
+                                      required>{{ $review->reply_comment }}</textarea>
+                            <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+                                <button type="button" class="btn btn-info btn-sm" onclick="generateReply({{ $review->id }})">
+                                    🤖 AIで再生成
+                                </button>
+                                <span class="ai-loading" id="ai-loading-{{ $review->id }}" style="display:none; font-size:0.8rem; color:#667eea;">生成中...</span>
+                                <button type="submit" class="btn btn-primary btn-sm">📤 更新を投稿</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEditReply({{ $review->id }})">キャンセル</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             @else
                 {{-- 返信フォーム --}}
                 <div class="reply-form" id="reply-form-{{ $review->id }}" style="background:#f8f9ff; border-radius:10px; padding:16px; margin-top:8px;">
@@ -156,6 +231,9 @@
                     {{-- AI生成ボタン & 返信テキスト（横並び風にコンパクト化） --}}
                     <form method="POST" action="/admin/google-reviews/{{ $review->id }}/reply">
                         @csrf
+                        <input type="hidden" name="store_id" value="{{ request('store_id') }}">
+                        <input type="hidden" name="rating" value="{{ request('rating') }}">
+                        <input type="hidden" name="reply_status" value="{{ request('reply_status') }}">
                         <textarea name="reply_comment" id="reply-text-{{ $review->id }}" rows="10"
                                   placeholder="返信文を入力してください..."
                                   style="width:100%; padding:10px 14px; border:2px solid #e5e7eb; border-radius:8px; font-size:0.9rem; font-family:inherit; resize:vertical; outline:none;"
@@ -174,9 +252,7 @@
     </div>
     @endforeach
 
-    <div class="pagination">
-        {{ $reviews->links() }}
-    </div>
+    {{ $reviews->appends(request()->query())->links('pagination::bootstrap-4') }}
 @endif
 
 @push('styles')
@@ -298,6 +374,19 @@
                 badge.style.display = 'none';
             }
         });
+    }
+
+    // 返信編集モード切り替え
+    function toggleEditReply(reviewId) {
+        var display = document.getElementById('reply-display-' + reviewId);
+        var edit = document.getElementById('reply-edit-' + reviewId);
+        if (edit.style.display === 'none') {
+            display.style.display = 'none';
+            edit.style.display = 'block';
+        } else {
+            display.style.display = 'block';
+            edit.style.display = 'none';
+        }
     }
 
     // AI返信生成

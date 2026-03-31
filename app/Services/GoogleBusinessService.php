@@ -7,6 +7,7 @@ use App\Models\SiteSetting;
 use App\Models\Store;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class GoogleBusinessService
@@ -15,6 +16,7 @@ class GoogleBusinessService
     protected string $tokenUrl = 'https://oauth2.googleapis.com/token';
     protected string $apiBase = 'https://mybusiness.googleapis.com/v4';
     protected string $accountMgmtBase = 'https://mybusinessaccountmanagement.googleapis.com/v1';
+    protected string $businessInfoBase = 'https://mybusinessbusinessinformation.googleapis.com/v1';
 
     /**
      * OAuth認可URLを生成
@@ -153,36 +155,112 @@ class GoogleBusinessService
     }
 
     /**
+     * 各APIエンドポイントをテストしてアカウントIDを検出
+     */
+    public function testApis(): array
+    {
+        $results = [];
+
+        // 1. Account Management API
+        $response = $this->apiGet($this->accountMgmtBase . '/accounts');
+        $results['account_management'] = [
+            'status' => $response ? $response->status() : 'no_token',
+            'body' => $response ? $response->json() : null,
+        ];
+
+        // 2. v4 Legacy accounts
+        $response = $this->apiGet($this->apiBase . '/accounts');
+        $results['v4_legacy'] = [
+            'status' => $response ? $response->status() : 'no_token',
+            'body' => $response ? $response->json() : null,
+        ];
+
+        // 3. Business Information API (locations直接)
+        // アカウントIDが既にあれば、ロケーション取得もテスト
+        $accountId = SiteSetting::get('google_account_id');
+        if ($accountId) {
+            $response = $this->apiGet(
+                $this->businessInfoBase . "/{$accountId}/locations",
+                ['readMask' => 'name,title,storefrontAddress']
+            );
+            $results['business_info_locations'] = [
+                'status' => $response ? $response->status() : 'no_token',
+                'body' => $response ? $response->json() : null,
+            ];
+        }
+
+        // アカウントIDを自動検出
+        $detectedAccountId = null;
+        if (isset($results['account_management']['body']['accounts'][0]['name'])) {
+            $detectedAccountId = $results['account_management']['body']['accounts'][0]['name'];
+        } elseif (isset($results['v4_legacy']['body']['accounts'][0]['name'])) {
+            $detectedAccountId = $results['v4_legacy']['body']['accounts'][0]['name'];
+        }
+        $results['detected_account_id'] = $detectedAccountId;
+
+        return $results;
+    }
+
+    /**
      * Googleビジネスアカウント一覧を取得
+     * Account Management API → v4 Legacy の順で試行
      */
     public function listAccounts(): ?array
     {
+        // まず Account Management API を試行
         $response = $this->apiGet($this->accountMgmtBase . '/accounts');
-
-        if (!$response || !$response->successful()) {
-            Log::error('Google API: listAccounts failed', ['body' => $response?->body()]);
-            return null;
+        if ($response && $response->successful()) {
+            return $response->json('accounts', []);
         }
 
-        return $response->json('accounts', []);
+        Log::warning('Google API: listAccounts via Account Management API failed, trying v4 legacy', [
+            'status' => $response?->status(),
+            'body' => $response?->body(),
+        ]);
+
+        // フォールバック: v4 Legacy API
+        $response = $this->apiGet($this->apiBase . '/accounts');
+        if ($response && $response->successful()) {
+            return $response->json('accounts', []);
+        }
+
+        Log::error('Google API: listAccounts failed on all endpoints', ['body' => $response?->body()]);
+        return null;
     }
 
     /**
      * アカウント配下のロケーション一覧を取得
+     * Business Information API（割り当て済み）を使用
      */
     public function listLocations(string $accountName): ?array
     {
+        // Business Information API を使用
+        $response = $this->apiGet(
+            $this->businessInfoBase . "/{$accountName}/locations",
+            ['readMask' => 'name,title,storefrontAddress']
+        );
+
+        if ($response && $response->successful()) {
+            return $response->json('locations', []);
+        }
+
+        Log::warning('Google API: listLocations via Business Information API failed, trying v4 legacy', [
+            'status' => $response?->status(),
+            'body' => $response?->body(),
+        ]);
+
+        // フォールバック: v4 Legacy API
         $response = $this->apiGet(
             $this->apiBase . "/{$accountName}/locations",
             ['readMask' => 'name,title,storefrontAddress']
         );
 
-        if (!$response || !$response->successful()) {
-            Log::error('Google API: listLocations failed', ['body' => $response?->body()]);
-            return null;
+        if ($response && $response->successful()) {
+            return $response->json('locations', []);
         }
 
-        return $response->json('locations', []);
+        Log::error('Google API: listLocations failed on all endpoints', ['body' => $response?->body()]);
+        return null;
     }
 
     /**
@@ -232,8 +310,9 @@ class GoogleBusinessService
 
             $reviews = $result['reviews'] ?? [];
             foreach ($reviews as $review) {
-                $this->upsertReview($store, $review);
-                $synced++;
+                if ($this->upsertReview($store, $review)) {
+                    $synced++;
+                }
             }
 
             $pageToken = $result['nextPageToken'] ?? null;
@@ -245,7 +324,7 @@ class GoogleBusinessService
     /**
      * Google口コミデータをDBにupsert
      */
-    protected function upsertReview(Store $store, array $data): GoogleReview
+    protected function upsertReview(Store $store, array $data): ?GoogleReview
     {
         $ratingMap = [
             'STAR_RATING_UNSPECIFIED' => 0,
@@ -256,9 +335,21 @@ class GoogleBusinessService
             'FIVE' => 5,
         ];
 
-        $reviewId = $data['reviewId'] ?? $data['name'];
+        $reviewId = $data['reviewId'] ?? $data['name'] ?? null;
+        if (!$reviewId) {
+            Log::warning('Google API: Missing review ID, skipping', ['data' => array_keys($data)]);
+            return null;
+        }
+
+        $isNew = !GoogleReview::where('google_review_id', $reviewId)->exists();
+
         $rating = $ratingMap[$data['starRating'] ?? 'STAR_RATING_UNSPECIFIED'] ?? 0;
         $comment = $data['comment'] ?? null;
+        // Google翻訳テキスト "(Translated by Google) ..." を除去
+        if ($comment) {
+            $comment = preg_replace('/\s*\(Translated by Google\).*$/us', '', $comment);
+            $comment = trim($comment) ?: null;
+        }
         $reviewerName = $data['reviewer']['displayName'] ?? '匿名';
         $reviewerPhoto = $data['reviewer']['profilePhotoUrl'] ?? null;
         $reviewedAt = isset($data['createTime']) ? Carbon::parse($data['createTime']) : now();
@@ -269,7 +360,7 @@ class GoogleBusinessService
             ? Carbon::parse($data['reviewReply']['updateTime'])
             : null;
 
-        return GoogleReview::updateOrCreate(
+        $review = GoogleReview::updateOrCreate(
             ['google_review_id' => $reviewId],
             [
                 'store_id' => $store->id,
@@ -282,6 +373,22 @@ class GoogleBusinessService
                 'reviewed_at' => $reviewedAt,
             ]
         );
+
+        // 新規の低評価口コミ（★1-2）の場合、通知メール送信
+        if ($isNew && $rating <= 2 && $store->notify_email) {
+            try {
+                Mail::to($store->notify_email)
+                    ->send(new \App\Mail\GoogleLowRatingNotification($review, $store));
+            } catch (\Exception $e) {
+                Log::error('Google低評価通知メール送信失敗', [
+                    'store' => $store->name,
+                    'review' => $review->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $review;
     }
 
     /**

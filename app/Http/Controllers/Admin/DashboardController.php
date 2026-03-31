@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\GoogleReview;
 use App\Models\Review;
 use App\Models\Store;
 use Illuminate\Http\Request;
@@ -96,12 +97,62 @@ class DashboardController extends Controller
             ->pluck('count', 'age')
             ->toArray();
 
+        // =============================================
+        // Google口コミ統計
+        // =============================================
+        $gQuery = GoogleReview::query();
+        if ($storeId) {
+            $gQuery->where('store_id', $storeId);
+        }
+
+        $gTotalReviews = (clone $gQuery)->count();
+        $gAvgRating = (clone $gQuery)->avg('rating');
+
+        // Google口コミ 評価分布
+        $gRatingDistribution = GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating')
+            ->pluck('count', 'rating')
+            ->toArray();
+        $gRatingCounts = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $gRatingCounts[$i] = $gRatingDistribution[$i] ?? 0;
+        }
+
+        // Google口コミ 返信率
+        $gRepliedCount = GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereNotNull('reply_comment')
+            ->count();
+        $gReplyRate = $gTotalReviews > 0 ? round($gRepliedCount / $gTotalReviews * 100, 1) : 0;
+
+        // Google口コミ 高評価率
+        $gHighRatingCount = GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->where('rating', '>=', 4)
+            ->count();
+        $gHighRatingRate = $gTotalReviews > 0 ? round($gHighRatingCount / $gTotalReviews * 100, 1) : 0;
+
+        // Google口コミ 日別推移（直近30日）
+        $gDailyReviews = GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->where('reviewed_at', '>=', now()->subDays(30))
+            ->select(DB::raw('DATE(reviewed_at) as date'), DB::raw('count(*) as count'), DB::raw('AVG(rating) as avg_rating'))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
         return view('admin.dashboard', compact(
             'stores', 'storeId',
             'totalReviews', 'avgRating',
             'ratingCounts', 'statusDistribution',
             'dailyReviews', 'highRatingRate', 'googleRate',
-            'genderDistribution', 'ageDistribution'
+            'genderDistribution', 'ageDistribution',
+            'gTotalReviews', 'gAvgRating', 'gRatingCounts',
+            'gReplyRate', 'gRepliedCount', 'gHighRatingRate',
+            'gDailyReviews'
         ));
     }
 }

@@ -257,6 +257,14 @@
             color: white;
             border-color: #667eea;
         }
+        .pagination li.disabled span {
+            color: #aaa;
+            background: #f9f9f9;
+            cursor: default;
+        }
+        .pagination li a:hover {
+            background: #f3f4f6;
+        }
         @media (max-width: 768px) {
             .container { padding: 16px; }
             .page-header { flex-direction: column; gap: 12px; align-items: flex-start; }

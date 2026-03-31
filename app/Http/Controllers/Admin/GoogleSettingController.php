@@ -86,9 +86,10 @@ class GoogleSettingController extends Controller
         $accounts = $google->listAccounts();
         if ($accounts && count($accounts) > 0) {
             SiteSetting::set('google_account_id', $accounts[0]['name']);
+            return redirect('/admin/google-settings')->with('success', 'Googleアカウントと連携しました。');
         }
 
-        return redirect('/admin/google-settings')->with('success', 'Googleアカウントと連携しました。');
+        return redirect('/admin/google-settings')->with('success', 'Googleアカウントと連携しました。アカウントIDを手動で入力してください。');
     }
 
     /**
@@ -103,6 +104,20 @@ class GoogleSettingController extends Controller
         SiteSetting::set('google_account_id', $validated['account_id']);
 
         return redirect('/admin/google-settings')->with('success', 'アカウントを設定しました。');
+    }
+
+    /**
+     * API接続テスト（アカウントID自動検出）
+     */
+    public function testConnection(GoogleBusinessService $google)
+    {
+        if (!$google->isConnected()) {
+            return response()->json(['error' => 'Google連携がされていません。']);
+        }
+
+        $results = $google->testApis();
+
+        return response()->json($results);
     }
 
     /**

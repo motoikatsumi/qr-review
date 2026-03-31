@@ -89,6 +89,7 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     Route::get('/google-settings/authorize', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'redirectToGoogle']);
     Route::get('/google-settings/callback', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'callback']);
     Route::post('/google-settings/account', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'saveAccount']);
+    Route::post('/google-settings/test-connection', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'testConnection']);
     Route::post('/google-settings/location-mapping', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'saveLocationMapping']);
     Route::post('/google-settings/disconnect', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'disconnect']);
 

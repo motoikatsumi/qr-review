@@ -120,24 +120,28 @@ class GoogleReviewController extends Controller
 
         $success = $google->replyToReview($review, $validated['reply_comment']);
 
+        $redirect = '/admin/google-reviews?' . http_build_query($request->only(['store_id', 'rating', 'reply_status'])) . '#review-' . $review->id;
+
         if (!$success) {
-            return redirect('/admin/google-reviews')->with('error', '返信の投稿に失敗しました。Google連携設定を確認してください。');
+            return redirect($redirect)->with('error', '返信の投稿に失敗しました。Google連携設定を確認してください。');
         }
 
-        return redirect('/admin/google-reviews')->with('success', '返信を投稿しました。');
+        return redirect($redirect)->with('success', '返信を投稿しました。');
     }
 
     /**
      * 返信を削除
      */
-    public function deleteReply(GoogleReview $review, GoogleBusinessService $google)
+    public function deleteReply(Request $request, GoogleReview $review, GoogleBusinessService $google)
     {
         $success = $google->deleteReply($review);
 
+        $redirect = '/admin/google-reviews?' . http_build_query($request->only(['store_id', 'rating', 'reply_status'])) . '#review-' . $review->id;
+
         if (!$success) {
-            return redirect('/admin/google-reviews')->with('error', '返信の削除に失敗しました。');
+            return redirect($redirect)->with('error', '返信の削除に失敗しました。');
         }
 
-        return redirect('/admin/google-reviews')->with('success', '返信を削除しました。');
+        return redirect($redirect)->with('success', '返信を削除しました。');
     }
 }

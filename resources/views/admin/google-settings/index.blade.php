@@ -42,6 +42,24 @@
                     <span style="font-size:0.85rem; color:#666;">アカウント: {{ $settings['account_id'] }}</span>
                 @endif
             </div>
+            @if(!$settings['account_id'])
+                <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px 16px; margin-bottom:16px;">
+                    <div style="font-size:0.85rem; color:#92400e; margin-bottom:8px;">
+                        ⚠️ アカウントIDが自動取得できませんでした。下のボタンでAPI接続テストを行うか、手動で入力してください。
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <button type="button" class="btn btn-info btn-sm" onclick="testConnection()">🔍 API接続テスト（アカウントID検出）</button>
+                        <span id="test-loading" style="display:none; font-size:0.8rem; color:#667eea; margin-left:8px;">テスト中...</span>
+                    </div>
+                    <div id="test-result" style="display:none; margin-bottom:10px;"></div>
+                    <form method="POST" action="/admin/google-settings/account" style="display:flex; gap:8px; align-items:center;">
+                        @csrf
+                        <input type="text" name="account_id" id="account-id-input" placeholder="accounts/123456789"
+                               style="flex:1; padding:8px 12px; border:2px solid #e5e7eb; border-radius:8px; font-size:0.85rem;">
+                        <button type="submit" class="btn btn-primary btn-sm">保存</button>
+                    </form>
+                </div>
+            @endif
             <form method="POST" action="/admin/google-settings/disconnect" style="display:inline;">
                 @csrf
                 <button type="submit" class="btn btn-danger" onclick="return confirm('連携を解除しますか？')">連携解除</button>
@@ -114,5 +132,78 @@
         font-size: 0.8rem;
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+function testConnection() {
+    var loading = document.getElementById('test-loading');
+    var resultDiv = document.getElementById('test-result');
+    loading.style.display = 'inline';
+    resultDiv.style.display = 'none';
+
+    fetch('/admin/google-settings/test-connection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+        }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        loading.style.display = 'none';
+        resultDiv.style.display = 'block';
+
+        var html = '<div style="background:#f8f9fa; border-radius:8px; padding:12px; font-size:0.8rem;">';
+
+        // Account Management API
+        var am = data.account_management || {};
+        html += '<div style="margin-bottom:8px;"><strong>Account Management API:</strong> ';
+        html += '<span style="color:' + (am.status === 200 ? '#059669' : '#dc2626') + ';">' + am.status + '</span>';
+        if (am.status !== 200 && am.body && am.body.error) {
+            html += ' - ' + (am.body.error.message || '').substring(0, 100);
+        }
+        html += '</div>';
+
+        // v4 Legacy
+        var v4 = data.v4_legacy || {};
+        html += '<div style="margin-bottom:8px;"><strong>v4 Legacy API:</strong> ';
+        html += '<span style="color:' + (v4.status === 200 ? '#059669' : '#dc2626') + ';">' + v4.status + '</span>';
+        if (v4.status !== 200 && v4.body && v4.body.error) {
+            html += ' - ' + (v4.body.error.message || '').substring(0, 100);
+        }
+        html += '</div>';
+
+        // Business Info Locations
+        if (data.business_info_locations) {
+            var bi = data.business_info_locations;
+            html += '<div style="margin-bottom:8px;"><strong>Business Information API:</strong> ';
+            html += '<span style="color:' + (bi.status === 200 ? '#059669' : '#dc2626') + ';">' + bi.status + '</span>';
+            html += '</div>';
+        }
+
+        // 検出結果
+        if (data.detected_account_id) {
+            html += '<div style="margin-top:8px; padding:8px; background:#d1fae5; border-radius:6px; color:#065f46;">';
+            html += '✅ アカウントID検出: <strong>' + data.detected_account_id + '</strong>';
+            html += ' <button type="button" onclick="document.getElementById(\'account-id-input\').value=\'' + data.detected_account_id + '\'" style="margin-left:8px; padding:2px 8px; background:#059669; color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.75rem;">入力欄にセット</button>';
+            html += '</div>';
+        } else {
+            html += '<div style="margin-top:8px; padding:8px; background:#fee2e2; border-radius:6px; color:#991b1b;">';
+            html += '❌ アカウントIDを自動検出できませんでした。APIの割り当て承認待ちの可能性があります。';
+            html += '</div>';
+        }
+
+        html += '</div>';
+        resultDiv.innerHTML = html;
+    })
+    .catch(function(err) {
+        loading.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div style="color:#dc2626; font-size:0.85rem;">通信エラーが発生しました。</div>';
+    });
+}
+</script>
 @endpush
 @endsection
