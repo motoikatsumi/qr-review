@@ -87,7 +87,7 @@ class GoogleReviewController extends Controller
             'category' => 'nullable|string|max:100',
             'keywords' => 'nullable|array',
             'keywords.*' => 'string|max:255',
-            'customer_type' => 'required|in:new,repeater',
+            'customer_type' => 'required|in:new,repeater,unknown',
         ]);
 
         $review = GoogleReview::with('store')->findOrFail($validated['review_id']);
@@ -143,5 +143,19 @@ class GoogleReviewController extends Controller
         }
 
         return redirect($redirect)->with('success', '返信を削除しました。');
+    }
+
+    /**
+     * 一括投稿用：口コミに返信を投稿（AJAX）
+     */
+    public function bulkReply(Request $request, GoogleReview $review, GoogleBusinessService $google)
+    {
+        $validated = $request->validate([
+            'reply_comment' => 'required|string|max:4096',
+        ]);
+
+        $success = $google->replyToReview($review, $validated['reply_comment']);
+
+        return response()->json(['success' => $success]);
     }
 }

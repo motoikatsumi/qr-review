@@ -72,6 +72,7 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     Route::post('/google-reviews/sync', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'sync']);
     Route::post('/google-reviews/generate-reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'generateReply']);
     Route::post('/google-reviews/{review}/reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'reply']);
+    Route::post('/google-reviews/{review}/bulk-reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'bulkReply']);
     Route::delete('/google-reviews/{review}/reply', [\App\Http\Controllers\Admin\GoogleReviewController::class, 'deleteReply']);
 
     // 返信カテゴリ・キーワード管理

@@ -12,6 +12,23 @@
     </div>
 </div>
 
+{{-- 一括操作バー（未返信がある場合のみ表示） --}}
+@php $unrepliedIds = $reviews->filter(fn($r) => !$r->reply_comment)->pluck('id')->toArray(); @endphp
+@if(count($unrepliedIds) > 0)
+<div class="card" style="margin-bottom: 20px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="card-body" style="padding: 14px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <span style="color:white; font-weight:600; font-size:0.9rem;">⚡ 一括操作（このページの未返信 {{ count($unrepliedIds) }}件）</span>
+        <button type="button" class="btn btn-sm" style="background:white; color:#667eea; font-weight:600;" onclick="bulkGenerateReplies()" id="bulk-generate-btn">
+            🤖 一括返信作成
+        </button>
+        <button type="button" class="btn btn-sm" style="background:#10b981; color:white; font-weight:600; display:none;" onclick="bulkPostReplies()" id="bulk-post-btn">
+            📤 一括返信投稿
+        </button>
+        <span id="bulk-progress" style="display:none; color:white; font-size:0.85rem;"></span>
+    </div>
+</div>
+@endif
+
 {{-- フィルター --}}
 <div class="card" style="margin-bottom: 20px;">
     <div class="card-body" style="padding: 14px 20px;">
@@ -119,12 +136,15 @@
                     <div class="reply-form" style="background:#f8f9ff; border-radius:10px; padding:16px; margin-top:8px;">
                         <div style="font-size:0.85rem; font-weight:600; color:#1e1b4b; margin-bottom:12px;">✏️ 返信を編集</div>
 
-                        {{-- 新規/リピーター選択 --}}
+                        {{-- 新規/リピーター/不明 選択 --}}
                         <div style="margin-bottom:12px;">
                             <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">顧客タイプ</label>
                             <div style="display:flex; gap:12px;">
                                 <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
-                                    <input type="radio" name="customer_type_{{ $review->id }}" value="new" checked class="customer-type-{{ $review->id }}"> 新規
+                                    <input type="radio" name="customer_type_{{ $review->id }}" value="unknown" checked class="customer-type-{{ $review->id }}"> 不明
+                                </label>
+                                <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
+                                    <input type="radio" name="customer_type_{{ $review->id }}" value="new" class="customer-type-{{ $review->id }}"> 新規
                                 </label>
                                 <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
                                     <input type="radio" name="customer_type_{{ $review->id }}" value="repeater" class="customer-type-{{ $review->id }}"> リピーター
@@ -184,12 +204,15 @@
                 <div class="reply-form" id="reply-form-{{ $review->id }}" style="background:#f8f9ff; border-radius:10px; padding:16px; margin-top:8px;">
                     <div style="font-size:0.85rem; font-weight:600; color:#1e1b4b; margin-bottom:12px;">💬 返信を作成</div>
 
-                    {{-- 新規/リピーター選択 --}}
+                    {{-- 新規/リピーター/不明 選択 --}}
                     <div style="margin-bottom:12px;">
                         <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">顧客タイプ</label>
                         <div style="display:flex; gap:12px;">
                             <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
-                                <input type="radio" name="customer_type_{{ $review->id }}" value="new" checked class="customer-type-{{ $review->id }}"> 新規
+                                <input type="radio" name="customer_type_{{ $review->id }}" value="unknown" checked class="customer-type-{{ $review->id }}"> 不明
+                            </label>
+                            <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
+                                <input type="radio" name="customer_type_{{ $review->id }}" value="new" class="customer-type-{{ $review->id }}"> 新規
                             </label>
                             <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-size:0.85rem;">
                                 <input type="radio" name="customer_type_{{ $review->id }}" value="repeater" class="customer-type-{{ $review->id }}"> リピーター
@@ -391,22 +414,7 @@
 
     // AI返信生成
     function generateReply(reviewId) {
-        var checkboxes = document.querySelectorAll('.kw-checkbox-' + reviewId + ':checked');
-
-        var categories = [];
-        var keywords = [];
-        checkboxes.forEach(function(cb) {
-            var cat = cb.getAttribute('data-category');
-            if (categories.indexOf(cat) === -1) categories.push(cat);
-            keywords.push(cb.getAttribute('data-keyword'));
-        });
-
-        // 顧客タイプ取得
-        var customerType = 'new';
-        var typeRadios = document.querySelectorAll('.customer-type-' + reviewId);
-        typeRadios.forEach(function(r) {
-            if (r.checked) customerType = r.value;
-        });
+        var sel = getReviewSelections(reviewId);
 
         var loading = document.getElementById('ai-loading-' + reviewId);
         var textarea = document.getElementById('reply-text-' + reviewId);
@@ -421,9 +429,9 @@
             },
             body: JSON.stringify({
                 review_id: reviewId,
-                category: categories.join('、'),
-                keywords: keywords,
-                customer_type: customerType,
+                category: sel.categories.join('、'),
+                keywords: sel.keywords,
+                customer_type: sel.customerType,
             })
         })
         .then(function(res) { return res.json(); })
@@ -439,6 +447,160 @@
             loading.style.display = 'none';
             alert('通信エラーが発生しました。');
         });
+    }
+
+    // 指定レビューIDの選択済みカテゴリ・キーワード・顧客タイプを取得
+    function getReviewSelections(reviewId) {
+        var checkboxes = document.querySelectorAll('.kw-checkbox-' + reviewId + ':checked');
+        var categories = [];
+        var keywords = [];
+        checkboxes.forEach(function(cb) {
+            var cat = cb.getAttribute('data-category');
+            if (categories.indexOf(cat) === -1) categories.push(cat);
+            keywords.push(cb.getAttribute('data-keyword'));
+        });
+
+        var customerType = 'unknown';
+        var typeRadios = document.querySelectorAll('.customer-type-' + reviewId);
+        typeRadios.forEach(function(r) {
+            if (r.checked) customerType = r.value;
+        });
+
+        return { categories: categories, keywords: keywords, customerType: customerType };
+    }
+
+    // =====================================
+    // 一括返信作成
+    // =====================================
+    var bulkUnrepliedIds = @json($unrepliedIds ?? []);
+
+    async function bulkGenerateReplies() {
+        if (bulkUnrepliedIds.length === 0) return;
+        if (!confirm('このページの未返信 ' + bulkUnrepliedIds.length + '件にAI返信を一括生成します。よろしいですか？')) return;
+
+        var btn = document.getElementById('bulk-generate-btn');
+        var progress = document.getElementById('bulk-progress');
+        var postBtn = document.getElementById('bulk-post-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ 生成中...';
+        progress.style.display = 'inline';
+
+        var successCount = 0;
+        var failCount = 0;
+
+        for (var i = 0; i < bulkUnrepliedIds.length; i++) {
+            var reviewId = bulkUnrepliedIds[i];
+            progress.textContent = '(' + (i + 1) + '/' + bulkUnrepliedIds.length + ') 生成中...';
+
+            // 各口コミの選択状態を取得（カテゴリ・キーワード・顧客タイプ）
+            var sel = getReviewSelections(reviewId);
+
+            try {
+                var res = await fetch('/admin/google-reviews/generate-reply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        review_id: reviewId,
+                        category: sel.categories.join('、'),
+                        keywords: sel.keywords,
+                        customer_type: sel.customerType,
+                    })
+                });
+                var data = await res.json();
+                if (data.reply) {
+                    var textarea = document.getElementById('reply-text-' + reviewId);
+                    if (textarea) {
+                        textarea.value = data.reply;
+                        textarea.style.borderColor = '#10b981';
+                    }
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (e) {
+                failCount++;
+            }
+        }
+
+        btn.disabled = false;
+        btn.textContent = '🤖 一括返信作成';
+        progress.textContent = '✅ ' + successCount + '件生成完了' + (failCount > 0 ? '（' + failCount + '件失敗）' : '') + ' → 内容を確認して一括投稿してください';
+
+        if (successCount > 0) {
+            postBtn.style.display = 'inline-block';
+        }
+    }
+
+    // =====================================
+    // 一括返信投稿
+    // =====================================
+    async function bulkPostReplies() {
+        // 返信テキストが入力されている未返信口コミだけ収集
+        var postData = [];
+        for (var i = 0; i < bulkUnrepliedIds.length; i++) {
+            var reviewId = bulkUnrepliedIds[i];
+            var textarea = document.getElementById('reply-text-' + reviewId);
+            if (textarea && textarea.value.trim() !== '') {
+                postData.push({ review_id: reviewId, reply_comment: textarea.value.trim() });
+            }
+        }
+
+        if (postData.length === 0) {
+            alert('投稿する返信がありません。先に「一括返信作成」で返信文を生成してください。');
+            return;
+        }
+
+        if (!confirm(postData.length + '件の返信をGoogleに投稿します。よろしいですか？')) return;
+
+        var btn = document.getElementById('bulk-post-btn');
+        var progress = document.getElementById('bulk-progress');
+        btn.disabled = true;
+        btn.textContent = '⏳ 投稿中...';
+
+        var successCount = 0;
+        var failCount = 0;
+
+        for (var i = 0; i < postData.length; i++) {
+            progress.textContent = '(' + (i + 1) + '/' + postData.length + ') 投稿中...';
+
+            try {
+                var res = await fetch('/admin/google-reviews/' + postData[i].review_id + '/bulk-reply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        reply_comment: postData[i].reply_comment,
+                    })
+                });
+                var data = await res.json();
+                if (data.success) {
+                    successCount++;
+                    // 成功した口コミのボーダーを更新
+                    var textarea = document.getElementById('reply-text-' + postData[i].review_id);
+                    if (textarea) textarea.style.borderColor = '#6366f1';
+                } else {
+                    failCount++;
+                }
+            } catch (e) {
+                failCount++;
+            }
+        }
+
+        btn.disabled = false;
+        progress.textContent = '🎉 ' + successCount + '件投稿完了' + (failCount > 0 ? '（' + failCount + '件失敗）' : '');
+
+        if (successCount > 0) {
+            setTimeout(function() {
+                location.reload();
+            }, 1500);
+        }
     }
 </script>
 @endpush
