@@ -93,6 +93,18 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     Route::post('/google-settings/location-mapping', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'saveLocationMapping']);
     Route::post('/google-settings/disconnect', [\App\Http\Controllers\Admin\GoogleSettingController::class, 'disconnect']);
 
+    // 買取投稿管理
+    Route::get('/purchase-posts', [\App\Http\Controllers\Admin\PurchasePostController::class, 'index'])->name('admin.purchase-posts.index');
+    Route::get('/purchase-posts/create', [\App\Http\Controllers\Admin\PurchasePostController::class, 'create'])->name('admin.purchase-posts.create');
+    Route::post('/purchase-posts/generate-episode', [\App\Http\Controllers\Admin\PurchasePostController::class, 'generateEpisode'])->name('admin.purchase-posts.generate-episode');
+    Route::post('/purchase-posts/generate-footer', [\App\Http\Controllers\Admin\PurchasePostController::class, 'generateFooter'])->name('admin.purchase-posts.generate-footer');
+    Route::post('/purchase-posts', [\App\Http\Controllers\Admin\PurchasePostController::class, 'store'])->name('admin.purchase-posts.store');
+    Route::get('/purchase-posts/{purchasePost}', [\App\Http\Controllers\Admin\PurchasePostController::class, 'show'])->name('admin.purchase-posts.show');
+    Route::get('/purchase-posts/{purchasePost}/edit', [\App\Http\Controllers\Admin\PurchasePostController::class, 'edit'])->name('admin.purchase-posts.edit');
+    Route::put('/purchase-posts/{purchasePost}', [\App\Http\Controllers\Admin\PurchasePostController::class, 'update'])->name('admin.purchase-posts.update');
+    Route::post('/purchase-posts/{purchasePost}/retry', [\App\Http\Controllers\Admin\PurchasePostController::class, 'retry'])->name('admin.purchase-posts.retry');
+    Route::delete('/purchase-posts/{purchasePost}', [\App\Http\Controllers\Admin\PurchasePostController::class, 'destroy'])->name('admin.purchase-posts.destroy');
+
     // 管理者専用：ユーザー管理 + 削除系操作
     Route::middleware('admin')->group(function () {
         Route::delete('/stores/{store}', [\App\Http\Controllers\Admin\StoreController::class, 'destroy']);

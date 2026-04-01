@@ -467,4 +467,146 @@ EOT;
             return null;
         }
     }
+
+    /**
+     * 買取投稿のブロック②（お客様エピソード）をAI生成
+     */
+    public function generatePurchaseEpisode(array $params): ?string
+    {
+        // UTF-8不正文字を除去
+        foreach ($params as $key => $value) {
+            if (is_string($value)) {
+                $params[$key] = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            }
+        }
+
+        $productName = $params['product_name'] ?? '';
+        $brandName = $params['brand_name'] ?? '';
+        $customerGender = $params['customer_gender'] ?? '';
+        $customerAge = $params['customer_age'] ?? '';
+        $customerReason = $params['customer_reason'] ?? '';
+        $productCondition = $params['product_condition'] ?? '';
+        $accessories = $params['accessories'] ?? '';
+
+        $customerInfo = '';
+        if ($customerGender) $customerInfo .= "性別：{$customerGender}、";
+        if ($customerReason) $customerInfo .= "売却理由：{$customerReason}、";
+        $customerInfo = $customerInfo ? rtrim($customerInfo, '、') : '情報なし';
+
+        $conditionInfo = $productCondition ?: '特記なし';
+        $accessoriesInfo = $accessories ?: 'なし';
+
+        $prompt = "あなたは質屋・買取店 質屋アシスト のスタッフとして、Googleビジネスプロフィールに投稿する買取エピソードの本文を作成してください。\n\n"
+            . "お客様から買取した馴れ初めを200〜300文字程度で簡潔に作成してください。\n\n"
+            . "■商品名：{$brandName} {$productName}\n"
+            . "■お客様：{$customerInfo}\n"
+            . "■商品の状態：{$conditionInfo}\n"
+            . "■付属品：{$accessoriesInfo}\n\n"
+            . "【条件】\n"
+            . "- 200〜300文字程度で簡潔にまとめる\n"
+            . "- 丁寧な敬語（です・ます調）で統一\n"
+            . "- お客様が商品を持ち込まれた経緯を簡潔に含める\n"
+            . "- 商品の状態や特徴に軽く触れる\n"
+            . "- 査定額に満足いただけた旨を含める（具体的な金額は書かない）\n"
+            . "- 今後もご不要なお品物がございましたら、ぜひお気軽にご相談ください。で締める\n"
+            . "- お客様の年齢は文章に含めない（「○○代の」などの表現は使わない）\n"
+            . "- マークダウン記法は使わない\n"
+            . "- 説明文・前置き不要。エピソード本文のみ出力";
+
+        try {
+            $payload = [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.8,
+                    'maxOutputTokens' => 1500,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
+                ],
+            ];
+
+            $jsonBody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($jsonBody === false) {
+                Log::error('Gemini: json_encode failed', ['error' => json_last_error_msg()]);
+                return null;
+            }
+
+            $response = Http::withBody($jsonBody, 'application/json')
+                ->post($this->apiUrl . '?key=' . $this->apiKey);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                return $text ? $this->cleanReplyText($text) : null;
+            }
+
+            Log::error('Gemini API error (purchase episode)', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Gemini API exception (purchase episode)', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * ブロック③（店舗別エリアフッター）のテンプレートをAI生成
+     */
+    public function generateStoreFooterTemplate(string $storeName, string $area): ?string
+    {
+        $prompt = <<<EOT
+以下の条件でGoogleビジネスプロフィール投稿用のエリアフッターテンプレートを1つ作成してください。
+
+【店舗名】{$storeName}
+【エリア】{$area}
+
+【フォーマット】
+「{エリア}で○○の売却や質預かりをご検討の方は、高価買取の{店舗名}へぜひご相談ください。LINE査定も受付中です。」
+
+※ ○○の部分は「○○」のまま残してください（商品カテゴリを後から入れるためのプレースホルダーです）
+※ 1文のみ出力してください
+※ 説明文・前置き不要。テンプレート文のみ出力
+EOT;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.5,
+                    'maxOutputTokens' => 300,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                return $text ? trim($text) : null;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Gemini API exception (footer template)', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
 }

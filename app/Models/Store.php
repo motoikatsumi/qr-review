@@ -34,4 +34,14 @@ class Store extends Model
     {
         return $this->hasMany(GoogleReview::class);
     }
+
+    public function purchasePosts()
+    {
+        return $this->hasMany(PurchasePost::class);
+    }
+
+    public function postTemplate()
+    {
+        return $this->hasOne(StorePostTemplate::class);
+    }
 }

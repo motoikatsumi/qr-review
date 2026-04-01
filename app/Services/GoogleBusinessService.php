@@ -146,6 +146,31 @@ class GoogleBusinessService
         return Http::withToken($token)->delete($url);
     }
 
+    protected function apiPost(string $url, array $data = [])
+    {
+        $token = $this->getAccessToken();
+        if (!$token) {
+            return null;
+        }
+
+        return Http::withToken($token)->post($url, $data);
+    }
+
+    protected function apiPostMultipart(string $url, array $multipart = [])
+    {
+        $token = $this->getAccessToken();
+        if (!$token) {
+            return null;
+        }
+
+        $request = Http::withToken($token);
+        foreach ($multipart as $item) {
+            $request = $request->attach($item['name'], $item['contents'], $item['filename'] ?? null, $item['headers'] ?? []);
+        }
+
+        return $request->post($url);
+    }
+
     /**
      * 連携状態を確認
      */
@@ -494,6 +519,167 @@ class GoogleBusinessService
             'reply_comment' => null,
             'replied_at' => null,
         ]);
+
+        return true;
+    }
+
+    // ==========================================
+    // Google ビジネス投稿（Local Post）機能
+    // ==========================================
+
+    /**
+     * ローカル投稿を作成（最新情報タイプ）
+     */
+    public function createLocalPost(Store $store, string $summary, ?string $imageUrl = null, ?string $actionUrl = null): array
+    {
+        $accountName = SiteSetting::get('google_account_id');
+        $locationName = $store->google_location_name;
+
+        if (!$accountName || !$locationName) {
+            return ['success' => false, 'error' => 'Google Business設定が不完全です（アカウントIDまたはロケーション未設定）'];
+        }
+
+        $url = $this->apiBase . "/{$accountName}/{$locationName}/localPosts";
+
+        $postData = [
+            'languageCode' => 'ja',
+            'summary' => $summary,
+            'topicType' => 'STANDARD',
+        ];
+
+        if ($actionUrl) {
+            $postData['callToAction'] = [
+                'actionType' => 'LEARN_MORE',
+                'url' => $actionUrl,
+            ];
+        }
+
+        if ($imageUrl) {
+            $postData['media'] = [
+                [
+                    'mediaFormat' => 'PHOTO',
+                    'sourceUrl' => $imageUrl,
+                ],
+            ];
+        }
+
+        $response = $this->apiPost($url, $postData);
+
+        if (!$response) {
+            return ['success' => false, 'error' => 'APIトークンが取得できませんでした'];
+        }
+
+        if (!$response->successful()) {
+            Log::error('Google API: createLocalPost failed', [
+                'store' => $store->id,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return ['success' => false, 'error' => 'Google API エラー: HTTP ' . $response->status() . ' - ' . $response->body()];
+        }
+
+        $data = $response->json();
+        return [
+            'success' => true,
+            'post_name' => $data['name'] ?? null,
+        ];
+    }
+
+    /**
+     * ローカル投稿を削除
+     */
+    public function deleteLocalPost(string $postName): bool
+    {
+        $response = $this->apiDelete($this->apiBase . '/' . ltrim($postName, '/'));
+
+        if (!$response || !$response->successful()) {
+            Log::error('Google API: deleteLocalPost failed', [
+                'postName' => $postName,
+                'body' => $response?->body(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    // ==========================================
+    // Google ビジネス商品（Local Post PRODUCT タイプ）
+    // ==========================================
+
+    /**
+     * 商品をPRODUCTタイプのローカル投稿として作成
+     * ※ GBPの「商品」タブにはパブリックAPIがないため、localPostsのPRODUCTタイプで代替
+     */
+    public function createProduct(Store $store, array $productData): array
+    {
+        $accountName = SiteSetting::get('google_account_id');
+        $locationName = $store->google_location_name;
+
+        if (!$accountName || !$locationName) {
+            return ['success' => false, 'error' => 'Google Business設定が不完全です'];
+        }
+
+        $url = $this->apiBase . "/{$accountName}/{$locationName}/localPosts";
+
+        $postPayload = [
+            'languageCode' => 'ja',
+            'topicType' => 'STANDARD',
+            'summary' => $productData['name'] . "\n\n" . ($productData['description'] ?? ''),
+        ];
+
+        if (!empty($productData['url'])) {
+            $postPayload['callToAction'] = [
+                'actionType' => 'LEARN_MORE',
+                'url' => $productData['url'],
+            ];
+        }
+
+        if (!empty($productData['image_url'])) {
+            $postPayload['media'] = [
+                [
+                    'mediaFormat' => 'PHOTO',
+                    'sourceUrl' => $productData['image_url'],
+                ],
+            ];
+        }
+
+        $response = $this->apiPost($url, $postPayload);
+
+        if (!$response) {
+            return ['success' => false, 'error' => 'APIトークンが取得できませんでした'];
+        }
+
+        if (!$response->successful()) {
+            Log::error('Google API: createProduct (localPost) failed', [
+                'store' => $store->id,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return ['success' => false, 'error' => 'Google API エラー: HTTP ' . $response->status() . ' - ' . $response->body()];
+        }
+
+        $data = $response->json();
+        return [
+            'success' => true,
+            'product_name' => $data['name'] ?? null,
+        ];
+    }
+
+    /**
+     * 商品を削除
+     */
+    public function deleteProduct(string $productName): bool
+    {
+        $response = $this->apiDelete($this->apiBase . '/' . ltrim($productName, '/'));
+
+        if (!$response || !$response->successful()) {
+            Log::error('Google API: deleteProduct failed', [
+                'productName' => $productName,
+                'body' => $response?->body(),
+            ]);
+            return false;
+        }
 
         return true;
     }

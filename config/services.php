@@ -40,4 +40,10 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     ],
 
+    'wordpress' => [
+        'url' => env('WORDPRESS_URL', 'https://78assist.com'),
+        'username' => env('WORDPRESS_USERNAME', ''),
+        'app_password' => env('WORDPRESS_APP_PASSWORD', ''),
+    ],
+
 ];
