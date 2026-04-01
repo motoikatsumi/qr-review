@@ -62,14 +62,15 @@ class ReviewController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|max:2000',
             'is_ai_generated' => 'nullable|boolean',
-            'gender' => 'nullable|string|max:10',
+            'gender' => 'required|string|in:男性,女性',
             'age' => 'nullable|string|max:10',
+            'visit_type' => 'required|string|in:新規,リピーター',
         ]);
 
         // 「修正する」ボタンからの戻り
         if ($request->has('_back')) {
             return redirect('/review/' . $slug)
-                ->withInput($request->only('rating', 'comment', 'is_ai_generated', 'gender', 'age'));
+                ->withInput($request->only('rating', 'comment', 'is_ai_generated', 'gender', 'age', 'visit_type'));
         }
 
         // 確認画面用の二重送信防止トークン
@@ -82,8 +83,9 @@ class ReviewController extends Controller
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
             'is_ai_generated' => $validated['is_ai_generated'] ?? 0,
-            'gender' => $validated['gender'] ?? '',
+            'gender' => $validated['gender'],
             'age' => $validated['age'] ?? '',
+            'visit_type' => $validated['visit_type'],
             'submitToken' => $submitToken,
         ]);
     }
@@ -104,8 +106,9 @@ class ReviewController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|max:2000',
             'is_ai_generated' => 'nullable|boolean',
-            'gender' => 'nullable|string|max:10',
+            'gender' => 'required|string|in:男性,女性',
             'age' => 'nullable|string|max:10',
+            'visit_type' => 'required|string|in:新規,リピーター',
             'submit_token' => 'required|string',
         ]);
 
@@ -133,8 +136,9 @@ class ReviewController extends Controller
                 'comment' => $validated['comment'],
                 'ai_generated_text' => !empty($validated['is_ai_generated']) ? $validated['comment'] : null,
                 'status' => 'redirected_to_google',
-                'gender' => $validated['gender'] ?? null,
+                'gender' => $validated['gender'],
                 'age' => $validated['age'] ?? null,
+                'visit_type' => $validated['visit_type'],
             ]);
 
             session(['review_submitted_' . $slug => true]);
@@ -148,8 +152,9 @@ class ReviewController extends Controller
             'comment' => $validated['comment'],
             'ai_generated_text' => !empty($validated['is_ai_generated']) ? $validated['comment'] : null,
             'status' => 'email_sent',
-            'gender' => $validated['gender'] ?? null,
+            'gender' => $validated['gender'],
             'age' => $validated['age'] ?? null,
+            'visit_type' => $validated['visit_type'],
         ]);
 
         // メール送信
@@ -171,17 +176,20 @@ class ReviewController extends Controller
         $store = Store::where('slug', $slug)->where('is_active', true)->firstOrFail();
 
         $validated = $request->validate([
-            'keyword' => 'required|string|max:100',
+            'keywords' => 'required|array|min:1',
+            'keywords.*' => 'required|string|max:100',
             'gender'  => 'nullable|string|max:10',
             'age'     => 'nullable|string|max:10',
+            'visit_type' => 'nullable|string|max:10',
         ]);
 
         $gemini = new GeminiService();
         $text = $gemini->generateSuggestion(
             $store->name,
-            $validated['keyword'],
+            $validated['keywords'],
             $validated['gender'] ?? '',
-            $validated['age'] ?? ''
+            $validated['age'] ?? '',
+            $validated['visit_type'] ?? ''
         );
 
         if (!$text) {

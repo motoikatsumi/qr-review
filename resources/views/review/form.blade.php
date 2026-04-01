@@ -64,28 +64,113 @@
     .persona-selects {
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        gap: 8px;
+        gap: 12px;
         margin-bottom: 12px;
     }
-    @media (min-width: 380px) {
-        .persona-selects {
-            flex-direction: row;
-            gap: 12px;
-        }
+    .radio-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .radio-group-label {
+        font-size: 0.82rem;
+        color: #555;
+        font-weight: 500;
+        white-space: nowrap;
+        min-width: 50px;
+    }
+    .radio-options {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+    }
+    .radio-options input[type="radio"] {
+        display: none;
+    }
+    .radio-options label {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        border-radius: 8px;
+        border: 2px solid #d1d5db;
+        font-size: 0.88rem;
+        color: #4b5563;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+    .radio-options input[type="radio"]:checked + label {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
     }
     .persona-selects select {
-        padding: 8px 12px;
+        padding: 10px 14px;
         border-radius: 8px;
-        border: 1px solid #d1d5db;
+        border: 2px solid #d1d5db;
         font-size: 0.9rem;
         color: #4b5563;
         background-color: white;
-        flex: 1;
-        min-width: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+        width: 100%;
         outline: none;
         -webkit-appearance: none;
         appearance: none;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        font-weight: 500;
+    }
+    .persona-selects select.has-value {
+        border-color: #667eea;
+        color: #667eea;
+        font-weight: 600;
+    }
+    .persona-selects select.highlight-nudge {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.25);
+    }
+    .radio-options-age {
+        display: flex;
+        gap: 5px;
+        flex: 1;
+    }
+    .radio-options-age input[type="radio"] {
+        display: none;
+    }
+    .radio-options-age label {
+        flex: 1;
+        text-align: center;
+        padding: 8px 0;
+        border-radius: 8px;
+        border: 2px solid #d1d5db;
+        font-size: 0.82rem;
+        color: #4b5563;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+    @media (max-width: 400px) {
+        .radio-group-label {
+            min-width: 36px;
+            font-size: 0.78rem;
+        }
+        .radio-options-age {
+            gap: 3px;
+        }
+        .radio-options-age label {
+            font-size: 0.74rem;
+            padding: 7px 0;
+            border-radius: 6px;
+        }
+    }
+    .radio-options-age input[type="radio"]:checked + label {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
     }
     .persona-selects select:focus {
         border-color: #667eea;
@@ -138,6 +223,12 @@
     }
     .suggestion-btn:active {
         transform: translateY(0);
+    }
+    .suggestion-btn.selected {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(102,126,234,0.3);
     }
     .suggestion-btn.loading {
         background: #f3f4f6;
@@ -243,8 +334,6 @@
     <form method="POST" action="{{ url('/review/' . $store->slug . '/confirm') }}" id="reviewForm">
         @csrf
         <input type="hidden" name="is_ai_generated" id="is_ai_generated" value="{{ old('is_ai_generated', 0) }}">
-        <input type="hidden" name="gender" id="genderHidden" value="{{ old('gender', '') }}">
-        <input type="hidden" name="age" id="ageHidden" value="{{ old('age', '') }}">
 
         <div class="rating-section">
             <p class="rating-label">満足度を選択してください</p>
@@ -268,19 +357,39 @@
             </p>
             
             <div class="persona-selects">
-                <select id="genderSelect" onchange="document.getElementById('genderHidden').value=this.value">
-                    <option value="">性別を選択（任意）</option>
-                    <option value="男性" {{ old('gender') == '男性' ? 'selected' : '' }}>男性</option>
-                    <option value="女性" {{ old('gender') == '女性' ? 'selected' : '' }}>女性</option>
-                </select>
-                <select id="ageSelect" onchange="document.getElementById('ageHidden').value=this.value">
-                    <option value="">年代を選択（任意）</option>
-                    <option value="20" {{ old('age') == '20' ? 'selected' : '' }}>20代</option>
-                    <option value="30" {{ old('age') == '30' ? 'selected' : '' }}>30代</option>
-                    <option value="40" {{ old('age') == '40' ? 'selected' : '' }}>40代</option>
-                    <option value="50" {{ old('age') == '50' ? 'selected' : '' }}>50代</option>
-                    <option value="60" {{ old('age') == '60' ? 'selected' : '' }}>60代以上</option>
-                </select>
+                <div class="radio-group">
+                    <span class="radio-group-label">性別</span>
+                    <div class="radio-options">
+                        <input type="radio" name="gender" id="genderMale" value="男性" {{ old('gender', '男性') == '男性' ? 'checked' : '' }}>
+                        <label for="genderMale">男性</label>
+                        <input type="radio" name="gender" id="genderFemale" value="女性" {{ old('gender', '男性') == '女性' ? 'checked' : '' }}>
+                        <label for="genderFemale">女性</label>
+                    </div>
+                </div>
+                <div class="radio-group">
+                    <span class="radio-group-label">来店</span>
+                    <div class="radio-options">
+                        <input type="radio" name="visit_type" id="visitNew" value="新規" {{ old('visit_type', '新規') == '新規' ? 'checked' : '' }}>
+                        <label for="visitNew">新規</label>
+                        <input type="radio" name="visit_type" id="visitRepeat" value="リピーター" {{ old('visit_type', '新規') == 'リピーター' ? 'checked' : '' }}>
+                        <label for="visitRepeat">リピーター</label>
+                    </div>
+                </div>
+                <div class="radio-group">
+                    <span class="radio-group-label">年代</span>
+                    <div class="radio-options-age">
+                        <input type="radio" name="age" id="age20" value="20" {{ old('age') == '20' ? 'checked' : '' }}>
+                        <label for="age20">20代</label>
+                        <input type="radio" name="age" id="age30" value="30" {{ old('age') == '30' ? 'checked' : '' }}>
+                        <label for="age30">30代</label>
+                        <input type="radio" name="age" id="age40" value="40" {{ old('age') == '40' ? 'checked' : '' }}>
+                        <label for="age40">40代</label>
+                        <input type="radio" name="age" id="age50" value="50" {{ old('age') == '50' ? 'checked' : '' }}>
+                        <label for="age50">50代</label>
+                        <input type="radio" name="age" id="age60" value="60" {{ old('age') == '60' ? 'checked' : '' }}>
+                        <label for="age60">60代~</label>
+                    </div>
+                </div>
             </div>
 
             <div class="suggestion-buttons">
@@ -294,7 +403,7 @@
                     @endforeach
                 @endforeach
             </div>
-            <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">上記のテーマを選択すると自動でコメントが生成されます</p>
+            <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">テーマは複数選択出来ます。選ぶたびに口コミが自動生成されます</p>
             <p class="ai-error" id="aiError">文章の生成に失敗しました。もう一度お試しください。</p>
         </div>
 
@@ -341,6 +450,8 @@
             document.getElementById('ratingText').textContent =
                 checkedRating.value + '星 - ' + ratingLabels[checkedRating.value];
         }
+        // 年代selectの状態復元
+        // (年代はラジオボタンなので自動復元)
     })();
 
     // 提案ボタンをシャッフルして6個表示（各カテゴリから最低1つ選出）
@@ -400,13 +511,28 @@
 
     document.querySelectorAll('.suggestion-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
-            const keyword = this.dataset.keyword;
-            const gender = document.getElementById('genderSelect').value;
-            const age = document.getElementById('ageSelect').value;
+            // トグル選択
+            this.classList.toggle('selected');
+
+            // 選択中のキーワードを収集
+            const selectedBtns = document.querySelectorAll('.suggestion-btn.selected');
+            const keywords = Array.from(selectedBtns).map(b => b.dataset.keyword);
+
+            // 全て解除された場合は何もしない
+            if (keywords.length === 0) {
+                return;
+            }
+
+            const genderEl = document.querySelector('input[name="gender"]:checked');
+            const gender = genderEl ? genderEl.value : '';
+            const ageEl = document.querySelector('input[name="age"]:checked');
+            const age = ageEl ? ageEl.value : '';
+            const visitTypeEl = document.querySelector('input[name="visit_type"]:checked');
+            const visitType = visitTypeEl ? visitTypeEl.value : '';
 
             // ローディング状態
             document.querySelectorAll('.suggestion-btn').forEach(b => b.disabled = true);
-            this.classList.add('loading');
+            selectedBtns.forEach(b => b.classList.add('loading'));
             document.getElementById('aiError').style.display = 'none';
 
             try {
@@ -418,9 +544,10 @@
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({ 
-                        keyword: keyword,
+                        keywords: keywords,
                         gender: gender,
-                        age: age
+                        age: age,
+                        visit_type: visitType
                     })
                 });
 
@@ -439,8 +566,10 @@
                 document.getElementById('aiError').style.display = 'block';
             } finally {
                 // ローディング解除
-                document.querySelectorAll('.suggestion-btn').forEach(b => b.disabled = false);
-                this.classList.remove('loading');
+                document.querySelectorAll('.suggestion-btn').forEach(b => {
+                    b.disabled = false;
+                    b.classList.remove('loading');
+                });
             }
         });
     });
@@ -455,6 +584,18 @@
         if (!rating) {
             e.preventDefault();
             alert('評価を選択してください');
+            return;
+        }
+        var gender = document.querySelector('input[name="gender"]:checked');
+        if (!gender) {
+            e.preventDefault();
+            alert('性別を選択してください');
+            return;
+        }
+        var visitType = document.querySelector('input[name="visit_type"]:checked');
+        if (!visitType) {
+            e.preventDefault();
+            alert('新規またはリピーターを選択してください');
             return;
         }
         var btn = document.getElementById('submitBtn');

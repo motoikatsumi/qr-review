@@ -54,6 +54,8 @@
     .persona-age-50 { background: #ede9fe; color: #7c3aed; }
     .persona-age-60 { background: #fce7f3; color: #be185d; }
     .persona-age-default { background: #f3f4f6; color: #6b7280; }
+    .persona-new { background: #fef3c7; color: #d97706; }
+    .persona-repeat { background: #d1fae5; color: #059669; }
     .review-body { flex: 1; min-width: 0; }
     .review-comment { font-size: 0.9rem; line-height: 1.7; color: #374151; white-space: pre-wrap; word-break: break-word; }
     .review-footer { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
@@ -82,6 +84,9 @@
                 <span class="{{ $review->gender === '男性' ? 'persona-male' : ($review->gender === '女性' ? 'persona-female' : 'persona-other') }}">{{ $review->gender ?: '-' }}</span>
                 @php $ageClass = match($review->age) { '10' => 'persona-age-10', '20' => 'persona-age-20', '30' => 'persona-age-30', '40' => 'persona-age-40', '50' => 'persona-age-50', '60' => 'persona-age-60', default => 'persona-age-default' }; @endphp
                 <span class="{{ $ageClass }}">{{ $review->age ? $review->age . '代' : '-' }}</span>
+                @if($review->visit_type)
+                <span class="{{ $review->visit_type === '新規' ? 'persona-new' : 'persona-repeat' }}">{{ $review->visit_type }}</span>
+                @endif
             </div>
         </div>
         <div class="review-body">

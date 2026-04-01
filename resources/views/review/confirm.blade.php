@@ -133,6 +133,7 @@
             <input type="hidden" name="is_ai_generated" value="{{ $is_ai_generated }}">
             <input type="hidden" name="gender" value="{{ $gender }}">
             <input type="hidden" name="age" value="{{ $age }}">
+            <input type="hidden" name="visit_type" value="{{ $visit_type }}">
             <button type="submit" class="btn btn-primary {{ $rating >= 4 ? 'btn-google-submit' : '' }}" id="submitBtn">
                 <span id="submitText">{{ $rating >= 4 ? '📍 コピーしてGoogleマップへ →' : '送信する →' }}</span>
                 <div class="loading-spinner" id="loadingSpinner" style="display:none;width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
@@ -155,6 +156,7 @@
             <input type="hidden" name="is_ai_generated" value="{{ $is_ai_generated }}">
             <input type="hidden" name="gender" value="{{ $gender }}">
             <input type="hidden" name="age" value="{{ $age }}">
+            <input type="hidden" name="visit_type" value="{{ $visit_type }}">
             <button type="submit" class="btn btn-back">✏️ 修正する</button>
         </form>
     </div>

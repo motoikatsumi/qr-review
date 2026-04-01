@@ -63,7 +63,7 @@ class ReviewController extends Controller
             $file = fopen('php://output', 'w');
             // BOM for Excel
             fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-            fputcsv($file, ['ID', '店舗名', '評価', '性別', '年代', 'コメント', 'AI生成文', 'ステータス', '投稿日時']);
+            fputcsv($file, ['ID', '店舗名', '評価', '性別', '年代', '新規/リピーター', 'コメント', 'AI生成文', 'ステータス', '投稿日時']);
 
             foreach ($reviews as $review) {
                 fputcsv($file, [
@@ -72,6 +72,7 @@ class ReviewController extends Controller
                     $review->rating,
                     $review->gender ?: '',
                     $review->age ? $review->age . '代' : '',
+                    $review->visit_type ?: '',
                     $review->comment,
                     $review->ai_generated_text,
                     $review->status === 'email_sent' ? 'メール送信済' : ($review->status === 'no_google_account' ? 'Googleアカウント無' : 'Google誘導'),

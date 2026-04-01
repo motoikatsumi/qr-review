@@ -18,6 +18,7 @@ class Review extends Model
         'status',
         'gender',
         'age',
+        'visit_type',
     ];
 
     public function store()

@@ -92,9 +92,22 @@ EOT;
 
     /**
      * キーワードボタンからGoogleマップ用の口コミ提案文を生成
+     *
+     * @param string $storeName
+     * @param string|array $keywords
+     * @param string $gender
+     * @param string $age
+     * @param string $visitType
+     * @return string|null
      */
-    public function generateSuggestion(string $storeName, string $keyword, string $gender = '', string $age = ''): ?string
+    public function generateSuggestion(string $storeName, $keywords, string $gender = '', string $age = '', string $visitType = ''): ?string
     {
+        // キーワードを統一的に扱う
+        if (is_array($keywords)) {
+            $keyword = implode('・', $keywords);
+        } else {
+            $keyword = $keywords;
+        }
         // 書き手のペルソナ：ユーザー入力があれば使用、なければランダム
         if ($gender && $age) {
             $persona = "{$age}代の{$gender}";
@@ -108,6 +121,11 @@ EOT;
             $ages = ['20', '30', '40', '50', '60'];
             $genders = ['男性', '女性'];
             $persona = $ages[array_rand($ages)] . '代の' . $genders[array_rand($genders)];
+        }
+
+        // 来店タイプをペルソナに追加
+        if ($visitType) {
+            $persona .= "（{$visitType}のお客様）";
         }
 
         // 文章のトーン（ランダム）
@@ -211,10 +229,27 @@ EOT;
         ];
         $lengthInstruction = $lengthPatterns[array_rand($lengthPatterns)];
 
-        // 「初めて」系表現の偏りを防ぐ：スタイルが新規客でない場合は高確率で回避指示を追加
+        // 「初めて」系表現の偏りを防ぐ：スタイルが新規客でない場合、またはリピーターの場合は回避指示を追加
         $avoidFirstTime = '';
-        if (strpos($style, '初めて') === false && strpos($style, '新規') === false) {
+        if ($visitType === 'リピーター' || (strpos($style, '初めて') === false && strpos($style, '新規') === false)) {
             $avoidFirstTime = '- 「初めて」「初めての」「初めて利用」という表現は使わないこと。既に何度か来店している前提で書く' . "\n";
+        }
+
+        // 複数テーマ選択時は文字数を増やす
+        $multiThemeInstruction = '';
+        if (is_array($keywords) && count($keywords) >= 2) {
+            $multiThemeInstruction = '- 【重要】テーマが複数あるが、全てのテーマを無理に詰め込まず、自然に組み合わせて1つの口コミとしてまとめること' . "\n";
+            // 複数テーマ時は短すぎる文字数パターンを除外して少し長めにする
+            $lengthPatterns = [
+                '40〜60文字程度の文章にする。1〜2文で簡潔にまとめる',
+                '40〜70文字程度の文章にする。1〜2文でまとめる',
+                '50〜70文字程度の文章にする。2文でまとめる',
+                '50〜70文字程度の文章にする。2文でまとめる',
+                '70〜90文字程度の文章にする。2〜3文でしっかりめにまとめる',
+                '70〜90文字程度の文章にする。2〜3文でしっかりめにまとめる',
+                '80〜120文字程度の文章にする。2〜3文でしっかりめにまとめる',
+            ];
+            $lengthInstruction = $lengthPatterns[array_rand($lengthPatterns)];
         }
 
         $prompt = <<<EOT
@@ -235,7 +270,7 @@ Googleマップに投稿する口コミ文を1つ生成してください。
 - 【重要】フランクになりすぎず、最低限の敬語や丁寧な言葉遣い（です/ます調）を守る
 - 【重要】性別に関係なく、女性語・お嬢様言葉は絶対に使わない。「〜わ」「〜のよ」「〜の」「〜かしら」などの女性的な語尾は禁止。男女とも同じ丁寧語（です/ます）で統一する
 - 【重要】お客様自身を下げるような発言（卑下など）や、不快感を与えるネガティブ・おかしい文章は絶対に含めない
-{$avoidFirstTime}- 絵文字・説明文・前置き不要。口コミ文のみ出力
+{$avoidFirstTime}{$multiThemeInstruction}- 絵文字・説明文・前置き不要。口コミ文のみ出力
 
 【NGワード・禁止表現】以下の内容は絶対に含めないこと：
 - 具体的な金額や査定額（例：「○○円」「○万円」）
@@ -245,6 +280,13 @@ Googleマップに投稿する口コミ文を1つ生成してください。
 - 「最高額」「業界一」「日本一」などの誇大表現
 - 【最重要】女性語・役割語は一切禁止。語尾に「わ」「のよ」「の」「かしら」を付ける表現は性別問わず全て禁止（例：「〜たわ」「〜だわ」「〜るわ」「〜ですわ」「〜ましたわ」「〜できるの」「〜のよね」「〜のよ」「〜かしら」「〜ますのよ」「〜でございますわ」）。文末が「〜の。」「〜の！」で終わるのも禁止
 - 不自然な語尾延ばし（例：「〜ねぇ」「〜ねー」「〜よぉ」「〜なぁ」「〜かなぁ」「〜とはねぇ」）。年配者風の口調にしないこと
+- 家族の死や不幸に関する表現（例：「亡くなった」「亡き」「他界」「遺品」「形見」「故人」「供養」）。ユーザーの実体験と異なる可能性があるため絶対に使わない
+- 借金・生活苦を連想させる表現（例：「借金」「返済」「生活費」「お金に困って」「金欠」）
+- 離婚・別れに関する表現（例：「離婚」「元妻」「元夫」「別れた」「元カノ」「元カレ」）
+- 病気・入院に関する表現（例：「病気」「入院」「手術費」「治療費」「闘病」）
+- 具体的なブランド名・品名（例：「ロレックス」「ルイヴィトン」「シャネル」「エルメス」）。持ち込んだ品と異なる可能性があるため
+- 盗品や不正を連想させる表現（例：「もらったもの」「拾った」「見つけた」）
+- ギャンブル関連の表現（例：「パチンコ」「競馬」「スロット」「賭け」）
 EOT;
 
 
