@@ -38,12 +38,12 @@
     .review-list { display: flex; flex-direction: column; gap: 12px; }
     .review-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; display: flex; gap: 16px; align-items: flex-start; transition: box-shadow 0.15s; }
     .review-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .review-meta { min-width: 120px; flex-shrink: 0; }
+    .review-meta { width: 140px; flex-shrink: 0; }
     .review-meta .date { font-size: 0.78rem; color: #9ca3af; }
     .review-meta .store-name { font-weight: 700; font-size: 0.9rem; margin-top: 4px; }
     .review-meta .stars { font-size: 1rem; margin-top: 4px; display: block; }
-    .review-meta .persona { font-size: 0.78rem; color: #6b7280; margin-top: 6px; }
-    .review-meta .persona span { display: inline-block; border-radius: 4px; padding: 1px 6px; margin-right: 4px; font-weight: 600; }
+    .review-meta .persona { font-size: 0.78rem; color: #6b7280; margin-top: 6px; display: flex; flex-wrap: nowrap; gap: 4px; }
+    .review-meta .persona span { display: inline-block; border-radius: 4px; padding: 1px 6px; font-weight: 600; white-space: nowrap; }
     .persona-male { background: #dbeafe; color: #2563eb; }
     .persona-female { background: #fce7f3; color: #db2777; }
     .persona-other { background: #f3f4f6; color: #6b7280; }

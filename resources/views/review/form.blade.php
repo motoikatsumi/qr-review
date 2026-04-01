@@ -403,7 +403,7 @@
                     @endforeach
                 @endforeach
             </div>
-            <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">テーマは複数選択出来ます。選ぶたびに口コミが自動生成されます</p>
+            <p style="font-size: 0.75rem; color: #6b7280; text-align: center; margin-top: 10px;">💡 テーマを選ぶと口コミが自動作成されます。<br>テーマは複数個選択可能です。</p>
             <p class="ai-error" id="aiError">文章の生成に失敗しました。もう一度お試しください。</p>
         </div>
 
