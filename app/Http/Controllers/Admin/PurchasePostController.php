@@ -158,12 +158,12 @@ class PurchasePostController extends Controller
             'block1_text' => 'required|string',
             'block2_text' => 'required|string',
             'block3_text' => 'required|string',
-            'image' => 'required|image|max:10240|dimensions:min_width=250,min_height=250',
+            'image' => 'required|image|min:11|max:10240|dimensions:min_width=250,min_height=250',
             'wp_tag_name' => 'nullable|string|max:100',
             'rank' => 'nullable|string|in:S,A,B,C,D',
+        ], [
+            'image.min' => '画像ファイルサイズが小さすぎます（最低11KB必要です。Google APIの要件: 10KB以上）。',
         ]);
-
-        $store = Store::findOrFail($request->store_id);
 
         // 重複チェック（同じ店舗・ブランド・商品名の投稿が24時間以内にあるか）
         $duplicate = PurchasePost::where('store_id', $request->store_id)
@@ -268,7 +268,7 @@ class PurchasePostController extends Controller
             'block1_text' => 'required|string',
             'block2_text' => 'required|string',
             'block3_text' => 'required|string',
-            'image' => 'nullable|image|max:10240|dimensions:min_width=250,min_height=250',
+            'image' => 'nullable|image|min:11|max:10240|dimensions:min_width=250,min_height=250',
             'wp_tag_name' => 'nullable|string|max:100',
             'rank' => 'nullable|string|in:S,A,B,C,D',
         ]);
