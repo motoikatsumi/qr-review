@@ -165,6 +165,8 @@ class PurchasePostController extends Controller
             'image.min' => '画像ファイルサイズが小さすぎます（最低11KB必要です。Google APIの要件: 10KB以上）。',
         ]);
 
+        $store = Store::findOrFail($request->store_id);
+
         // 重複チェック（同じ店舗・ブランド・商品名の投稿が24時間以内にあるか）
         $duplicate = PurchasePost::where('store_id', $request->store_id)
             ->where('brand_name', $request->brand_name)
