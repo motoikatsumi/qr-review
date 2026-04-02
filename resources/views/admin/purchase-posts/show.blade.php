@@ -9,7 +9,7 @@
 </div>
 
 {{-- ステータス概要 --}}
-<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
     <div class="card" style="border-top:3px solid {{ $purchasePost->wp_status === 'published' ? '#10b981' : ($purchasePost->wp_status === 'failed' ? '#ef4444' : '#d1d5db') }};">
         <div class="card-body" style="text-align:center;padding:16px;">
             <div style="font-size:0.8rem;color:#888;margin-bottom:4px;">WordPress</div>
@@ -34,10 +34,22 @@
             @endif
         </div>
     </div>
+    <div class="card" style="border-top:3px solid {{ $purchasePost->google_photo_status === 'published' ? '#10b981' : ($purchasePost->google_photo_status === 'failed' ? '#ef4444' : '#d1d5db') }};">
+        <div class="card-body" style="text-align:center;padding:16px;">
+            <div style="font-size:0.8rem;color:#888;margin-bottom:4px;">Google写真</div>
+            @if($purchasePost->google_photo_status === 'published')
+                <span class="badge badge-green" style="font-size:0.85rem;">✅ 追加済み</span>
+            @elseif($purchasePost->google_photo_status === 'failed')
+                <span class="badge badge-red" style="font-size:0.85rem;">❌ 失敗</span>
+            @else
+                <span class="badge badge-gray" style="font-size:0.85rem;">⏳ 未実行</span>
+            @endif
+        </div>
+    </div>
 </div>
 
 {{-- エラー詳細 --}}
-@if($purchasePost->wp_error || $purchasePost->google_post_error)
+@if($purchasePost->wp_error || $purchasePost->google_post_error || $purchasePost->google_photo_error)
 <div class="card" style="margin-bottom:20px;border-left:4px solid #ef4444;">
     <div class="card-header" style="background:#fef2f2;color:#991b1b;">⚠️ エラー詳細</div>
     <div class="card-body">
@@ -47,8 +59,13 @@
             </div>
         @endif
         @if($purchasePost->google_post_error)
-            <div>
+            <div style="margin-bottom:8px;">
                 <strong>Google投稿:</strong> <span style="color:#dc2626;">{{ $purchasePost->google_post_error }}</span>
+            </div>
+        @endif
+        @if($purchasePost->google_photo_error)
+            <div>
+                <strong>Google写真:</strong> <span style="color:#dc2626;">{{ $purchasePost->google_photo_error }}</span>
             </div>
         @endif
     </div>
@@ -91,7 +108,7 @@
 {{-- 操作ボタン --}}
 <div style="display:flex;gap:12px;justify-content:center;margin-bottom:40px;">
     <a href="{{ route('admin.purchase-posts.edit', $purchasePost) }}" class="btn btn-primary" style="padding:12px 32px;">✏️ 編集</a>
-    @if($purchasePost->wp_status === 'failed' || $purchasePost->google_post_status === 'failed')
+    @if($purchasePost->wp_status === 'failed' || $purchasePost->google_post_status === 'failed' || $purchasePost->google_photo_status === 'failed')
         <form method="POST" action="{{ route('admin.purchase-posts.retry', $purchasePost) }}">
             @csrf
             <button type="submit" class="btn btn-primary" style="padding:12px 32px;">🔄 失敗分をリトライ</button>

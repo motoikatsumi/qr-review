@@ -45,7 +45,8 @@
                     <th>商品名</th>
                     <th>カテゴリ</th>
                     <th>WP</th>
-                    <th>Google</th>
+                    <th>G投稿</th>
+                    <th>G写真</th>
                     <th>投稿日</th>
                     <th>操作</th>
                 </tr>
@@ -71,6 +72,15 @@
                             <span class="badge badge-green">✅ 完了</span>
                         @elseif($post->google_post_status === 'failed')
                             <span class="badge badge-red" title="{{ $post->google_post_error }}">❌ 失敗</span>
+                        @else
+                            <span class="badge badge-gray">⏳ 未実行</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($post->google_photo_status === 'published')
+                            <span class="badge badge-green">✅ 完了</span>
+                        @elseif($post->google_photo_status === 'failed')
+                            <span class="badge badge-red" title="{{ $post->google_photo_error }}">❌ 失敗</span>
                         @else
                             <span class="badge badge-gray">⏳ 未実行</span>
                         @endif

@@ -214,6 +214,9 @@ class PurchasePostController extends Controller
         // --- Google ビジネス投稿（最新情報） ---
         $this->publishToGooglePost($post, $catInfo);
 
+        // --- Google ビジネス写真ギャラリー ---
+        $this->publishToGooglePhoto($post);
+
         $post->published_at = now();
         $post->save();
 
@@ -222,8 +225,10 @@ class PurchasePostController extends Controller
         if ($post->wp_status === 'failed') $messages[] = 'WordPress投稿失敗: ' . $post->wp_error;
         if ($post->google_post_status === 'published') $messages[] = 'Google投稿完了';
         if ($post->google_post_status === 'failed') $messages[] = 'Google投稿失敗: ' . $post->google_post_error;
+        if ($post->google_photo_status === 'published') $messages[] = 'Google写真追加完了';
+        if ($post->google_photo_status === 'failed') $messages[] = 'Google写真追加失敗: ' . $post->google_photo_error;
 
-        $hasError = $post->wp_status === 'failed' || $post->google_post_status === 'failed';
+        $hasError = $post->wp_status === 'failed' || $post->google_post_status === 'failed' || $post->google_photo_status === 'failed';
 
         return redirect()->route('admin.purchase-posts.index')
             ->with($hasError ? 'error' : 'success', implode(' / ', $messages));
@@ -321,9 +326,14 @@ class PurchasePostController extends Controller
             $messages[] = $purchasePost->google_post_status === 'published' ? 'Google投稿再投稿成功' : 'Google投稿再投稿失敗';
         }
 
+        if ($purchasePost->google_photo_status === 'failed') {
+            $this->publishToGooglePhoto($purchasePost);
+            $messages[] = $purchasePost->google_photo_status === 'published' ? 'Google写真再追加成功' : 'Google写真再追加失敗';
+        }
+
         $purchasePost->save();
 
-        $hasError = $purchasePost->wp_status === 'failed' || $purchasePost->google_post_status === 'failed';
+        $hasError = $purchasePost->wp_status === 'failed' || $purchasePost->google_post_status === 'failed' || $purchasePost->google_photo_status === 'failed';
 
         return redirect()->route('admin.purchase-posts.show', $purchasePost)
             ->with($hasError ? 'error' : 'success', implode(' / ', $messages));
@@ -354,6 +364,16 @@ class PurchasePostController extends Controller
                 $google->deleteLocalPost($purchasePost->google_post_id);
             } catch (\Exception $e) {
                 Log::error('Google post delete failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Google写真を削除
+        if ($purchasePost->google_photo_name) {
+            try {
+                $google = $google ?? new GoogleBusinessService();
+                $google->deletePhoto($purchasePost->google_photo_name);
+            } catch (\Exception $e) {
+                Log::error('Google photo delete failed', ['error' => $e->getMessage()]);
             }
         }
 
@@ -463,6 +483,41 @@ class PurchasePostController extends Controller
             $post->google_post_status = 'failed';
             $post->google_post_error = $e->getMessage();
             Log::error('Google post publish failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    protected function publishToGooglePhoto(PurchasePost $post): void
+    {
+        try {
+            $store = $post->store;
+            if (!$store->google_location_name) {
+                $post->google_photo_status = 'failed';
+                $post->google_photo_error = 'Google Businessのロケーションが未設定です';
+                return;
+            }
+
+            $imageUrl = $post->wp_image_url;
+            if (!$imageUrl) {
+                $post->google_photo_status = 'failed';
+                $post->google_photo_error = 'WordPress画像URLが未設定です（WordPress投稿が先に必要）';
+                return;
+            }
+
+            $google = new GoogleBusinessService();
+            $result = $google->uploadPhoto($store, $imageUrl);
+
+            if ($result['success']) {
+                $post->google_photo_name = $result['media_name'];
+                $post->google_photo_status = 'published';
+                $post->google_photo_error = null;
+            } else {
+                $post->google_photo_status = 'failed';
+                $post->google_photo_error = $result['error'];
+            }
+        } catch (\Exception $e) {
+            $post->google_photo_status = 'failed';
+            $post->google_photo_error = $e->getMessage();
+            Log::error('Google photo upload failed', ['error' => $e->getMessage()]);
         }
     }
 }

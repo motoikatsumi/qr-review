@@ -604,6 +604,72 @@ class GoogleBusinessService
     }
 
     // ==========================================
+    // Google ビジネス 写真ギャラリー
+    // ==========================================
+
+    /**
+     * 写真をGoogleビジネスプロフィールのギャラリーにアップロード
+     */
+    public function uploadPhoto(Store $store, string $imageUrl): array
+    {
+        $accountName = SiteSetting::get('google_account_id');
+        $locationName = $store->google_location_name;
+
+        if (!$accountName || !$locationName) {
+            return ['success' => false, 'error' => 'Google Business設定が不完全です（アカウントIDまたはロケーション未設定）'];
+        }
+
+        $url = $this->apiBase . "/{$accountName}/{$locationName}/media";
+
+        $mediaData = [
+            'mediaFormat' => 'PHOTO',
+            'locationAssociation' => [
+                'category' => 'ADDITIONAL',
+            ],
+            'sourceUrl' => $imageUrl,
+        ];
+
+        $response = $this->apiPost($url, $mediaData);
+
+        if (!$response) {
+            return ['success' => false, 'error' => 'APIトークンが取得できませんでした'];
+        }
+
+        if (!$response->successful()) {
+            Log::error('Google API: uploadPhoto failed', [
+                'store' => $store->id,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            return ['success' => false, 'error' => 'Google API エラー: HTTP ' . $response->status() . ' - ' . $response->body()];
+        }
+
+        $data = $response->json();
+        return [
+            'success' => true,
+            'media_name' => $data['name'] ?? null,
+        ];
+    }
+
+    /**
+     * 写真を削除
+     */
+    public function deletePhoto(string $mediaName): bool
+    {
+        $response = $this->apiDelete($this->apiBase . '/' . ltrim($mediaName, '/'));
+
+        if (!$response || !$response->successful()) {
+            Log::error('Google API: deletePhoto failed', [
+                'mediaName' => $mediaName,
+                'body' => $response?->body(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    // ==========================================
     // Google ビジネス商品（Local Post PRODUCT タイプ）
     // ==========================================
 

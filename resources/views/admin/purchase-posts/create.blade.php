@@ -329,14 +329,23 @@
         @endforeach
     };
 
-    // 店舗選択時にブロック③を自動セット
-    document.getElementById('store_id').addEventListener('change', function() {
-        var storeId = this.value;
+    // ブロック③を店舗＋カテゴリから自動生成
+    function updateBlock3() {
+        var storeId = document.getElementById('store_id').value;
+        var categoryName = document.getElementById('category').value;
         var footer = storeFooterMap[storeId];
         if (footer) {
+            if (categoryName) {
+                footer = footer.replace(/○○/g, categoryName);
+            }
             document.getElementById('block3_text').value = footer;
             updateCounts();
         }
+    }
+
+    // 店舗選択時にブロック③を自動セット
+    document.getElementById('store_id').addEventListener('change', function() {
+        updateBlock3();
     });
 
     // 画像プレビュー
@@ -409,13 +418,8 @@
     document.getElementById('product_status').addEventListener('change', autoGenerateBlock1);
     document.getElementById('category').addEventListener('change', function() {
         autoGenerateBlock1();
-        // ブロック③の○○をカテゴリ名に置換
-        var block3 = document.getElementById('block3_text');
-        var categoryName = this.value;
-        if (categoryName && block3.value.indexOf('○○') !== -1) {
-            block3.value = block3.value.replace(/○○/g, categoryName);
-        }
-        updateCounts();
+        // ブロック③を店舗＋カテゴリで再生成
+        updateBlock3();
     });
 
     // ブロック② AI生成
