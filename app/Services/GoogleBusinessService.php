@@ -347,8 +347,12 @@ class GoogleBusinessService
                 if ($existing) {
                     $apiComment = $review['comment'] ?? null;
                     if ($apiComment) {
-                        $apiComment = preg_replace('/\s*\(Translated by Google\).*$/us', '', $apiComment);
-                        $apiComment = trim($apiComment) ?: null;
+                        if (preg_match('/\(Original\)\s*\n(.+)$/us', $apiComment, $m)) {
+                            $apiComment = trim($m[1]);
+                        } elseif (preg_match('/^\(Translated by Google\)/u', $apiComment)) {
+                            $apiComment = preg_replace('/^\(Translated by Google\)[^\n]*/u', '', $apiComment);
+                            $apiComment = trim($apiComment) ?: null;
+                        }
                     }
                     $apiReply = $review['reviewReply']['comment'] ?? null;
                     $ratingMap = ['STAR_RATING_UNSPECIFIED'=>0,'ONE'=>1,'TWO'=>2,'THREE'=>3,'FOUR'=>4,'FIVE'=>5];
@@ -407,10 +411,16 @@ class GoogleBusinessService
 
         $rating = $ratingMap[$data['starRating'] ?? 'STAR_RATING_UNSPECIFIED'] ?? 0;
         $comment = $data['comment'] ?? null;
-        // Google翻訳テキスト "(Translated by Google) ..." を除去
+        // Google翻訳テキストを除去し、オリジナルのコメントを保持
         if ($comment) {
-            $comment = preg_replace('/\s*\(Translated by Google\).*$/us', '', $comment);
-            $comment = trim($comment) ?: null;
+            // パターン1: "(Translated by Google) 英語訳\n\n(Original)\n日本語原文" → 日本語原文を保持
+            if (preg_match('/\(Original\)\s*\n(.+)$/us', $comment, $matches)) {
+                $comment = trim($matches[1]);
+            } elseif (preg_match('/^\(Translated by Google\)/u', $comment)) {
+                // パターン2: "(Translated by Google)" で始まるが (Original) がない → 翻訳部分だけ除去
+                $comment = preg_replace('/^\(Translated by Google\)[^\n]*/u', '', $comment);
+                $comment = trim($comment) ?: null;
+            }
         }
         $reviewerName = $data['reviewer']['displayName'] ?? '匿名';
         $reviewerPhoto = $data['reviewer']['profilePhotoUrl'] ?? null;
