@@ -353,6 +353,10 @@ class GoogleBusinessService
                             $apiComment = preg_replace('/^\(Translated by Google\)[^\n]*/u', '', $apiComment);
                             $apiComment = trim($apiComment) ?: null;
                         }
+                        if ($apiComment && str_contains($apiComment, '(Translated by Google)')) {
+                            $apiComment = preg_replace('/\s*\(Translated by Google\).*$/us', '', $apiComment);
+                            $apiComment = trim($apiComment) ?: null;
+                        }
                     }
                     $apiReply = $review['reviewReply']['comment'] ?? null;
                     $ratingMap = ['STAR_RATING_UNSPECIFIED'=>0,'ONE'=>1,'TWO'=>2,'THREE'=>3,'FOUR'=>4,'FIVE'=>5];
@@ -419,6 +423,11 @@ class GoogleBusinessService
             } elseif (preg_match('/^\(Translated by Google\)/u', $comment)) {
                 // パターン2: "(Translated by Google)" で始まるが (Original) がない → 翻訳部分だけ除去
                 $comment = preg_replace('/^\(Translated by Google\)[^\n]*/u', '', $comment);
+                $comment = trim($comment) ?: null;
+            }
+            // パターン3: "日本語原文 (Translated by Google) 英語訳" → (Translated by Google) 以降を除去
+            if ($comment && str_contains($comment, '(Translated by Google)')) {
+                $comment = preg_replace('/\s*\(Translated by Google\).*$/us', '', $comment);
                 $comment = trim($comment) ?: null;
             }
         }
