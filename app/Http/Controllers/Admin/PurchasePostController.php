@@ -710,7 +710,8 @@ class PurchasePostController extends Controller
             }
 
             // キャプション組み立て
-            $caption = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text . "\n\n#買取 #質屋アシスト #" . str_replace(' ', '', $post->brand_name);
+            $hashtags = $this->generateHashtags($post);
+            $caption = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text . "\n\n" . $hashtags;
 
             $result = $instagram->publishPost($imageUrl, $caption);
 
@@ -747,7 +748,8 @@ class PurchasePostController extends Controller
             }
 
             // メッセージ組み立て
-            $message = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text;
+            $hashtags = $this->generateHashtags($post);
+            $message = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text . "\n\n" . $hashtags;
 
             $result = $facebook->publishPost($imageUrl, $message);
 
@@ -764,5 +766,72 @@ class PurchasePostController extends Controller
             $post->facebook_error = $e->getMessage();
             Log::error('Facebook publish failed', ['error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * ハッシュタグを生成
+     */
+    protected function generateHashtags(PurchasePost $post): string
+    {
+        $tags = ['買取', '高価買取', '質屋アシスト'];
+
+        // アクション系
+        $tags[] = '査定';
+        $tags[] = '無料査定';
+        $tags[] = '即日現金化';
+
+        // 業種系
+        $tags[] = '質屋';
+        $tags[] = 'リサイクルショップ';
+
+        // 地域タグ（店舗ごとの周辺エリア）
+        $storeAreaTags = [
+            '西千石' => ['鹿児島市', '西千石', '天文館', '鹿児島'],
+            '宇宿'   => ['鹿児島市', '宇宿', '谷山', '鹿児島'],
+            '伊敷'   => ['鹿児島市', '伊敷', '草牟田', '吉野', '鹿児島'],
+            '鹿屋'   => ['鹿屋市', '鹿屋', '寿', '札元'],
+            '国分'   => ['霧島市', '国分', '隼人', '霧島'],
+        ];
+
+        if ($post->store) {
+            $storeName = $post->store->name;
+            $matched = false;
+            foreach ($storeAreaTags as $key => $areas) {
+                if (str_contains($storeName, $key)) {
+                    foreach ($areas as $area) {
+                        $tags[] = $area;
+                        $tags[] = $area . '買取';
+                    }
+                    $matched = true;
+                    break;
+                }
+            }
+            if (!$matched) {
+                $tags[] = '鹿児島';
+                $tags[] = '鹿児島買取';
+            }
+        }
+
+        // カテゴリ
+        if ($post->category) {
+            $tags[] = str_replace(['・', ' ', '　'], '', $post->category);
+            $tags[] = $post->category . '買取';
+        }
+
+        // ブランド名
+        if ($post->brand_name) {
+            $tags[] = str_replace([' ', '　'], '', $post->brand_name);
+            $tags[] = str_replace([' ', '　'], '', $post->brand_name) . '買取';
+        }
+
+        // 商品名
+        if ($post->product_name) {
+            $tags[] = str_replace([' ', '　'], '', $post->product_name);
+        }
+
+        // 重複除去
+        $tags = array_unique($tags);
+
+        return implode(' ', array_map(fn($tag) => '#' . $tag, $tags));
     }
 }
