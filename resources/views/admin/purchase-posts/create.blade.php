@@ -348,7 +348,7 @@
     {{-- 投稿ボタン --}}
     <div style="display:flex;gap:12px;justify-content:center;margin-bottom:40px;">
         <button type="submit" class="btn btn-primary" style="padding:14px 40px;font-size:1rem;" id="submitBtn">
-            🚀 WordPress + Google に投稿する
+            🚀 投稿する
         </button>
     </div>
 </form>

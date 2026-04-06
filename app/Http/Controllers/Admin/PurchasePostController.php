@@ -7,6 +7,8 @@ use App\Models\PurchasePost;
 use App\Models\Store;
 use App\Services\GeminiService;
 use App\Services\GoogleBusinessService;
+use App\Services\FacebookService;
+use App\Services\InstagramService;
 use App\Services\PawnSystemService;
 use App\Services\WordPressService;
 use Illuminate\Http\Request;
@@ -354,6 +356,12 @@ class PurchasePostController extends Controller
         // --- Google ビジネス写真ギャラリー ---
         $this->publishToGooglePhoto($post);
 
+        // --- Instagram 投稿 ---
+        $this->publishToInstagram($post);
+
+        // --- Facebook 投稿 ---
+        $this->publishToFacebook($post);
+
         $post->published_at = now();
         $post->save();
 
@@ -364,8 +372,12 @@ class PurchasePostController extends Controller
         if ($post->google_post_status === 'failed') $messages[] = 'Google投稿失敗: ' . $post->google_post_error;
         if ($post->google_photo_status === 'published') $messages[] = 'Google写真追加完了';
         if ($post->google_photo_status === 'failed') $messages[] = 'Google写真追加失敗: ' . $post->google_photo_error;
+        if ($post->instagram_status === 'published') $messages[] = 'Instagram投稿完了';
+        if ($post->instagram_status === 'failed') $messages[] = 'Instagram投稿失敗: ' . $post->instagram_error;
+        if ($post->facebook_status === 'published') $messages[] = 'Facebook投稿完了';
+        if ($post->facebook_status === 'failed') $messages[] = 'Facebook投稿失敗: ' . $post->facebook_error;
 
-        $hasError = $post->wp_status === 'failed' || $post->google_post_status === 'failed' || $post->google_photo_status === 'failed';
+        $hasError = $post->wp_status === 'failed' || $post->google_post_status === 'failed' || $post->google_photo_status === 'failed' || $post->instagram_status === 'failed' || $post->facebook_status === 'failed';
 
         return redirect()->route('admin.purchase-posts.index')
             ->with($hasError ? 'error' : 'success', implode(' / ', $messages));
@@ -468,9 +480,19 @@ class PurchasePostController extends Controller
             $messages[] = $purchasePost->google_photo_status === 'published' ? 'Google写真再追加成功' : 'Google写真再追加失敗';
         }
 
+        if ($purchasePost->instagram_status === 'failed') {
+            $this->publishToInstagram($purchasePost);
+            $messages[] = $purchasePost->instagram_status === 'published' ? 'Instagram再投稿成功' : 'Instagram再投稿失敗';
+        }
+
+        if ($purchasePost->facebook_status === 'failed') {
+            $this->publishToFacebook($purchasePost);
+            $messages[] = $purchasePost->facebook_status === 'published' ? 'Facebook再投稿成功' : 'Facebook再投稿失敗';
+        }
+
         $purchasePost->save();
 
-        $hasError = $purchasePost->wp_status === 'failed' || $purchasePost->google_post_status === 'failed' || $purchasePost->google_photo_status === 'failed';
+        $hasError = $purchasePost->wp_status === 'failed' || $purchasePost->google_post_status === 'failed' || $purchasePost->google_photo_status === 'failed' || $purchasePost->instagram_status === 'failed' || $purchasePost->facebook_status === 'failed';
 
         return redirect()->route('admin.purchase-posts.show', $purchasePost)
             ->with($hasError ? 'error' : 'success', implode(' / ', $messages));
@@ -511,6 +533,18 @@ class PurchasePostController extends Controller
                 $google->deletePhoto($purchasePost->google_photo_name);
             } catch (\Exception $e) {
                 Log::error('Google photo delete failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Instagram投稿は削除APIが無いためスキップ（投稿は残る）
+
+        // Facebook投稿を削除
+        if ($purchasePost->facebook_post_id) {
+            try {
+                $fb = new FacebookService();
+                $fb->deletePost($purchasePost->facebook_post_id);
+            } catch (\Exception $e) {
+                Log::error('Facebook post delete failed', ['error' => $e->getMessage()]);
             }
         }
 
@@ -655,6 +689,80 @@ class PurchasePostController extends Controller
             $post->google_photo_status = 'failed';
             $post->google_photo_error = $e->getMessage();
             Log::error('Google photo upload failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    protected function publishToInstagram(PurchasePost $post): void
+    {
+        try {
+            $instagram = new InstagramService();
+            if (!$instagram->isConnected()) {
+                $post->instagram_status = 'failed';
+                $post->instagram_error = 'Instagram APIが未設定です';
+                return;
+            }
+
+            $imageUrl = $post->wp_image_url;
+            if (!$imageUrl) {
+                $post->instagram_status = 'failed';
+                $post->instagram_error = 'WordPress画像URLが未設定です（WordPress投稿が先に必要）';
+                return;
+            }
+
+            // キャプション組み立て
+            $caption = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text . "\n\n#買取 #質屋アシスト #" . str_replace(' ', '', $post->brand_name);
+
+            $result = $instagram->publishPost($imageUrl, $caption);
+
+            if ($result['success']) {
+                $post->instagram_media_id = $result['media_id'];
+                $post->instagram_status = 'published';
+                $post->instagram_error = null;
+            } else {
+                $post->instagram_status = 'failed';
+                $post->instagram_error = $result['error'];
+            }
+        } catch (\Exception $e) {
+            $post->instagram_status = 'failed';
+            $post->instagram_error = $e->getMessage();
+            Log::error('Instagram publish failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    protected function publishToFacebook(PurchasePost $post): void
+    {
+        try {
+            $facebook = new FacebookService();
+            if (!$facebook->isConnected()) {
+                $post->facebook_status = 'failed';
+                $post->facebook_error = 'Facebook APIが未設定です';
+                return;
+            }
+
+            $imageUrl = $post->wp_image_url;
+            if (!$imageUrl) {
+                $post->facebook_status = 'failed';
+                $post->facebook_error = 'WordPress画像URLが未設定です（WordPress投稿が先に必要）';
+                return;
+            }
+
+            // メッセージ組み立て
+            $message = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text;
+
+            $result = $facebook->publishPost($imageUrl, $message);
+
+            if ($result['success']) {
+                $post->facebook_post_id = $result['post_id'];
+                $post->facebook_status = 'published';
+                $post->facebook_error = null;
+            } else {
+                $post->facebook_status = 'failed';
+                $post->facebook_error = $result['error'];
+            }
+        } catch (\Exception $e) {
+            $post->facebook_status = 'failed';
+            $post->facebook_error = $e->getMessage();
+            Log::error('Facebook publish failed', ['error' => $e->getMessage()]);
         }
     }
 }
