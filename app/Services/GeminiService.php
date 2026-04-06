@@ -371,6 +371,64 @@ EOT;
     }
 
     /**
+     * 口コミ内容からお客様が新規・リピーターかをAIで判定
+     */
+    public function detectCustomerType(string $reviewComment): string
+    {
+        if (empty(trim($reviewComment))) {
+            return 'unknown';
+        }
+
+        $prompt = <<<EOT
+以下の口コミを読んで、このお客様が「新規」「リピーター」「不明」のどれかを判定してください。
+
+【口コミ内容】
+{$reviewComment}
+
+【判定基準】
+- 「また来ました」「何度も利用」「いつも」「リピート」「前回も」「毎回」など、複数回利用を示す表現がある → repeater
+- 「初めて」「初来店」「初利用」など、初めての利用を示す表現がある → new
+- どちらとも判断できない → unknown
+
+【出力】
+「new」「repeater」「unknown」のいずれか1語のみ出力してください。それ以外は何も出力しないでください。
+EOT;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.1,
+                    'maxOutputTokens' => 10,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $result = strtolower(trim($data['candidates'][0]['content']['parts'][0]['text'] ?? ''));
+                if (in_array($result, ['new', 'repeater', 'unknown'])) {
+                    return $result;
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Gemini API exception (detectCustomerType)', ['message' => $e->getMessage()]);
+        }
+
+        return 'unknown';
+    }
+
+    /**
      * Google口コミへの返信文をAIで生成（MEO対策ワード入り）
      */
     public function generateReplyComment(

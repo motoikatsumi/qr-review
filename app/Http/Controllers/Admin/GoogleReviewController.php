@@ -24,6 +24,12 @@ class GoogleReviewController extends Controller
 
         $query = GoogleReview::with('store')->orderByDesc('reviewed_at');
 
+        // 未返信かつ1年以上前の口コミは除外
+        $query->where(function ($q) {
+            $q->whereNotNull('reply_comment')
+              ->orWhere('reviewed_at', '>=', now()->subYear());
+        });
+
         // 店舗フィルター
         if ($request->filled('store_id')) {
             $query->where('store_id', $request->input('store_id'));
