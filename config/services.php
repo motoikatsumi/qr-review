@@ -46,4 +46,9 @@ return [
         'app_password' => env('WORDPRESS_APP_PASSWORD', ''),
     ],
 
+    'pawn_system' => [
+        'url' => env('PAWN_SYSTEM_API_URL', ''),
+        'token' => env('PAWN_SYSTEM_API_TOKEN', ''),
+    ],
+
 ];

@@ -97,6 +97,7 @@ Route::middleware(['ip.restrict', 'auth'])->prefix('admin')->group(function () {
     // 買取投稿管理
     Route::get('/purchase-posts', [\App\Http\Controllers\Admin\PurchasePostController::class, 'index'])->name('admin.purchase-posts.index');
     Route::get('/purchase-posts/create', [\App\Http\Controllers\Admin\PurchasePostController::class, 'create'])->name('admin.purchase-posts.create');
+    Route::post('/purchase-posts/fetch-stock', [\App\Http\Controllers\Admin\PurchasePostController::class, 'fetchStock'])->name('admin.purchase-posts.fetch-stock');
     Route::post('/purchase-posts/generate-episode', [\App\Http\Controllers\Admin\PurchasePostController::class, 'generateEpisode'])->name('admin.purchase-posts.generate-episode');
     Route::post('/purchase-posts/generate-footer', [\App\Http\Controllers\Admin\PurchasePostController::class, 'generateFooter'])->name('admin.purchase-posts.generate-footer');
     Route::post('/purchase-posts', [\App\Http\Controllers\Admin\PurchasePostController::class, 'store'])->name('admin.purchase-posts.store');

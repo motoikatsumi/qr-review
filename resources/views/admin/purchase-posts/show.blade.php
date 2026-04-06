@@ -64,7 +64,7 @@
             </div>
         @endif
         @if($purchasePost->google_photo_error)
-            <div>
+            <div style="margin-bottom:8px;">
                 <strong>Google写真:</strong> <span style="color:#dc2626;">{{ $purchasePost->google_photo_error }}</span>
             </div>
         @endif

@@ -96,6 +96,24 @@
         text-align: right;
         margin-top: 4px;
     }
+    .tag-btn {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .tag-btn:hover {
+        background: #e5e7eb;
+    }
+    .tag-btn.active {
+        background: #dbeafe;
+        border-color: #3b82f6;
+        color: #1d4ed8;
+        font-weight: 600;
+    }
 </style>
 @endpush
 
@@ -107,6 +125,23 @@
 
 <form method="POST" action="{{ route('admin.purchase-posts.store') }}" enctype="multipart/form-data" id="postForm">
     @csrf
+
+    {{-- pawn-system連携 --}}
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">🔗 在庫連携（pawn-system）</div>
+        <div class="card-body">
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+                <div class="form-group" style="flex:1;margin-bottom:0;">
+                    <label for="manage_number">管理番号</label>
+                    <input type="text" id="manage_number" placeholder="例：001_2603K55" style="font-size:1rem;">
+                </div>
+                <button type="button" class="btn btn-primary" id="fetchStockBtn" onclick="fetchStock()" style="padding:8px 20px;white-space:nowrap;">
+                    📥 在庫取得
+                </button>
+            </div>
+            <div id="fetchResult" style="margin-top:8px;font-size:0.85rem;display:none;"></div>
+        </div>
+    </div>
 
     {{-- 基本情報 --}}
     <div class="card" style="margin-bottom:20px;">
@@ -228,9 +263,9 @@
             </div>
             <div class="form-group">
                 <label for="customer_reason">売却理由</label>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                <div id="tags_customer_reason" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                     @foreach(['使わなくなったため', '引っ越しのため', '買い替えのため', '資金が必要なため', '断捨離・整理のため', '遺品整理のため', 'プレゼントだが不要になった'] as $reason)
-                        <button type="button" class="btn btn-sm" style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:20px;padding:4px 12px;font-size:0.8rem;cursor:pointer;" onclick="appendToField('customer_reason', '{{ $reason }}')">{{ $reason }}</button>
+                        <button type="button" class="tag-btn" data-field="customer_reason" data-value="{{ $reason }}" onclick="toggleTag(this)">{{ $reason }}</button>
                     @endforeach
                 </div>
                 <input type="text" id="customer_reason" name="customer_reason" value="{{ old('customer_reason') }}" placeholder="選択するか直接入力">
@@ -238,18 +273,18 @@
             <div class="two-col">
                 <div class="form-group">
                     <label for="product_condition">商品の状態</label>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                        @foreach(['目立つキズなし', '全体的に良好', '多少の使用感あり', '未使用品', '新品同様', '小キズあり', '汚れあり', '動作確認済み'] as $cond)
-                            <button type="button" class="btn btn-sm" style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:20px;padding:4px 12px;font-size:0.8rem;cursor:pointer;" onclick="appendToField('product_condition', '{{ $cond }}')">{{ $cond }}</button>
+                    <div id="tags_product_condition" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                        @foreach(['目立つキズなし', '全体的に良好', '多少の使用感あり', '未使用品', '新品同様', '小キズあり', '汚れあり', '動作確認済み', 'ジャンク品'] as $cond)
+                            <button type="button" class="tag-btn" data-field="product_condition" data-value="{{ $cond }}" onclick="toggleTag(this)">{{ $cond }}</button>
                         @endforeach
                     </div>
                     <input type="text" id="product_condition" name="product_condition" value="{{ old('product_condition') }}" placeholder="選択するか直接入力">
                 </div>
                 <div class="form-group">
                     <label for="accessories">付属品</label>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                    <div id="tags_accessories" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                         @foreach(['箱', '保証書', '説明書', '替えベルト', '充電器', 'ケース', '袋', 'ギャランティカード', '鑑定書', 'コマ'] as $acc)
-                            <button type="button" class="btn btn-sm" style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:20px;padding:4px 12px;font-size:0.8rem;cursor:pointer;" onclick="appendToField('accessories', '{{ $acc }}')">{{ $acc }}</button>
+                            <button type="button" class="tag-btn" data-field="accessories" data-value="{{ $acc }}" onclick="toggleTag(this)">{{ $acc }}</button>
                         @endforeach
                     </div>
                     <input type="text" id="accessories" name="accessories" value="{{ old('accessories') }}" placeholder="選択するか直接入力（複数可）">
@@ -322,6 +357,13 @@
 
 @push('scripts')
 <script>
+    // HTMLエスケープ
+    function escHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
     // 店舗別フッターテンプレート（○○はカテゴリ名に自動置換）
     var storeFooterMap = {
         @foreach($stores as $store)
@@ -388,7 +430,38 @@
     document.getElementById('block2_text').addEventListener('input', updateCounts);
     document.getElementById('block3_text').addEventListener('input', updateCounts);
 
-    // 選択肢をテキスト入力に追加
+    // タグボタンのトグル（選択/解除）
+    function toggleTag(btn) {
+        var fieldId = btn.dataset.field;
+        var value = btn.dataset.value;
+        var field = document.getElementById(fieldId);
+        var values = field.value ? field.value.split('、').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+        var idx = values.indexOf(value);
+        if (idx !== -1) {
+            values.splice(idx, 1);
+        } else {
+            values.push(value);
+        }
+        field.value = values.join('、');
+        syncTagButtons(fieldId);
+    }
+
+    // 入力フィールドの値に基づいてボタンのactive状態を同期
+    function syncTagButtons(fieldId) {
+        var field = document.getElementById(fieldId);
+        var container = document.getElementById('tags_' + fieldId);
+        if (!field || !container) return;
+        var values = field.value ? field.value.split('、').map(function(v){ return v.trim(); }).filter(Boolean) : [];
+        container.querySelectorAll('.tag-btn').forEach(function(btn) {
+            if (values.indexOf(btn.dataset.value) !== -1) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // 後方互換: テキスト追記用
     function appendToField(fieldId, value) {
         var field = document.getElementById(fieldId);
         var current = field.value.trim();
@@ -397,6 +470,7 @@
         } else {
             field.value = current + value;
         }
+        syncTagButtons(fieldId);
     }
 
     // ブロック①自動生成（ブランド名・商品名・状態・カテゴリ入力時に自動更新）
@@ -525,5 +599,151 @@
 
     // 初期化
     updateCounts();
+    syncTagButtons('customer_reason');
+    syncTagButtons('product_condition');
+    syncTagButtons('accessories');
+
+    // pawn-system在庫取得
+    function fetchStock() {
+        var manageNumber = document.getElementById('manage_number').value.trim();
+        if (!manageNumber) {
+            alert('管理番号を入力してください');
+            return;
+        }
+
+        var btn = document.getElementById('fetchStockBtn');
+        var resultDiv = document.getElementById('fetchResult');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> 取得中...';
+        resultDiv.style.display = 'none';
+
+        var formData = new FormData();
+        formData.append('manage_number', manageNumber);
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route("admin.purchase-posts.fetch-stock") }}', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error('サーバーエラー (' + res.status + ')');
+            return res.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                applyStockData(data.data);
+                var msg = '✅ ' + escHtml(manageNumber) + ' の在庫情報を取得しました';
+                if (data.data.customer_name) {
+                    var nameDisplay = escHtml(data.data.customer_name);
+                    if (data.data.customer_kana) {
+                        nameDisplay += '（' + escHtml(data.data.customer_kana) + '）';
+                    }
+                    msg += '<br><span style="font-size:0.85rem;">👤 顧客名: <strong>' + nameDisplay + '</strong></span>';
+                }
+                if (data.data.feature) {
+                    msg += '<br><span style="font-size:0.85rem;">📋 特徴: ' + escHtml(data.data.feature) + '</span>';
+                }
+                resultDiv.innerHTML = '<span style="color:#059669;">' + msg + '</span>';
+            } else {
+                resultDiv.innerHTML = '<span style="color:#ef4444;">❌ ' + (data.message || '取得に失敗しました') + '</span>';
+            }
+            resultDiv.style.display = 'block';
+        })
+        .catch(function(err) {
+            resultDiv.innerHTML = '<span style="color:#ef4444;">❌ 通信エラー: ' + err.message + '</span>';
+            resultDiv.style.display = 'block';
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '📥 在庫取得';
+        });
+    }
+
+    // 取得したデータをフォームに自動入力
+    function applyStockData(data) {
+        // 店舗を名前で選択
+        if (data.shop_name) {
+            var storeSelect = document.getElementById('store_id');
+            for (var i = 0; i < storeSelect.options.length; i++) {
+                if (storeSelect.options[i].text.indexOf(data.shop_name) !== -1) {
+                    storeSelect.value = storeSelect.options[i].value;
+                    break;
+                }
+            }
+        }
+
+        // カテゴリ選択
+        if (data.category) {
+            var catSelect = document.getElementById('category');
+            for (var i = 0; i < catSelect.options.length; i++) {
+                if (catSelect.options[i].value === data.category) {
+                    catSelect.value = data.category;
+                    break;
+                }
+            }
+        }
+
+        // ブランド名
+        if (data.brand_name) {
+            document.getElementById('brand_name').value = data.brand_name;
+        }
+
+        // 商品名
+        if (data.product_name) {
+            document.getElementById('product_name').value = data.product_name;
+        }
+
+        // 状態
+        if (data.product_status) {
+            document.getElementById('product_status').value = data.product_status;
+        }
+
+        // ランク
+        if (data.rank) {
+            document.getElementById('rank').value = data.rank;
+        }
+
+        // タグにブランド名を設定
+        if (data.brand_name) {
+            document.getElementById('wp_tag_name').value = data.brand_name;
+        }
+
+        // 性別
+        if (data.customer_gender) {
+            document.getElementById('customer_gender').value = data.customer_gender;
+        }
+
+        // 年齢
+        if (data.customer_age) {
+            document.getElementById('customer_age').value = data.customer_age;
+        }
+
+        // 商品の状態を自動入力（featureから検出）
+        if (data.detected_conditions && data.detected_conditions.length > 0) {
+            document.getElementById('product_condition').value = data.detected_conditions.join('、');
+        }
+
+        // 付属品を自動入力（featureから検出）
+        if (data.detected_accessories && data.detected_accessories.length > 0) {
+            document.getElementById('accessories').value = data.detected_accessories.join('、');
+        }
+
+        // タグボタンの選択状態を同期
+        syncTagButtons('customer_reason');
+        syncTagButtons('product_condition');
+        syncTagButtons('accessories');
+
+        // ブロック①・③を自動生成
+        autoGenerateBlock1();
+        updateBlock3();
+    }
+
+    // Enterキーで在庫取得
+    document.getElementById('manage_number').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            fetchStock();
+        }
+    });
 </script>
 @endpush

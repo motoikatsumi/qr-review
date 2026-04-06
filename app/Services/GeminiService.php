@@ -715,4 +715,144 @@ EOT;
             return null;
         }
     }
+
+    /**
+     * 日本語の氏名からAIで性別を推定する
+     * @return string|null '男性', '女性', or null（判定不能）
+     */
+    public function estimateGender(string $name): ?string
+    {
+        $prompt = <<<EOT
+以下の日本語の氏名から、性別を推定してください。
+
+【氏名】
+{$name}
+
+【ルール】
+- 名前（下の名前）から判断してください
+- 男性の場合は「男性」とだけ出力
+- 女性の場合は「女性」とだけ出力
+- 判断が難しい場合（中性的な名前、読みが不明など）は「不明」とだけ出力
+- 余計な説明は不要です。「男性」「女性」「不明」のいずれかのみ出力してください
+EOT;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.1,
+                    'maxOutputTokens' => 10,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $text = trim($data['candidates'][0]['content']['parts'][0]['text'] ?? '');
+
+                if (in_array($text, ['男性', '女性'])) {
+                    return $text;
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Gemini API exception (gender estimation)', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * featureテキストからブランド名・商品名（型番込み）を抽出する
+     * 例: "LV パピヨン30 M51385 SP0083 ブラウン モノグラム ショルダーバッグ レディース 付属品なし 中古"
+     *   → ["brand_name" => "ルイヴィトン", "product_name" => "パピヨン30 M51385"]
+     */
+    public function extractProductInfo(string $feature): ?array
+    {
+        $prompt = <<<EOT
+以下は質屋の在庫データの商品特徴テキストです。「ブランド名（メーカー名）」と「商品名」を抽出してJSON形式で出力してください。
+
+【テキスト】
+{$feature}
+
+【ルール】
+■ブランド名(brand_name):
+- テキストに英語表記と日本語表記の両方がある場合は両方含める（例: COACH コーチ→COACH コーチ、ソニー SONY→ソニー SONY）
+- テキストに略称しかない場合は正式名称に変換（例: LV→ルイヴィトン）
+- テキストに片方の表記しかない場合はそのまま出力（例: Apple→Apple、シャネル→シャネル）
+- メーカー名もブランド名として扱う（例: 高木酒造→高木酒造）
+- ブランド/メーカーが不明な場合はnull
+
+■商品名(product_name):
+- モデル名・シリーズ名 + 型番を含める
+- ブランド名・メーカー名は含めない
+- 色、素材名、性別（メンズ/レディース）は含めない
+- 「中古」「新品」「付属品なし」「動作確認済」「箱付属」等の状態・付属品情報は含めない
+- サイズ・容量があれば含める
+
+■具体例:
+- 「LV パピヨン30 M51385 ブラウン モノグラム ショルダーバッグ」→ {"brand_name":"ルイヴィトン","product_name":"パピヨン30 M51385"}
+- 「COACH コーチ ショルダーバッグ F58328 ベージュ PVCレザー」→ {"brand_name":"COACH コーチ","product_name":"ショルダーバッグ F58328"}
+- 「ROLEX デイトジャスト 16233 SS×YG」→ {"brand_name":"ROLEX ロレックス","product_name":"デイトジャスト 16233"}
+- 「ソニー SONY コンパクトデジタルカメラ DSC-HX60V ボディのみ」→ {"brand_name":"ソニー SONY","product_name":"コンパクトデジタルカメラ DSC-HX60V"}
+- 「日本酒 十四代 EXTRA 播州白鶴錦 純米大吟醸 720ml」→ {"brand_name":"高木酒造","product_name":"十四代 EXTRA 播州白鶴錦 純米大吟醸 720ml"}
+- 「Apple Watch SE 3 40mm MEH54J/A GPSモデル」→ {"brand_name":"Apple","product_name":"Apple Watch SE 3 40mm MEH54J/A"}
+
+■出力形式:
+JSONのみ出力。余計な説明やマークダウン記法は不要です。
+EOT;
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
+                'contents' => [
+                    [
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.1,
+                    'maxOutputTokens' => 200,
+                    'thinkingConfig' => [
+                        'thinkingBudget' => 0,
+                    ],
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $text = trim($data['candidates'][0]['content']['parts'][0]['text'] ?? '');
+
+                // ```json ... ``` のマークダウンを除去
+                $text = preg_replace('/^```(?:json)?\s*/i', '', $text);
+                $text = preg_replace('/\s*```$/', '', $text);
+
+                $parsed = json_decode($text, true);
+                if (is_array($parsed)) {
+                    return [
+                        'brand_name'   => $parsed['brand_name'] ?? null,
+                        'product_name' => $parsed['product_name'] ?? null,
+                    ];
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Gemini API exception (product info extraction)', ['message' => $e->getMessage()]);
+            return null;
+        }
+    }
 }

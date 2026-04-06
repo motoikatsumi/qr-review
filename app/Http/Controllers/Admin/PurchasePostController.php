@@ -7,6 +7,7 @@ use App\Models\PurchasePost;
 use App\Models\Store;
 use App\Services\GeminiService;
 use App\Services\GoogleBusinessService;
+use App\Services\PawnSystemService;
 use App\Services\WordPressService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -88,6 +89,140 @@ class PurchasePostController extends Controller
         $categories = array_keys($this->categoryMap);
 
         return view('admin.purchase-posts.create', compact('stores', 'categories'));
+    }
+
+    /**
+     * pawn-systemから管理番号で在庫情報を取得（AJAX）
+     */
+    public function fetchStock(Request $request)
+    {
+        $request->validate([
+            'manage_number' => 'required|string|max:50',
+        ]);
+
+        $service = new PawnSystemService();
+        $data = $service->getStockByManageNumber($request->manage_number);
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => '在庫が見つかりません。管理番号を確認してください。',
+            ]);
+        }
+
+        // AIで性別を判定
+        $gemini = new GeminiService();
+
+        if (!empty($data['customer_name'])) {
+            try {
+                $gender = $gemini->estimateGender($data['customer_name']);
+                $data['customer_gender'] = $gender;
+            } catch (\Exception $e) {
+                Log::warning('性別AI判定エラー', ['message' => $e->getMessage()]);
+                $data['customer_gender'] = null;
+            }
+        } else {
+            $data['customer_gender'] = null;
+        }
+
+        // AIでブランド名・商品名（型番込み）を抽出
+        if (!empty($data['feature'])) {
+            try {
+                $productInfo = $gemini->extractProductInfo($data['feature']);
+                if ($productInfo) {
+                    if (!empty($productInfo['product_name'])) {
+                        $data['product_name'] = $productInfo['product_name'];
+                    }
+                    if (!empty($productInfo['brand_name'])) {
+                        $data['brand_name'] = $productInfo['brand_name'];
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('商品情報AI抽出エラー', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // featureから商品の状態・付属品を抽出
+        $data['detected_conditions'] = [];
+        $data['detected_accessories'] = [];
+        if (!empty($data['feature'])) {
+            $data['detected_conditions'] = $this->detectConditions($data['feature']);
+            $data['detected_accessories'] = $this->detectAccessories($data['feature']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * featureテキストから商品の状態に該当するキーワードを抽出
+     */
+    private function detectConditions(string $feature): array
+    {
+        $conditionKeywords = [
+            '目立つキズなし' => ['キズなし', '傷なし', 'きずなし', '目立つキズなし', '目立つ傷なし', '目立った傷なし'],
+            '全体的に良好'  => ['良好', '美品', '良品', '綺麗', 'きれい'],
+            '多少の使用感あり' => ['使用感', '使用感あり', 'スレ', 'スレあり'],
+            '未使用品'      => ['未使用', '未使用品'],
+            '新品同様'      => ['新品同様', 'ほぼ新品'],
+            '小キズあり'    => ['小キズ', '小傷', 'コキズ', '薄キズ', '薄傷', '微細なキズ'],
+            '汚れあり'      => ['汚れ', '汚れあり', 'シミ', '変色', 'くすみ'],
+            '動作確認済み'  => ['動作確認済', '動作OK', '動作良好', '稼働確認'],
+        ];
+
+        $detected = [];
+        $featureLower = mb_strtolower($feature, 'UTF-8');
+
+        foreach ($conditionKeywords as $label => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (mb_strpos($featureLower, mb_strtolower($keyword, 'UTF-8')) !== false) {
+                    $detected[] = $label;
+                    break;
+                }
+            }
+        }
+
+        return array_unique($detected);
+    }
+
+    /**
+     * featureテキストから付属品に該当するキーワードを抽出
+     */
+    private function detectAccessories(string $feature): array
+    {
+        $accessoryKeywords = [
+            '箱'             => ['箱', 'BOX', 'ボックス'],
+            '保証書'          => ['保証書', '保証カード', 'ギャランティ', 'WARRANTY'],
+            '説明書'          => ['説明書', 'マニュアル'],
+            '替えベルト'       => ['替えベルト', '予備ベルト', '替えバンド'],
+            '充電器'          => ['充電器', 'チャージャー', 'ACアダプタ', '充電ケーブル'],
+            'ケース'          => ['ケース付', '専用ケース', 'ハードケース', 'ソフトケース'],
+            '袋'             => ['袋', '保存袋', 'ポーチ'],
+            'ギャランティカード' => ['ギャランティ', 'ギャラ'],
+            '鑑定書'          => ['鑑定書', '鑑別書'],
+            'コマ'            => ['コマ', '余りコマ', '駒'],
+        ];
+
+        $detected = [];
+
+        foreach ($accessoryKeywords as $label => $keywords) {
+            foreach ($keywords as $keyword) {
+                if (mb_stripos($feature, $keyword) !== false) {
+                    $detected[] = $label;
+                    break;
+                }
+            }
+        }
+
+        // 「完備付属」「完備」は全付属品の意味合い
+        if (mb_strpos($feature, '完備') !== false) {
+            if (!in_array('箱', $detected)) $detected[] = '箱';
+            if (!in_array('保証書', $detected)) $detected[] = '保証書';
+        }
+
+        return array_unique($detected);
     }
 
     /**
