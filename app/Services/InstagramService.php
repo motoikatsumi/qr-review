@@ -36,7 +36,9 @@ class InstagramService
     public function publishPost(string $imageUrl, string $caption): array
     {
         // Step 1: メディアコンテナ作成
-        $containerResponse = Http::post("{$this->baseUrl}/{$this->igUserId}/media", [
+        // v22以降、graph.instagram.com の /media エンドポイントは media_type の明示指定が必須
+        $containerResponse = Http::asForm()->post("{$this->baseUrl}/{$this->igUserId}/media", [
+            'media_type' => 'IMAGE',
             'image_url' => $imageUrl,
             'caption' => $caption,
             'access_token' => $this->accessToken,
@@ -74,7 +76,7 @@ class InstagramService
         }
 
         // Step 3: メディア公開
-        $publishResponse = Http::post("{$this->baseUrl}/{$this->igUserId}/media_publish", [
+        $publishResponse = Http::asForm()->post("{$this->baseUrl}/{$this->igUserId}/media_publish", [
             'creation_id' => $containerId,
             'access_token' => $this->accessToken,
         ]);
