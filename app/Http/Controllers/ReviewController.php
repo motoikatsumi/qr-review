@@ -283,13 +283,6 @@ class ReviewController extends Controller
             : $this->defaultReviewGroups();
         $persona = $this->collectPersonaInput($request, $reviewGroups);
 
-        // アップロード済み画像があれば Gemini Vision に渡す（絶対パス）
-        $imagePaths = [];
-        $uploadedImages = $this->getValidUploadedImages($slug, (array) $request->input('uploaded_images', []));
-        foreach ($uploadedImages as $filename) {
-            $imagePaths[] = Storage::disk('public')->path($this->uploadDir($slug) . '/' . $filename);
-        }
-
         $gemini = new GeminiService();
         $text = $gemini->generateSuggestion(
             $store,
@@ -298,8 +291,7 @@ class ReviewController extends Controller
             $persona['age']        ?? '',
             $persona['visit_type'] ?? '',
             $persona['item']       ?? '',
-            $persona,  // 全 persona（カスタム質問対応）
-            $imagePaths
+            $persona  // 全 persona（カスタム質問対応）
         );
 
         if (!$text) {

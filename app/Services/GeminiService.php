@@ -238,10 +238,9 @@ EOT;
      * @param string $visitType
      * @param string $item       利用品目（例: ブランド品 / 貴金属 / 焼肉コース 等、業種依存）
      * @param array  $personaExtra カスタム質問を含む全 persona（key => value のマップ）
-     * @param array  $imagePaths  添付画像の絶対パス（Vision に渡して文章生成のヒントにする）
      * @return string|null
      */
-    public function generateSuggestion(Store $store, $keywords, string $gender = '', string $age = '', string $visitType = '', string $item = '', array $personaExtra = [], array $imagePaths = []): ?string
+    public function generateSuggestion(Store $store, $keywords, string $gender = '', string $age = '', string $visitType = '', string $item = '', array $personaExtra = []): ?string
     {
         // 月間利用上限チェック
         $limitError = $this->checkMonthlyLimit();
@@ -473,12 +472,6 @@ EOT;
         }
         $ngWordLines .= '- 盗品や不正を連想させる表現（例：「もらったもの」「拾った」「見つけた」）' . "\n";
 
-        // 画像活用の指示（添付画像がある場合のみ）
-        $imageInstruction = '';
-        if (!empty($imagePaths)) {
-            $imageInstruction = "- 【画像活用】添付された画像から読み取れる具体的な要素（料理の見た目、店内の雰囲気、商品の様子、色味、盛り付け、清潔感など）を1つだけ自然に口コミに反映する。不確かな推測や、画像に写っていないことは書かない。画像の内容を説明するのではなく、来店者の感想として自然に組み込む";
-        }
-
         $prompt = <<<EOT
 Googleマップに投稿する口コミ文を1つ生成してください。
 
@@ -486,7 +479,6 @@ Googleマップに投稿する口コミ文を1つ生成してください。
 {$toneInstruction}
 - 【最重要・文字数】{$lengthInstruction}。この文字数を厳密に守ること。指定より長い文章は絶対に書かない
 {$itemInstruction}
-{$imageInstruction}
 ★★★ ここまで ★★★
 
 【店舗名】{$storeName}
@@ -518,22 +510,13 @@ EOT;
         $prompt .= $ngWordLines;
 
 
-        // 画像があれば inline_data として parts に追加（Gemini Vision）
-        $parts = [['text' => $prompt]];
-        foreach ($imagePaths as $imgPath) {
-            $imagePart = $this->buildImagePart($imgPath);
-            if ($imagePart) {
-                $parts[] = $imagePart;
-            }
-        }
-
         try {
             $response = Http::timeout(30)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . '?key=' . $this->apiKey, [
                 'contents' => [
                     [
-                        'parts' => $parts,
+                        'parts' => [['text' => $prompt]],
                     ]
                 ],
                 'generationConfig' => [
@@ -561,35 +544,6 @@ EOT;
             Log::error('Gemini API exception (suggestion)', ['message' => $e->getMessage()]);
             return null;
         }
-    }
-
-    /**
-     * 画像ファイルから Gemini API 用の inline_data part を生成。失敗時は null。
-     */
-    private function buildImagePart(string $path): ?array
-    {
-        if (!is_file($path) || !is_readable($path)) {
-            return null;
-        }
-        $size = @filesize($path);
-        if (!$size || $size > 5 * 1024 * 1024) {
-            return null;
-        }
-        $mime = @mime_content_type($path) ?: 'image/jpeg';
-        // Gemini が確実にサポートする mime のみ通す
-        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'], true)) {
-            return null;
-        }
-        $bytes = @file_get_contents($path);
-        if ($bytes === false) {
-            return null;
-        }
-        return [
-            'inline_data' => [
-                'mime_type' => $mime,
-                'data'      => base64_encode($bytes),
-            ],
-        ];
     }
 
     /**

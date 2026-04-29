@@ -971,12 +971,6 @@
                 }
             });
 
-            // アップロード済み画像（あれば AI のヒントとして渡す）
-            const uploadedFilenames = Array.from(document.querySelectorAll('input[name="uploaded_images[]"]')).map(i => i.value);
-            if (uploadedFilenames.length > 0) {
-                personaBody.uploaded_images = uploadedFilenames;
-            }
-
             // ローディング状態
             document.querySelectorAll('.suggestion-btn').forEach(b => b.disabled = true);
             selectedBtns.forEach(b => b.classList.add('loading'));
