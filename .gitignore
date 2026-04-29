@@ -13,3 +13,6 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# Claude Code local-only permission overrides
+.claude/settings.local.json
