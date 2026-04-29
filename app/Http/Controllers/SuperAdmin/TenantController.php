@@ -248,6 +248,16 @@ class TenantController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active');
 
+        // ai_monthly_limit が空ならプランのデフォルト値で埋める（NOT NULL カラム対策）
+        if (empty($validated['ai_monthly_limit'])) {
+            $limits = Tenant::planLimits();
+            $validated['ai_monthly_limit'] = $limits[$validated['plan']] ?? 200;
+        }
+        // monthly_fee_per_store が空なら 11000 をデフォルトに
+        if (empty($validated['monthly_fee_per_store'])) {
+            $validated['monthly_fee_per_store'] = 11000;
+        }
+
         $tenant->update($validated);
 
         return redirect('/super-admin/tenants')->with('success', 'テナント情報を更新しました。');
