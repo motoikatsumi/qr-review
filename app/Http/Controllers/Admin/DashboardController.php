@@ -286,7 +286,11 @@ class DashboardController extends Controller
      */
     private function buildMonthlyTrend(string $modelClass, string $dateColumn, ?int $storeId, int $months): array
     {
-        $start = now()->subMonths($months - 1)->startOfMonth();
+        // Carbon の subMonths() は日付オーバーフローで重複月を生成する
+        // （例: 2026-04-29 から subMonths(2) → 2026-02-29 はうるう年でないので 2026-03-01 にオーバーフロー）
+        // 月初日付ベースで安全に算出するため、まず今月の 1 日を起点にする
+        $startOfThisMonth = now()->startOfMonth();
+        $start = $startOfThisMonth->copy()->subMonthsNoOverflow($months - 1);
 
         $rows = $modelClass::query()
             ->when($storeId, fn($q) => $q->where('store_id', $storeId))
@@ -304,7 +308,8 @@ class DashboardController extends Controller
         $result = [];
         $prevCount = null;
         for ($i = $months - 1; $i >= 0; $i--) {
-            $date = now()->subMonths($i)->startOfMonth();
+            // startOfMonth を起点 + subMonthsNoOverflow で月境界を厳密に扱う
+            $date = $startOfThisMonth->copy()->subMonthsNoOverflow($i);
             $key = $date->format('Y-m');
             $row = $rows->get($key);
             $count = $row ? (int) $row->count : 0;
