@@ -510,40 +510,56 @@ EOT;
         $prompt .= $ngWordLines;
 
 
-        try {
-            $response = Http::timeout(30)->withHeaders([
-                'Content-Type' => 'application/json',
-            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
-                'contents' => [
-                    [
-                        'parts' => [['text' => $prompt]],
-                    ]
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [['text' => $prompt]],
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 1.0,
+                'maxOutputTokens' => 150,
+                'thinkingConfig' => [
+                    'thinkingBudget' => 0,
                 ],
-                'generationConfig' => [
-                    'temperature' => 1.0,
-                    'maxOutputTokens' => 150,
-                    'thinkingConfig' => [
-                        'thinkingBudget' => 0,
-                    ],
-                ],
-            ]);
+            ],
+        ];
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
-                return $text ? $this->cleanSuggestionText($text) : null;
+        // Gemini API はたまに SSL eof 等で接続が切れるので最大2回試行
+        $attempts = 2;
+        $lastError = null;
+        for ($i = 0; $i < $attempts; $i++) {
+            try {
+                $response = Http::timeout(60)
+                    ->connectTimeout(10)
+                    ->withHeaders(['Content-Type' => 'application/json'])
+                    ->post($this->apiUrl . '?key=' . $this->apiKey, $payload);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                    return $text ? $this->cleanSuggestionText($text) : null;
+                }
+
+                Log::error('Gemini API error (suggestion)', [
+                    'attempt' => $i + 1,
+                    'status'  => $response->status(),
+                    'body'    => $response->body(),
+                ]);
+                // 5xx 以外は即時リトライしない
+                if ($response->status() < 500) return null;
+            } catch (\Exception $e) {
+                $lastError = $e;
+                Log::warning('Gemini API exception (suggestion), retrying', [
+                    'attempt' => $i + 1,
+                    'message' => $e->getMessage(),
+                ]);
             }
-
-            Log::error('Gemini API error (suggestion)', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            return null;
-        } catch (\Exception $e) {
-            Log::error('Gemini API exception (suggestion)', ['message' => $e->getMessage()]);
-            return null;
         }
+        if ($lastError) {
+            Log::error('Gemini API exception (suggestion) after retries', ['message' => $lastError->getMessage()]);
+        }
+        return null;
     }
 
     /**

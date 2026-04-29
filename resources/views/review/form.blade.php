@@ -858,17 +858,27 @@
         });
 
         // 画像をリサイズ&JPEG圧縮してアップロード時間を短縮する
-        // 失敗した場合は元ファイルを返してアップロードは継続させる
+        // どこかで失敗した場合は元ファイルを返してアップロードは継続させる
         async function compressImage(file) {
             const MAX_EDGE = 1600;
             const QUALITY = 0.82;
+            const DECODE_TIMEOUT_MS = 8000;
+            // HEIC/HEIF は Canvas に描画できないブラウザが多いので圧縮しない
+            const lname = (file.name || '').toLowerCase();
+            const ltype = (file.type || '').toLowerCase();
+            if (ltype.includes('heic') || ltype.includes('heif') ||
+                lname.endsWith('.heic') || lname.endsWith('.heif')) {
+                return file;
+            }
+            let objectUrl = null;
             try {
+                objectUrl = URL.createObjectURL(file);
                 const img = await new Promise((resolve, reject) => {
-                    const url = URL.createObjectURL(file);
                     const im = new Image();
-                    im.onload = () => { URL.revokeObjectURL(url); resolve(im); };
-                    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode failed')); };
-                    im.src = url;
+                    const t = setTimeout(() => reject(new Error('decode timeout')), DECODE_TIMEOUT_MS);
+                    im.onload  = () => { clearTimeout(t); resolve(im); };
+                    im.onerror = () => { clearTimeout(t); reject(new Error('decode failed')); };
+                    im.src = objectUrl;
                 });
                 const w = img.naturalWidth, h = img.naturalHeight;
                 if (!w || !h) return file;
@@ -879,14 +889,20 @@
                 const canvas = document.createElement('canvas');
                 canvas.width = tw; canvas.height = th;
                 const ctx = canvas.getContext('2d');
+                if (!ctx) return file;
                 ctx.drawImage(img, 0, 0, tw, th);
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', QUALITY));
+                const blob = await new Promise(resolve => {
+                    try { canvas.toBlob(resolve, 'image/jpeg', QUALITY); }
+                    catch (_) { resolve(null); }
+                });
                 if (!blob) return file;
                 // 圧縮後のほうが大きい稀なケースは元を返す
                 if (blob.size >= file.size) return file;
                 return new File([blob], (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
             } catch (_) {
                 return file;
+            } finally {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
             }
         }
 
