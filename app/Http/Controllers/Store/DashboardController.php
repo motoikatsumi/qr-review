@@ -21,7 +21,11 @@ class DashboardController extends Controller
 
         $reviewCount       = Review::where('store_id', $store->id)->count();
         $googleReviewCount = GoogleReview::where('store_id', $store->id)->count();
-        $unrepliedCount    = GoogleReview::where('store_id', $store->id)->whereNull('reply_comment')->count();
+        // 未返信は「1 年以内」のみカウント（一覧画面の表示仕様に揃える）
+        $unrepliedCount    = GoogleReview::where('store_id', $store->id)
+            ->whereNull('reply_comment')
+            ->where('reviewed_at', '>=', now()->subYear())
+            ->count();
         $recentReviews     = Review::where('store_id', $store->id)
             ->orderByDesc('created_at')->take(5)->get();
 

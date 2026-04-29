@@ -336,6 +336,10 @@ class GoogleBusinessService
                 ->toArray()
         );
 
+        // 全ページから取得した review_id をすべて記録（後で「Googleから消えた口コミ」を検出するため）
+        $seenReviewIds = [];
+        $fullSyncCompleted = false;
+
         do {
             $result = $this->fetchReviews($store, $pageToken);
             if (!$result) {
@@ -350,6 +354,9 @@ class GoogleBusinessService
                 if (!$reviewId) {
                     continue;
                 }
+
+                // 全ページで見えた ID を記録（クリーンアップ判定用）
+                $seenReviewIds[$reviewId] = true;
 
                 // 返信確認待ちリストから除外（Googleから取得できたので確認済み）
                 unset($unverifiedReplyIds[$reviewId]);
@@ -388,8 +395,15 @@ class GoogleBusinessService
                 }
             }
 
+            $pageToken = $result['nextPageToken'] ?? null;
+            // 次ページが無ければ全ページ取得完了
+            if (!$pageToken) {
+                $fullSyncCompleted = true;
+            }
+
             // ページ内の全口コミが既存かつ未変更で、かつDB上の返信済み口コミを全て確認済みなら打ち切り
             // ※ 未確認の返信済みIDが残っている場合は次ページも確認する（DBとGoogleの返信乖離を検出するため）
+            // ※ 早期終了した場合は「削除済みクリーンアップ」は信頼性が低いのでスキップ
             if ($unchangedCount === count($reviews) && count($reviews) > 0 && empty($unverifiedReplyIds)) {
                 Log::info("Google sync: 既存口コミに到達かつ返信確認済み、同期を打ち切り", [
                     'store' => $store->name,
@@ -397,9 +411,21 @@ class GoogleBusinessService
                 ]);
                 break;
             }
-
-            $pageToken = $result['nextPageToken'] ?? null;
         } while ($pageToken);
+
+        // 全ページ取得が完了した場合のみ、Google から消えた口コミを DB から削除
+        // （早期終了時は不完全な seenReviewIds をもとに削除すると正常な口コミも消してしまうため避ける）
+        if ($fullSyncCompleted && !empty($seenReviewIds)) {
+            $deletedCount = GoogleReview::where('store_id', $store->id)
+                ->whereNotIn('google_review_id', array_keys($seenReviewIds))
+                ->delete();
+            if ($deletedCount > 0) {
+                Log::info('Google sync: 削除済み口コミを DB から物理削除', [
+                    'store' => $store->name,
+                    'deleted' => $deletedCount,
+                ]);
+            }
+        }
 
         return $synced;
     }

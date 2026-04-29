@@ -163,9 +163,12 @@ class DashboardController extends Controller
         // =============================================
 
         // 1. 未返信の Google 口コミ件数
+        // 一覧画面と仕様を揃えて、未返信は「1 年以内」のみカウント
+        // （古すぎる未返信口コミは実用上カウントしても意味がないため）
         $unrepliedGoogleCount = GoogleReview::query()
             ->when($storeId, fn($q) => $q->where('store_id', $storeId))
             ->whereNull('reply_comment')
+            ->where('reviewed_at', '>=', now()->subYear())
             ->count();
 
         // 2. 低評価（閾値以下）の内部口コミ（過去 7 日分）
