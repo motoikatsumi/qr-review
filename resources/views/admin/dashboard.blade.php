@@ -593,7 +593,7 @@
             </div>
         </a>
 
-        <a href="/admin/reviews?rating=low{{ $storeId ? '&store_id=' . $storeId : '' }}" class="todo-card {{ $lowRatingReviewCount > 0 ? 'alert' : 'success' }}">
+        <a href="/admin/reviews?rating_filter=low&from_date={{ now()->subDays(7)->format('Y-m-d') }}{{ $storeId ? '&store_id=' . $storeId : '' }}" class="todo-card {{ $lowRatingReviewCount > 0 ? 'alert' : 'success' }}">
             <div class="todo-card-icon">⚠️</div>
             <div class="todo-card-body">
                 <div class="todo-card-count">{{ $lowRatingReviewCount }}<span style="font-size:0.85rem;font-weight:normal;margin-left:4px;">件</span></div>

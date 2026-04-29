@@ -35,6 +35,18 @@ class ReviewController extends Controller
             }
         }
 
+        // フィルター：日付範囲（ダッシュボードからの遷移などで投稿日時を絞る）
+        if ($request->filled('from_date')) {
+            try {
+                $query->where('created_at', '>=', \Carbon\Carbon::parse($request->from_date)->startOfDay());
+            } catch (\Throwable $e) {}
+        }
+        if ($request->filled('to_date')) {
+            try {
+                $query->where('created_at', '<=', \Carbon\Carbon::parse($request->to_date)->endOfDay());
+            } catch (\Throwable $e) {}
+        }
+
         $reviews = $query->paginate(50);
         $totalCount = Review::count();
 
