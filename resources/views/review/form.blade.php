@@ -857,6 +857,39 @@
             }
         });
 
+        // 画像をリサイズ&JPEG圧縮してアップロード時間を短縮する
+        // 失敗した場合は元ファイルを返してアップロードは継続させる
+        async function compressImage(file) {
+            const MAX_EDGE = 1600;
+            const QUALITY = 0.82;
+            try {
+                const img = await new Promise((resolve, reject) => {
+                    const url = URL.createObjectURL(file);
+                    const im = new Image();
+                    im.onload = () => { URL.revokeObjectURL(url); resolve(im); };
+                    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode failed')); };
+                    im.src = url;
+                });
+                const w = img.naturalWidth, h = img.naturalHeight;
+                if (!w || !h) return file;
+                // 元画像が小さければそのまま返す（再エンコードのロスを避ける）
+                if (Math.max(w, h) <= MAX_EDGE && file.size <= 1024 * 1024) return file;
+                const scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+                const tw = Math.round(w * scale), th = Math.round(h * scale);
+                const canvas = document.createElement('canvas');
+                canvas.width = tw; canvas.height = th;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, tw, th);
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', QUALITY));
+                if (!blob) return file;
+                // 圧縮後のほうが大きい稀なケースは元を返す
+                if (blob.size >= file.size) return file;
+                return new File([blob], (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+            } catch (_) {
+                return file;
+            }
+        }
+
         async function uploadOne(file) {
             // プレビュー（uploading 状態）を先に追加
             const thumb = document.createElement('div');
@@ -867,8 +900,9 @@
             updateAddBtnVisibility();
             updateCountBadge();
 
+            const uploadFile = await compressImage(file);
             const fd = new FormData();
-            fd.append('image', file);
+            fd.append('image', uploadFile);
 
             try {
                 const res = await fetch(uploadImageUrl, {
