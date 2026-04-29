@@ -40,7 +40,9 @@ return [
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_MASTER_DATABASE', 'qr_master'),
+            // 単一DBレンタルサーバー(ロリポップ等)では master を独立 DB として
+            // 持てないので、未設定時はデフォルトDBに同居させる。
+            'database' => env('DB_MASTER_DATABASE') ?: env('DB_DATABASE', 'qr_master'),
             'username' => env('DB_USERNAME', 'forge'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
