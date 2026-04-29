@@ -372,6 +372,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 14px;
+        align-items: stretch;
     }
     .todo-card {
         display: flex;
@@ -383,6 +384,8 @@
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         text-decoration: none;
         transition: all 0.2s ease;
+        min-height: 110px;
+        align-items: center;
     }
     .todo-card:hover {
         transform: translateY(-2px);
@@ -393,7 +396,14 @@
     .todo-card.info { border-color: #a5b4fc; background: linear-gradient(135deg, #eef2ff, #e0e7ff); }
     .todo-card.success { border-color: #86efac; background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
     .todo-card-icon { font-size: 2rem; flex-shrink: 0; }
-    .todo-card-body { flex: 1; min-width: 0; }
+    .todo-card-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+    }
     .todo-card-count {
         font-size: 1.6rem;
         font-weight: 700;
@@ -403,14 +413,14 @@
     .todo-card-label {
         font-size: 0.85rem;
         color: #4b5563;
-        margin-top: 2px;
         font-weight: 500;
+        line-height: 1.4;
     }
     .todo-card-link {
         font-size: 0.78rem;
         color: #6366f1;
-        margin-top: 4px;
         font-weight: 600;
+        line-height: 1.4;
     }
 
     /* === クイックアクション === */
