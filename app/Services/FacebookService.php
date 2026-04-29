@@ -2,20 +2,34 @@
 
 namespace App\Services;
 
-use App\Models\SiteSetting;
+use App\Models\Store;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class FacebookService
 {
     protected string $baseUrl = 'https://graph.facebook.com/v25.0';
-    protected ?string $accessToken;
-    protected ?string $pageId;
+    protected ?string $accessToken = null;
+    protected ?string $pageId = null;
 
     public function __construct()
     {
-        $this->accessToken = SiteSetting::get('facebook_page_access_token');
-        $this->pageId = SiteSetting::get('facebook_page_id');
+        // OAuth連携により store_integrations テーブルから取得
+        // forStore() で店舗ごとのトークンをセットして使用
+    }
+
+    /**
+     * 店舗ごとの設定でインスタンス生成（store_integrations優先、なければSiteSetting）
+     */
+    public static function forStore(Store $store): self
+    {
+        $instance = new self();
+        $integration = $store->integration('facebook');
+        if ($integration && $integration->is_active) {
+            $instance->accessToken = $integration->access_token;
+            $instance->pageId      = $integration->extra_data['page_id'] ?? null;
+        }
+        return $instance;
     }
 
     /**
@@ -35,6 +49,9 @@ class FacebookService
      */
     public function publishPost(string $imageUrl, string $message): array
     {
+        // Cloudinary mirror to bypass Sakura/Lolipop WAF for Meta crawlers
+        if ($__m = (new \App\Services\ImageMirrorService())->mirror($imageUrl)) { $imageUrl = $__m; }
+
         $response = Http::post("{$this->baseUrl}/{$this->pageId}/photos", [
             'url' => $imageUrl,
             'message' => $message,
@@ -81,5 +98,24 @@ class FacebookService
         }
 
         return ['success' => true, 'error' => null];
+    }
+
+    /**
+     * アクセストークンの接続テスト（外部から呼び出し可能）
+     */
+    public function testToken(string $accessToken, string $pageId): array
+    {
+        try {
+            $response = Http::get("{$this->baseUrl}/{$pageId}", [
+                'fields'       => 'id,name',
+                'access_token' => $accessToken,
+            ]);
+            if ($response->successful()) {
+                return ['success' => true, 'name' => $response->json('name')];
+            }
+            return ['success' => false, 'error' => $response->json('error.message', 'HTTP ' . $response->status())];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 }

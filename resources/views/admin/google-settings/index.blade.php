@@ -62,7 +62,7 @@
             @endif
             <form method="POST" action="/admin/google-settings/disconnect" style="display:inline;">
                 @csrf
-                <button type="submit" class="btn btn-danger" onclick="return confirm('連携を解除しますか？')">連携解除</button>
+                <button type="submit" class="btn btn-danger" onclick="return confirm('連携を解除しますか？\nこの操作は元に戻せません。')">連携解除</button>
             </form>
         @else
             @if($settings['client_id'] && $settings['client_secret'])

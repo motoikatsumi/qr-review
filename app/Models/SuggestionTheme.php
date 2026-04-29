@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SuggestionTheme extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['category_id', 'icon', 'label', 'keyword', 'sort_order', 'is_active'];
 
     protected $casts = [

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', '買取投稿を編集')
+@section('title', '投稿を編集')
 
 @push('styles')
 <style>
@@ -54,9 +54,24 @@
 
 @section('content')
 <div class="page-header">
-    <h1>✏️ 買取投稿を編集</h1>
+    <h1>✏️ 投稿を編集</h1>
     <a href="{{ route('admin.purchase-posts.show', $purchasePost) }}" class="btn btn-secondary">← 詳細に戻る</a>
 </div>
+
+{{-- 店舗データをJSに渡す --}}
+<script>
+var storeData = {};
+@foreach($stores as $s)
+    storeData[{{ $s->id }}] = {
+        name: @json($s->name),
+        use_product_rank: {{ ($s->businessType->use_product_rank ?? false) ? 'true' : 'false' }},
+        post_categories: @json($s->businessType->post_categories ?? []),
+        post_status_options: @json($s->businessType->post_status_options ?? []),
+    };
+@endforeach
+var currentCategory = @json(old('category', $purchasePost->category));
+var currentStatus = @json(old('product_status', $purchasePost->product_status));
+</script>
 
 <form method="POST" action="{{ route('admin.purchase-posts.update', $purchasePost) }}" enctype="multipart/form-data" id="editForm">
     @csrf
@@ -69,7 +84,7 @@
             <div class="two-col">
                 <div class="form-group">
                     <label for="store_id">投稿店舗 <span style="color:#ef4444">*</span></label>
-                    <select id="store_id" name="store_id" required>
+                    <select id="store_id" name="store_id" required onchange="onStoreChange()">
                         <option value="">店舗を選択</option>
                         @foreach($stores as $store)
                             <option value="{{ $store->id }}" {{ old('store_id', $purchasePost->store_id) == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
@@ -82,9 +97,6 @@
                     <label for="category">カテゴリ <span style="color:#ef4444">*</span></label>
                     <select id="category" name="category" required>
                         <option value="">カテゴリを選択</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat }}" {{ old('category', $purchasePost->category) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                        @endforeach
                     </select>
                     @error('category') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
                 </div>
@@ -107,12 +119,10 @@
                 <div class="form-group">
                     <label for="product_status">状態 <span style="color:#ef4444">*</span></label>
                     <select id="product_status" name="product_status" required>
-                        <option value="中古品" {{ old('product_status', $purchasePost->product_status) === '中古品' ? 'selected' : '' }}>中古品</option>
-                        <option value="新品" {{ old('product_status', $purchasePost->product_status) === '新品' ? 'selected' : '' }}>新品</option>
-                        <option value="未使用品" {{ old('product_status', $purchasePost->product_status) === '未使用品' ? 'selected' : '' }}>未使用品</option>
+                        <option value="">状態を選択</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="rankGroup">
                     <label for="rank">ランク</label>
                     <select id="rank" name="rank">
                         <option value="" {{ old('rank', $purchasePost->rank) === '' || old('rank', $purchasePost->rank) === null ? 'selected' : '' }}>選択してください</option>
@@ -128,12 +138,12 @@
             <div class="two-col">
                 <div class="form-group">
                     <label for="wp_tag_name">タグ（ブランド名）</label>
-                    <input type="text" id="wp_tag_name" name="wp_tag_name" value="{{ old('wp_tag_name', $purchasePost->wp_tag_name) }}" placeholder="例：ロレックス">
+                    <input type="text" id="wp_tag_name" name="wp_tag_name" value="{{ old('wp_tag_name', $purchasePost->wp_tag_name) }}" placeholder="例：ブランド名やメーカー名">
                 </div>
             </div>
 
             <div class="form-group">
-                <label>商品画像</label>
+                <label>画像</label>
                 <div style="display:flex;gap:20px;align-items:flex-start;">
                     @if($purchasePost->wp_image_url)
                         <img src="{{ $purchasePost->wp_image_url }}" alt="現在の画像" class="current-image">
@@ -162,7 +172,7 @@
 
     {{-- ブロック② --}}
     <div class="block-section">
-        <h3>🔷 ブロック②：お客様エピソード</h3>
+        <h3>🔷 ブロック②：エピソード</h3>
         <div class="form-group" style="margin-bottom:8px;">
             <textarea id="block2_text" name="block2_text" rows="10" required>{{ old('block2_text', $purchasePost->block2_text) }}</textarea>
             <div class="char-count"><span id="block2Count">0</span> / 1,500</div>
@@ -208,6 +218,45 @@
 
 @push('scripts')
 <script>
+    function onStoreChange() {
+        var storeId = document.getElementById('store_id').value;
+        var sd = storeData[storeId] || null;
+
+        // ランク表示/非表示
+        var rankGroup = document.getElementById('rankGroup');
+        if (sd && sd.use_product_rank) {
+            rankGroup.style.display = '';
+        } else {
+            rankGroup.style.display = 'none';
+        }
+
+        // カテゴリ更新
+        var catSel = document.getElementById('category');
+        catSel.innerHTML = '<option value="">カテゴリを選択</option>';
+        if (sd && sd.post_categories) {
+            sd.post_categories.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                if (c.name === currentCategory) opt.selected = true;
+                catSel.appendChild(opt);
+            });
+        }
+
+        // ステータス更新
+        var statusSel = document.getElementById('product_status');
+        statusSel.innerHTML = '<option value="">状態を選択</option>';
+        if (sd && sd.post_status_options) {
+            sd.post_status_options.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                if (s === currentStatus) opt.selected = true;
+                statusSel.appendChild(opt);
+            });
+        }
+    }
+
     function updateCounts() {
         var b1 = document.getElementById('block1_text').value;
         var b2 = document.getElementById('block2_text').value;
@@ -237,6 +286,8 @@
         btn.innerHTML = '保存中...';
     });
 
+    // 初期化
+    onStoreChange();
     updateCounts();
 </script>
 @endpush

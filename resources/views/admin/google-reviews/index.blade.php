@@ -126,7 +126,7 @@
                             <input type="hidden" name="store_id" value="{{ request('store_id') }}">
                             <input type="hidden" name="rating" value="{{ request('rating') }}">
                             <input type="hidden" name="reply_status" value="{{ request('reply_status') }}">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('返信を削除しますか？')">返信を削除</button>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('返信を削除しますか？\nこの操作は元に戻せません。')">返信を削除</button>
                         </form>
                     </div>
                 </div>
@@ -152,19 +152,31 @@
                             </div>
                         </div>
 
-                        {{-- カテゴリ・キーワード選択（タブ式） --}}
+                        {{-- カテゴリ・キーワード選択（タブ式・業種フィルタあり） --}}
+                        @php
+                            $reviewBtId = $review->store?->business_type_id;
+                            // この口コミの店舗業種に合うカテゴリ（業種一致 or 業種共通=null）のみ表示
+                            $filteredCategories = $categories->filter(fn($c) => is_null($c->business_type_id) || $c->business_type_id == $reviewBtId)->values();
+                        @endphp
                         <div style="margin-bottom:12px;">
-                            <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">カテゴリ & キーワード（MEO対策）</label>
+                            <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">
+                                カテゴリ & キーワード（MEO対策）
+                                @if($review->store?->businessType)
+                                    <span style="font-weight:400;font-size:0.72rem;color:#9ca3af;margin-left:6px;">業種: {{ $review->store->businessType->name }}</span>
+                                @endif
+                            </label>
                             <div class="cat-tabs" data-review="{{ $review->id }}" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-                                @foreach($categories as $cat)
+                                @forelse($filteredCategories as $cat)
                                     <button type="button" class="cat-tab cat-tab-{{ $review->id }}" data-review="{{ $review->id }}" data-cat="{{ $cat->id }}"
                                             style="padding:4px 10px; background:white; border:1px solid #e5e7eb; border-radius:6px; font-size:0.75rem; cursor:pointer; transition:all 0.2s; color:#555;">
                                         {{ $cat->name }}
                                         <span class="cat-count" style="display:none; color:#667eea; font-weight:700;"></span>
                                     </button>
-                                @endforeach
+                                @empty
+                                    <span style="font-size:0.78rem;color:#9ca3af;">この業種のカテゴリは登録されていません。</span>
+                                @endforelse
                             </div>
-                            @foreach($categories as $cat)
+                            @foreach($filteredCategories as $cat)
                                 <div class="kw-panel kw-panel-{{ $review->id }}" data-cat="{{ $cat->id }}" style="display:none; flex-wrap:wrap; gap:5px; padding:8px 0;">
                                     @foreach($cat->keywords as $kw)
                                         <label style="display:inline-flex; align-items:center; gap:3px; padding:4px 10px; background:white; border:1px solid #e5e7eb; border-radius:20px; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">
@@ -220,21 +232,32 @@
                         </div>
                     </div>
 
-                    {{-- カテゴリ・キーワード選択（タブ式） --}}
+                    {{-- カテゴリ・キーワード選択（タブ式・業種フィルタあり） --}}
+                    @php
+                        $reviewBtId = $review->store?->business_type_id;
+                        $filteredCategories = $categories->filter(fn($c) => is_null($c->business_type_id) || $c->business_type_id == $reviewBtId)->values();
+                    @endphp
                     <div style="margin-bottom:12px;">
-                        <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">カテゴリ & キーワード（MEO対策）</label>
+                        <label style="font-size:0.8rem; font-weight:600; color:#555; display:block; margin-bottom:6px;">
+                            カテゴリ & キーワード（MEO対策）
+                            @if($review->store?->businessType)
+                                <span style="font-weight:400;font-size:0.72rem;color:#9ca3af;margin-left:6px;">業種: {{ $review->store->businessType->name }}</span>
+                            @endif
+                        </label>
                         {{-- カテゴリタブ --}}
                         <div class="cat-tabs" data-review="{{ $review->id }}" style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-                            @foreach($categories as $cat)
+                            @forelse($filteredCategories as $cat)
                                 <button type="button" class="cat-tab cat-tab-{{ $review->id }}" data-review="{{ $review->id }}" data-cat="{{ $cat->id }}"
                                         style="padding:4px 10px; background:white; border:1px solid #e5e7eb; border-radius:6px; font-size:0.75rem; cursor:pointer; transition:all 0.2s; color:#555;">
                                     {{ $cat->name }}
                                     <span class="cat-count" style="display:none; color:#667eea; font-weight:700;"></span>
                                 </button>
-                            @endforeach
+                            @empty
+                                <span style="font-size:0.78rem;color:#9ca3af;">この業種のカテゴリは登録されていません。</span>
+                            @endforelse
                         </div>
                         {{-- キーワードパネル（カテゴリごと） --}}
-                        @foreach($categories as $cat)
+                        @foreach($filteredCategories as $cat)
                             <div class="kw-panel kw-panel-{{ $review->id }}" data-cat="{{ $cat->id }}" style="display:none; flex-wrap:wrap; gap:5px; padding:8px 0;">
                                 @foreach($cat->keywords as $kw)
                                     <label style="display:inline-flex; align-items:center; gap:3px; padding:4px 10px; background:white; border:1px solid #e5e7eb; border-radius:20px; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">

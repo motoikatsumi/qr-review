@@ -96,10 +96,16 @@ class GoogleReviewController extends Controller
             'customer_type' => 'required|in:new,repeater,unknown',
         ]);
 
-        $review = GoogleReview::with('store')->findOrFail($validated['review_id']);
+        $review = GoogleReview::with(['store', 'store.businessType'])->findOrFail($validated['review_id']);
+
+        \Log::info('generateReply called', [
+            'store' => $review->store->name,
+            'tone' => $review->store->ai_tone_preference,
+            'reply_length' => $review->store->ai_reply_length,
+        ]);
 
         $reply = $gemini->generateReplyComment(
-            $review->store->name,
+            $review->store,
             $review->rating,
             $review->comment ?? '',
             $validated['category'] ?? '',

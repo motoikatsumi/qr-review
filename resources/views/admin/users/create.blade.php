@@ -38,12 +38,26 @@
 
             <div class="form-group">
                 <label>権限</label>
-                <select name="role">
+                <select name="role" id="role-select" onchange="toggleStoreField()">
                     <option value="member" {{ old('role') === 'member' ? 'selected' : '' }}>メンバー（閲覧のみ）</option>
                     <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>管理者（全権限）</option>
+                    <option value="store_owner" {{ old('role') === 'store_owner' ? 'selected' : '' }}>店舗オーナー</option>
                 </select>
-                <p class="form-hint">管理者：ユーザー管理、口コミ削除が可能 ／ メンバー：閲覧・CSV出力のみ</p>
+                <p class="form-hint">管理者：全権限 ／ メンバー：閲覧・CSV出力のみ ／ 店舗オーナー：自店舗管理のみ</p>
                 @error('role')<p class="form-error">{{ $message }}</p>@enderror
+            </div>
+
+            <div class="form-group" id="store-field" style="display:{{ old('role') === 'store_owner' ? 'block' : 'none' }};">
+                <label>担当店舗</label>
+                <select name="store_id">
+                    <option value="">-- 選択してください --</option>
+                    @foreach($stores as $store)
+                        <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>
+                            {{ $store->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('store_id')<p class="form-error">{{ $message }}</p>@enderror
             </div>
 
             <div style="display:flex;gap:10px;margin-top:24px;">
@@ -58,5 +72,13 @@
 <style>
     .form-error { color: #dc2626; font-size: 0.8rem; margin-top: 4px; }
 </style>
+@endpush
+@push('scripts')
+<script>
+function toggleStoreField() {
+    const role = document.getElementById('role-select').value;
+    document.getElementById('store-field').style.display = role === 'store_owner' ? 'block' : 'none';
+}
+</script>
 @endpush
 @endsection

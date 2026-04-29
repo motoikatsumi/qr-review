@@ -18,36 +18,42 @@ use Illuminate\Support\Facades\Storage;
 class PurchasePostController extends Controller
 {
     /**
-     * カテゴリとGBPカテゴリ・LP URLのマッピング
+     * 店舗の業種設定からカテゴリマッピングを取得
      */
-    protected array $categoryMap = [
-        'ゲーム・ソフト' => ['slug' => 'ゲーム', 'url' => 'https://78assist.com/items/other'],
-        '時計' => ['slug' => '時計', 'url' => 'https://78assist.com/items/clock'],
-        'ブランド品' => ['slug' => 'ブランド品', 'url' => 'https://78assist.com/items/brand'],
-        '貴金属' => ['slug' => 'ジュエリー', 'url' => 'https://78assist.com/items/gold'],
-        '金券' => ['slug' => '硬貨', 'url' => 'https://78assist.com/items/other'],
-        'カメラ・レンズ' => ['slug' => 'カメラ', 'url' => 'https://78assist.com/items/camera'],
-        '電化製品' => ['slug' => 'パソコン', 'url' => 'https://78assist.com/items/electricity'],
-        '電動工具' => ['slug' => 'スポーツ用品', 'url' => 'https://78assist.com/items/electric-tool'],
-        'お酒' => ['slug' => 'アルコール', 'url' => 'https://78assist.com/items/other'],
-        'スマホ・タブレット' => ['slug' => 'スマホ・タブレット', 'url' => 'https://78assist.com/items/smartphone'],
-        '楽器' => ['slug' => '楽器', 'url' => 'https://78assist.com/items/instrument'],
-        'ダイヤモンド' => ['slug' => 'ダイヤモンド', 'url' => 'https://78assist.com/items/gold'],
-        'プラチナ' => ['slug' => 'プラチナ', 'url' => 'https://78assist.com/items/gold'],
-        '宝石' => ['slug' => '宝石', 'url' => 'https://78assist.com/items/gold'],
-        'DVDブルーレイ' => ['slug' => 'DVDブルーレイ', 'url' => 'https://78assist.com/items/other'],
-        'おもちゃ' => ['slug' => 'おもちゃ', 'url' => 'https://78assist.com/items/other'],
-        'フィギュア' => ['slug' => 'フィギュア', 'url' => 'https://78assist.com/items/other'],
-        '健康器具' => ['slug' => '健康器具', 'url' => 'https://78assist.com/items/other'],
-        'カー用品' => ['slug' => 'カー用品', 'url' => 'https://78assist.com/items/other'],
-    ];
+    protected function getCategoryMap(Store $store): array
+    {
+        $bt = $store->businessType;
+        $categories = $bt->post_categories ?? [];
+        $map = [];
+        foreach ($categories as $cat) {
+            $map[$cat['name']] = [
+                'slug' => $cat['wp_slug'] ?? 'blog',
+                'path' => $cat['wp_path'] ?? '',
+            ];
+        }
+        return $map;
+    }
+
+    /**
+     * 投稿タイトルを業種テンプレートから生成
+     */
+    protected function buildPublishTitle(PurchasePost $post): string
+    {
+        $store = $post->store;
+        $bt = $store?->businessType;
+        $actionWord = $bt->post_action_word ?? 'ご紹介';
+
+        return $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . 'を' . $actionWord . 'いたしました';
+    }
 
     /**
      * 投稿一覧
      */
     public function index(Request $request)
     {
-        $query = PurchasePost::with('store')->orderBy('created_at', 'desc');
+        $showTrashed = $request->input('show') === 'trashed';
+        $query = ($showTrashed ? PurchasePost::onlyTrashed() : PurchasePost::query())
+            ->with('store')->orderBy('created_at', 'desc');
 
         if ($request->filled('store_id')) {
             $query->where('store_id', $request->store_id);
@@ -78,8 +84,10 @@ class PurchasePostController extends Controller
 
         $posts = $query->paginate(30);
         $stores = Store::where('is_active', true)->orderBy('name')->get();
+        $wpUrl = config('services.wordpress.url');
+        $trashedCount = PurchasePost::onlyTrashed()->count();
 
-        return view('admin.purchase-posts.index', compact('posts', 'stores'));
+        return view('admin.purchase-posts.index', compact('posts', 'stores', 'wpUrl', 'showTrashed', 'trashedCount'));
     }
 
     /**
@@ -87,10 +95,9 @@ class PurchasePostController extends Controller
      */
     public function create()
     {
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
-        $categories = array_keys($this->categoryMap);
+        $stores = Store::with(['postTemplate', 'businessType'])->where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.purchase-posts.create', compact('stores', 'categories'));
+        return view('admin.purchase-posts.create', compact('stores'));
     }
 
     /**
@@ -232,15 +239,30 @@ class PurchasePostController extends Controller
      */
     public function generateEpisode(Request $request)
     {
+        // 業種によってbrand/productが不要な場合がある
+        $hiddenFields = [];
+        if ($request->filled('store_id')) {
+            $store = \App\Models\Store::with('businessType')->find($request->store_id);
+            $hiddenFields = $store->businessType->post_hidden_fields ?? [];
+        }
+
+        $brandRule = in_array('brand_name', $hiddenFields) ? 'nullable|string|max:200' : 'required|string|max:200';
+        $productRule = in_array('product_name', $hiddenFields) ? 'nullable|string|max:200' : 'required|string|max:200';
+
         $request->validate([
-            'brand_name' => 'required|string|max:200',
-            'product_name' => 'required|string|max:200',
+            'brand_name' => $brandRule,
+            'product_name' => $productRule,
         ]);
 
         $params = $request->only([
             'brand_name', 'product_name', 'customer_gender', 'customer_age',
-            'customer_reason', 'product_condition', 'accessories',
+            'customer_reason', 'product_condition', 'accessories', 'category',
         ]);
+
+        $store = null;
+        if ($request->filled('store_id')) {
+            $store = \App\Models\Store::find($request->store_id);
+        }
 
         // フォームデータのエンコーディングを修正
         foreach ($params as $key => $value) {
@@ -251,7 +273,7 @@ class PurchasePostController extends Controller
         }
 
         $gemini = new GeminiService();
-        $text = $gemini->generatePurchaseEpisode($params);
+        $text = $gemini->generatePurchaseEpisode($params, $store);
 
         if ($text) {
             return response()->json(['success' => true, 'text' => $text]);
@@ -272,7 +294,7 @@ class PurchasePostController extends Controller
 
         $store = Store::findOrFail($request->store_id);
         $gemini = new GeminiService();
-        $text = $gemini->generateStoreFooterTemplate($store->name, $request->area);
+        $text = $gemini->generateStoreFooterTemplate($store, $request->area);
 
         if ($text) {
             return response()->json(['success' => true, 'text' => $text]);
@@ -286,33 +308,42 @@ class PurchasePostController extends Controller
      */
     public function store(Request $request)
     {
+        $store = Store::with('businessType')->findOrFail($request->store_id);
+        $categoryMap = $this->getCategoryMap($store);
+        $hiddenFields = $store->businessType->post_hidden_fields ?? [];
+
+        // brand_name/product_name は業種で非表示の場合はnullable
+        $brandRule = in_array('brand_name', $hiddenFields) ? 'nullable|string|max:200' : 'required|string|max:200';
+        $productRule = in_array('product_name', $hiddenFields) ? 'nullable|string|max:200' : 'required|string|max:200';
+
         $request->validate([
             'store_id' => 'required|exists:stores,id',
-            'brand_name' => 'required|string|max:200',
-            'product_name' => 'required|string|max:200',
+            'brand_name' => $brandRule,
+            'product_name' => $productRule,
             'product_status' => 'required|string|max:50',
-            'category' => ['required', 'string', 'max:50', \Illuminate\Validation\Rule::in(array_keys($this->categoryMap))],
+            'category' => ['required', 'string', 'max:50'],
             'block1_text' => 'required|string',
             'block2_text' => 'required|string',
             'block3_text' => 'required|string',
             'image' => 'required|image|min:11|max:10240|dimensions:min_width=250,min_height=250',
             'wp_tag_name' => 'nullable|string|max:100',
+            'custom_hashtags' => 'nullable|string|max:2000',
             'rank' => 'nullable|string|in:S,A,B,C,D',
         ], [
             'image.min' => '画像ファイルサイズが小さすぎます（最低11KB必要です。Google APIの要件: 10KB以上）。',
         ]);
 
-        $store = Store::findOrFail($request->store_id);
+        // 重複チェック（brand/productがある業種のみ）
+        if (!in_array('brand_name', $hiddenFields) && $request->brand_name && $request->product_name) {
+            $duplicate = PurchasePost::where('store_id', $request->store_id)
+                ->where('brand_name', $request->brand_name)
+                ->where('product_name', $request->product_name)
+                ->where('created_at', '>=', now()->subDay())
+                ->exists();
 
-        // 重複チェック（同じ店舗・ブランド・商品名の投稿が24時間以内にあるか）
-        $duplicate = PurchasePost::where('store_id', $request->store_id)
-            ->where('brand_name', $request->brand_name)
-            ->where('product_name', $request->product_name)
-            ->where('created_at', '>=', now()->subDay())
-            ->exists();
-
-        if ($duplicate) {
-            return back()->withInput()->with('error', '同じ店舗・ブランド名・商品名の投稿が24時間以内に存在します。重複投稿でないか確認してください。');
+            if ($duplicate) {
+                return back()->withInput()->with('error', '同じ店舗・ブランド名・商品名の投稿が24時間以内に存在します。重複投稿でないか確認してください。');
+            }
         }
 
         // 画像をローカルに一時保存
@@ -323,8 +354,8 @@ class PurchasePostController extends Controller
         $block3Replaced = str_replace('○○', $request->category, $request->block3_text);
         $fullText = $request->block1_text . "\n\n" . $request->block2_text . "\n\n" . $block3Replaced;
 
-        // カテゴリマッピング
-        $catInfo = $this->categoryMap[$request->category] ?? ['slug' => 'blog', 'url' => ''];
+        // カテゴリマッピング（業種設定から取得）
+        $catInfo = $categoryMap[$request->category] ?? ['slug' => 'blog', 'path' => ''];
 
         $post = PurchasePost::create([
             'store_id' => $store->id,
@@ -345,6 +376,7 @@ class PurchasePostController extends Controller
             'image_path' => $imagePath,
             'wp_category_slug' => $catInfo['slug'],
             'wp_tag_name' => $request->wp_tag_name,
+            'custom_hashtags' => $request->custom_hashtags,
         ]);
 
         // --- WordPress 投稿 ---
@@ -397,10 +429,9 @@ class PurchasePostController extends Controller
      */
     public function edit(PurchasePost $purchasePost)
     {
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
-        $categories = array_keys($this->categoryMap);
+        $stores = Store::with(['postTemplate', 'businessType'])->where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.purchase-posts.edit', compact('purchasePost', 'stores', 'categories'));
+        return view('admin.purchase-posts.edit', compact('purchasePost', 'stores'));
     }
 
     /**
@@ -408,21 +439,25 @@ class PurchasePostController extends Controller
      */
     public function update(Request $request, PurchasePost $purchasePost)
     {
+        $store = Store::with('businessType')->findOrFail($request->store_id);
+
         $request->validate([
             'store_id' => 'required|exists:stores,id',
             'brand_name' => 'required|string|max:200',
             'product_name' => 'required|string|max:200',
             'product_status' => 'required|string|max:50',
-            'category' => ['required', 'string', 'max:50', \Illuminate\Validation\Rule::in(array_keys($this->categoryMap))],
+            'category' => ['required', 'string', 'max:50'],
             'block1_text' => 'required|string',
             'block2_text' => 'required|string',
             'block3_text' => 'required|string',
             'image' => 'nullable|image|min:11|max:10240|dimensions:min_width=250,min_height=250',
             'wp_tag_name' => 'nullable|string|max:100',
+            'custom_hashtags' => 'nullable|string|max:2000',
             'rank' => 'nullable|string|in:S,A,B,C,D',
         ]);
 
-        $catInfo = $this->categoryMap[$request->category] ?? ['slug' => 'blog', 'url' => ''];
+        $categoryMap = $this->getCategoryMap($store);
+        $catInfo = $categoryMap[$request->category] ?? ['slug' => 'blog', 'path' => ''];
         $block3Replaced = str_replace('○○', $request->category, $request->block3_text);
         $fullText = $request->block1_text . "\n\n" . $request->block2_text . "\n\n" . $block3Replaced;
 
@@ -439,6 +474,7 @@ class PurchasePostController extends Controller
             'full_text' => $fullText,
             'wp_category_slug' => $catInfo['slug'],
             'wp_tag_name' => $request->wp_tag_name,
+            'custom_hashtags' => $request->custom_hashtags,
         ];
 
         // 画像が新しくアップロードされた場合
@@ -461,8 +497,10 @@ class PurchasePostController extends Controller
      */
     public function retry(PurchasePost $purchasePost)
     {
+        $purchasePost->load('store.businessType');
         $fullImagePath = storage_path('app/public/' . $purchasePost->image_path);
-        $catInfo = $this->categoryMap[$purchasePost->category] ?? ['slug' => 'blog', 'url' => ''];
+        $categoryMap = $purchasePost->store ? $this->getCategoryMap($purchasePost->store) : [];
+        $catInfo = $categoryMap[$purchasePost->category] ?? ['slug' => 'blog', 'path' => ''];
         $messages = [];
 
         if ($purchasePost->wp_status === 'failed') {
@@ -506,7 +544,7 @@ class PurchasePostController extends Controller
         // WordPress投稿を削除
         if ($purchasePost->wp_post_id) {
             try {
-                $wp = new WordPressService();
+                $wp = WordPressService::forStore($purchasePost->store);
                 $wp->deletePost($purchasePost->wp_post_id);
                 if ($purchasePost->wp_media_id) {
                     $wp->deleteMedia($purchasePost->wp_media_id);
@@ -541,7 +579,7 @@ class PurchasePostController extends Controller
         // Facebook投稿を削除
         if ($purchasePost->facebook_post_id) {
             try {
-                $fb = new FacebookService();
+                $fb = FacebookService::forStore($purchasePost->store);
                 $fb->deletePost($purchasePost->facebook_post_id);
             } catch (\Exception $e) {
                 Log::error('Facebook post delete failed', ['error' => $e->getMessage()]);
@@ -559,6 +597,33 @@ class PurchasePostController extends Controller
             ->with('success', '投稿を削除しました');
     }
 
+    /**
+     * 削除済み投稿を復元（ローカル DB レコードのみ。外部投稿は復活しない）
+     */
+    public function restore($id)
+    {
+        $post = PurchasePost::onlyTrashed()->findOrFail($id);
+        $post->restore();
+        return back()->with('success', "投稿「{$post->brand_name} {$post->product_name}」をゴミ箱から復元しました。（WordPress / SNS への再投稿は別途お願いします）");
+    }
+
+    /**
+     * 完全削除（DB から物理削除）
+     */
+    public function forceDelete($id)
+    {
+        $post = PurchasePost::onlyTrashed()->findOrFail($id);
+
+        // ローカル画像が残っていれば削除
+        if ($post->image_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image_path);
+        }
+
+        $label = "{$post->brand_name} {$post->product_name}";
+        $post->forceDelete();
+        return back()->with('success', "投稿「{$label}」を完全に削除しました。");
+    }
+
     // ==============================
     // Private Publishing Methods
     // ==============================
@@ -566,7 +631,7 @@ class PurchasePostController extends Controller
     protected function publishToWordPress(PurchasePost $post, string $imagePath): void
     {
         try {
-            $wp = new WordPressService();
+            $wp = WordPressService::forStore($post->store);
 
             // 画像アップロード
             $fileName = $post->brand_name . '_' . $post->product_name . '.' . pathinfo($imagePath, PATHINFO_EXTENSION);
@@ -597,7 +662,7 @@ class PurchasePostController extends Controller
                     . $htmlContent;
             }
 
-            $title = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . 'をお買取りいたしました';
+            $title = $this->buildPublishTitle($post);
 
             $result = $wp->createPost([
                 'title' => $title,
@@ -638,7 +703,8 @@ class PurchasePostController extends Controller
 
             $google = new GoogleBusinessService();
             $imageUrl = $post->wp_image_url;
-            $actionUrl = $catInfo['url'] ?? null;
+            $wpBaseUrl = rtrim(config('services.wordpress.url'), '/');
+            $actionUrl = ($wpBaseUrl && !empty($catInfo['path'])) ? $wpBaseUrl . $catInfo['path'] : null;
 
             $result = $google->createLocalPost($store, $post->full_text, $imageUrl, $actionUrl ?: null);
 
@@ -692,26 +758,52 @@ class PurchasePostController extends Controller
         }
     }
 
+    /**
+     * 投稿用の画像 URL を決定する。
+     * - 店舗が WordPress 連携を使う設定: 既存の wp_image_url を返す（後段で Cloudinary にミラーされる）
+     * - WordPress 連携を使わない設定: image_path のローカルファイルを直接 Cloudinary にアップロード
+     */
+    protected function resolveImageUrl(PurchasePost $post): ?string
+    {
+        $useWp = $post->store->use_wordpress ?? true;
+
+        if ($useWp && !empty($post->wp_image_url)) {
+            return $post->wp_image_url;
+        }
+
+        // WordPress 連携 OFF または wp_image_url が無い → ローカル画像を直接 Cloudinary に
+        if (empty($post->image_path)) {
+            return null;
+        }
+        $localPath = storage_path('app/public/' . $post->image_path);
+        if (!file_exists($localPath)) {
+            return null;
+        }
+
+        $mirror = (new \App\Services\ImageMirrorService())->mirrorFromLocal($localPath);
+        return $mirror;  // Cloudinary URL（失敗時は null）
+    }
+
     protected function publishToInstagram(PurchasePost $post): void
     {
         try {
-            $instagram = new InstagramService();
+            $instagram = InstagramService::forStore($post->store);
             if (!$instagram->isConnected()) {
                 $post->instagram_status = 'failed';
                 $post->instagram_error = 'Instagram APIが未設定です';
                 return;
             }
 
-            $imageUrl = $post->wp_image_url;
+            $imageUrl = $this->resolveImageUrl($post);
             if (!$imageUrl) {
                 $post->instagram_status = 'failed';
-                $post->instagram_error = 'WordPress画像URLが未設定です（WordPress投稿が先に必要）';
+                $post->instagram_error = '画像が見つかりません（WordPress 連携 OFF の場合は image_path にローカルファイルが必要）';
                 return;
             }
 
             // キャプション組み立て
             $hashtags = $this->generateHashtags($post);
-            $caption = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text . "\n\n" . $hashtags;
+            $caption = $this->buildPublishTitle($post) . "\n\n" . $post->full_text . "\n\n" . $hashtags;
 
             $result = $instagram->publishPost($imageUrl, $caption);
 
@@ -733,23 +825,23 @@ class PurchasePostController extends Controller
     protected function publishToFacebook(PurchasePost $post): void
     {
         try {
-            $facebook = new FacebookService();
+            $facebook = FacebookService::forStore($post->store);
             if (!$facebook->isConnected()) {
                 $post->facebook_status = 'failed';
                 $post->facebook_error = 'Facebook APIが未設定です';
                 return;
             }
 
-            $imageUrl = $post->wp_image_url;
+            $imageUrl = $this->resolveImageUrl($post);
             if (!$imageUrl) {
                 $post->facebook_status = 'failed';
-                $post->facebook_error = 'WordPress画像URLが未設定です（WordPress投稿が先に必要）';
+                $post->facebook_error = '画像が見つかりません（WordPress 連携 OFF の場合は image_path にローカルファイルが必要）';
                 return;
             }
 
             // メッセージ組み立て
             $hashtags = $this->generateHashtags($post);
-            $message = $post->brand_name . ' ' . $post->product_name . ' ' . $post->product_status . "をお買取りいたしました\n\n" . $post->full_text . "\n\n" . $hashtags;
+            $message = $this->buildPublishTitle($post) . "\n\n" . $post->full_text . "\n\n" . $hashtags;
 
             $result = $facebook->publishPost($imageUrl, $message);
 
@@ -773,60 +865,36 @@ class PurchasePostController extends Controller
      */
     protected function generateHashtags(PurchasePost $post): string
     {
-        $tags = ['買取', '高価買取', '質屋アシスト'];
-
-        // アクション系
-        $tags[] = '査定';
-        $tags[] = '無料査定';
-        $tags[] = '即日現金化';
-
-        // 業種系
-        $tags[] = '質屋';
-        $tags[] = 'リサイクルショップ';
-
-        // 地域タグ（店舗ごとの周辺エリア）
-        $storeAreaTags = [
-            '西千石' => ['鹿児島市', '西千石', '天文館', '鹿児島'],
-            '宇宿'   => ['鹿児島市', '宇宿', '谷山', '鹿児島'],
-            '伊敷'   => ['鹿児島市', '伊敷', '草牟田', '吉野', '鹿児島'],
-            '鹿屋'   => ['鹿屋市', '鹿屋', '寿', '札元'],
-            '国分'   => ['霧島市', '国分', '隼人', '霧島'],
-        ];
-
-        if ($post->store) {
-            $storeName = $post->store->name;
-            $matched = false;
-            foreach ($storeAreaTags as $key => $areas) {
-                if (str_contains($storeName, $key)) {
-                    foreach ($areas as $area) {
-                        $tags[] = $area;
-                        $tags[] = $area . '買取';
-                    }
-                    $matched = true;
-                    break;
-                }
+        // 投稿にカスタムハッシュタグが保存されている場合はそれを使う
+        if (!empty($post->custom_hashtags)) {
+            $lines = array_filter(array_map('trim', explode("\n", str_replace("\r\n", "\n", $post->custom_hashtags))));
+            $tags = [];
+            foreach ($lines as $line) {
+                $tag = ltrim($line, '#');
+                if ($tag) $tags[] = $tag;
             }
-            if (!$matched) {
-                $tags[] = '鹿児島';
-                $tags[] = '鹿児島買取';
+            if (!empty($tags)) {
+                return implode(' ', array_map(fn($tag) => '#' . $tag, array_unique($tags)));
             }
         }
+
+        // フォールバック：自動生成
+        $bt = $post->store?->businessType;
+        $tags = [];
 
         // カテゴリ
         if ($post->category) {
             $tags[] = str_replace(['・', ' ', '　'], '', $post->category);
-            $tags[] = $post->category . '買取';
         }
 
         // ブランド名
         if ($post->brand_name) {
             $tags[] = str_replace([' ', '　'], '', $post->brand_name);
-            $tags[] = str_replace([' ', '　'], '', $post->brand_name) . '買取';
         }
 
-        // 商品名
-        if ($post->product_name) {
-            $tags[] = str_replace([' ', '　'], '', $post->product_name);
+        // 店舗名
+        if ($post->store) {
+            $tags[] = str_replace([' ', '　', '　'], '', $post->store->name);
         }
 
         // 重複除去

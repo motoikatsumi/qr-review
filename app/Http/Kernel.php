@@ -37,6 +37,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\TenantDatabase::class,
         ],
 
         'api' => [
@@ -65,5 +66,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'ip.restrict' => \App\Http\Middleware\IpRestriction::class,
         'admin' => \App\Http\Middleware\AdminOnly::class,
+        'store.owner' => \App\Http\Middleware\StoreOwnerAccess::class,
+        'redirect.store_owner' => \App\Http\Middleware\RedirectStoreOwner::class,
     ];
 }

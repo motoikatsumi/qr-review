@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GoogleReview;
+use App\Models\PurchasePost;
 use App\Models\Review;
 use App\Models\Store;
+use App\Models\StoreIntegration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -61,6 +63,12 @@ class DashboardController extends Controller
             ->groupBy('date')
             ->orderBy('date')
             ->get();
+
+        // 月別推移（直近12ヶ月）と前月比
+        $monthlyReviews = $this->buildMonthlyTrend(Review::class, 'created_at', $storeId, 12);
+
+        // 年別推移（直近5年）と前年比
+        $yearlyReviews = $this->buildYearlyTrend(Review::class, 'created_at', $storeId, 5);
 
         // 高評価率
         $highRatingCount = Review::query()
@@ -144,15 +152,213 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
+        // Google口コミ 月別推移（直近12ヶ月）と前月比
+        $gMonthlyReviews = $this->buildMonthlyTrend(GoogleReview::class, 'reviewed_at', $storeId, 12);
+
+        // Google口コミ 年別推移（直近5年）と前年比
+        $gYearlyReviews = $this->buildYearlyTrend(GoogleReview::class, 'reviewed_at', $storeId, 5);
+
+        // =============================================
+        // 今日やること（Todo 系）
+        // =============================================
+
+        // 1. 未返信の Google 口コミ件数
+        $unrepliedGoogleCount = GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereNull('reply_comment')
+            ->count();
+
+        // 2. 低評価（閾値以下）の内部口コミ（過去 7 日分）
+        $lowRatingReviewCount = Review::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->where('rating', '<=', 3)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        // 3. 投稿失敗の買取投稿（要対応）
+        $failedPostCount = PurchasePost::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->where(function ($q) {
+                $q->where('wp_status', 'failed')
+                  ->orWhere('google_post_status', 'failed')
+                  ->orWhere('google_photo_status', 'failed')
+                  ->orWhere('instagram_status', 'failed')
+                  ->orWhere('facebook_status', 'failed');
+            })
+            ->count();
+
+        // 4. 新着口コミ（今日）
+        $todayReviewCount = Review::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereDate('created_at', today())
+            ->count();
+
+        $todayGoogleReviewCount = GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereDate('reviewed_at', today())
+            ->count();
+
+        // =============================================
+        // 設定完了状況（セットアップチェック）
+        // =============================================
+        $setupAlerts = [];
+
+        // 店舗の業種が未設定
+        $storesWithoutBusinessType = Store::whereNull('business_type_id')
+            ->where('is_active', true)
+            ->when($storeId, fn($q) => $q->where('id', $storeId))
+            ->count();
+        if ($storesWithoutBusinessType > 0) {
+            $setupAlerts[] = [
+                'label' => "業種が未設定の店舗が {$storesWithoutBusinessType} 件あります",
+                'url'   => '/admin/stores',
+                'icon'  => '🏢',
+            ];
+        }
+
+        // 通知メール未設定の店舗
+        $storesWithoutNotifyEmail = Store::whereNull('notify_email')
+            ->orWhere('notify_email', '')
+            ->where('is_active', true)
+            ->when($storeId, fn($q) => $q->where('id', $storeId))
+            ->count();
+        if ($storesWithoutNotifyEmail > 0) {
+            $setupAlerts[] = [
+                'label' => "低評価通知メールが未設定の店舗が {$storesWithoutNotifyEmail} 件あります",
+                'url'   => '/admin/stores',
+                'icon'  => '📧',
+            ];
+        }
+
+        // Google マップ URL 未設定
+        $storesWithoutGoogleUrl = Store::where(function ($q) {
+                $q->whereNull('google_review_url')->orWhere('google_review_url', '');
+            })
+            ->where('is_active', true)
+            ->when($storeId, fn($q) => $q->where('id', $storeId))
+            ->count();
+        if ($storesWithoutGoogleUrl > 0) {
+            $setupAlerts[] = [
+                'label' => "Google マップ URL が未設定の店舗が {$storesWithoutGoogleUrl} 件あります",
+                'url'   => '/admin/stores',
+                'icon'  => '🌐',
+            ];
+        }
+
+        // 未払い請求書アラート
+        $unpaidInvoices = collect();
+        try {
+            $tenant = \App\Models\Tenant::current();
+            if ($tenant) {
+                $unpaidInvoices = \App\Models\Invoice::where('tenant_id', $tenant->id)
+                    ->whereIn('status', ['sent', 'overdue'])
+                    ->orderBy('due_date')
+                    ->get();
+            }
+        } catch (\Throwable $e) {
+            // 無視
+        }
+
         return view('admin.dashboard', compact(
             'stores', 'storeId',
             'totalReviews', 'avgRating',
             'ratingCounts', 'statusDistribution',
-            'dailyReviews', 'highRatingRate', 'googleRate',
+            'dailyReviews', 'monthlyReviews', 'yearlyReviews',
+            'highRatingRate', 'googleRate',
             'genderDistribution', 'ageDistribution',
             'gTotalReviews', 'gAvgRating', 'gRatingCounts',
             'gReplyRate', 'gRepliedCount', 'gHighRatingRate',
-            'gDailyReviews'
+            'gDailyReviews', 'gMonthlyReviews', 'gYearlyReviews',
+            // 今日やること
+            'unrepliedGoogleCount', 'lowRatingReviewCount', 'failedPostCount',
+            'todayReviewCount', 'todayGoogleReviewCount',
+            'setupAlerts',
+            // 請求書
+            'unpaidInvoices'
         ));
+    }
+
+    /**
+     * 直近 N ヶ月の月別件数・平均評価・前月差分を返す
+     */
+    private function buildMonthlyTrend(string $modelClass, string $dateColumn, ?int $storeId, int $months): array
+    {
+        $start = now()->subMonths($months - 1)->startOfMonth();
+
+        $rows = $modelClass::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->where($dateColumn, '>=', $start)
+            ->select(
+                DB::raw("DATE_FORMAT($dateColumn, '%Y-%m') as ym"),
+                DB::raw('count(*) as count'),
+                DB::raw('AVG(rating) as avg_rating')
+            )
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get()
+            ->keyBy('ym');
+
+        $result = [];
+        $prevCount = null;
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $date = now()->subMonths($i)->startOfMonth();
+            $key = $date->format('Y-m');
+            $row = $rows->get($key);
+            $count = $row ? (int) $row->count : 0;
+            $avg = $row && $row->count > 0 ? (float) $row->avg_rating : null;
+            $diff = $prevCount === null ? null : $count - $prevCount;
+            $result[] = [
+                'label' => $date->format('Y年n月'),
+                'short' => $date->format('Y/n'),
+                'count' => $count,
+                'avg_rating' => $avg,
+                'diff' => $diff,
+            ];
+            $prevCount = $count;
+        }
+        return $result;
+    }
+
+    /**
+     * 直近 N 年の年別件数・平均評価・前年差分を返す
+     * システム稼働開始年（2026年）より前は表示しない
+     */
+    private function buildYearlyTrend(string $modelClass, string $dateColumn, ?int $storeId, int $years): array
+    {
+        $systemStartYear = 2026;
+        $currentYear = (int) now()->format('Y');
+        $startYear = max($systemStartYear, $currentYear - ($years - 1));
+        $start = \Carbon\Carbon::create($startYear, 1, 1)->startOfYear();
+
+        $rows = $modelClass::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->where($dateColumn, '>=', $start)
+            ->select(
+                DB::raw("YEAR($dateColumn) as y"),
+                DB::raw('count(*) as count'),
+                DB::raw('AVG(rating) as avg_rating')
+            )
+            ->groupBy('y')
+            ->orderBy('y')
+            ->get()
+            ->keyBy('y');
+
+        $result = [];
+        $prevCount = null;
+        for ($year = $startYear; $year <= $currentYear; $year++) {
+            $row = $rows->get($year);
+            $count = $row ? (int) $row->count : 0;
+            $avg = $row && $row->count > 0 ? (float) $row->avg_rating : null;
+            $diff = $prevCount === null ? null : $count - $prevCount;
+            $result[] = [
+                'label' => $year . '年',
+                'short' => (string) $year,
+                'count' => $count,
+                'avg_rating' => $avg,
+                'diff' => $diff,
+            ];
+            $prevCount = $count;
+        }
+        return $result;
     }
 }

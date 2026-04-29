@@ -12,7 +12,7 @@ class CreateStoresTable extends Migration
             $table->id();
             $table->string('name');
             $table->string('google_review_url', 500);
-            $table->string('notify_email')->default('shichi@assist-grp.jp');
+            $table->string('notify_email')->nullable();
             $table->string('slug', 100)->unique();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

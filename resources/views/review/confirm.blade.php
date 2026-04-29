@@ -75,6 +75,46 @@
         color: #1e3a5f;
         line-height: 1.5;
     }
+    .photo-cta {
+        margin-top: 10px;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 2px solid #f59e0b;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .photo-cta p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #78350f;
+        line-height: 1.6;
+        font-weight: 500;
+    }
+    .photo-cta .icon {
+        font-size: 1.1rem;
+        vertical-align: middle;
+    }
+    /* アップロード画像プレビュー */
+    .confirm-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+        gap: 6px;
+        margin-top: 6px;
+    }
+    .confirm-images .img-cell {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+    }
+    .confirm-images .img-cell img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
     .btn-google-submit {
         background: linear-gradient(135deg, #4285f4, #34a853) !important;
         color: white !important;
@@ -86,6 +126,93 @@
     @keyframes pulseBtn {
         0%, 100% { box-shadow: 0 4px 15px rgba(66,133,244,0.4); }
         50% { box-shadow: 0 4px 25px rgba(66,133,244,0.7); }
+    }
+    .btn-save-photos {
+        margin-top: 8px;
+        width: 100%;
+        padding: 10px 14px;
+        background: white;
+        color: #d97706;
+        border: 2px solid #f59e0b;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .btn-save-photos:hover {
+        background: #fffbeb;
+        transform: translateY(-1px);
+    }
+    .btn-save-photos:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .save-photos-hint {
+        margin-top: 6px;
+        font-size: 0.72rem;
+        color: #92400e;
+        text-align: center;
+        line-height: 1.5;
+    }
+    /* 保存ガイド用モーダル */
+    .save-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 9999;
+        overflow-y: auto;
+        padding: 20px;
+    }
+    .save-modal.active { display: block; }
+    .save-modal-inner {
+        max-width: 480px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+    }
+    .save-modal h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+        color: #1f2937;
+    }
+    .save-modal-instruction {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        color: #78350f;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+    .save-modal-images img {
+        width: 100%;
+        max-height: 60vh;
+        object-fit: contain;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        background: #f3f4f6;
+    }
+    .save-modal-close {
+        width: 100%;
+        margin-top: 8px;
+        padding: 10px;
+        background: #1f2937;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
     }
 </style>
 @endpush
@@ -111,14 +238,51 @@
             <p class="confirm-value">{{ $comment }}</p>
         </div>
 
+        @if (!empty($uploadedImageUrls ?? []))
+        <div class="confirm-item">
+            <p class="confirm-label">添付した写真（{{ count($uploadedImageUrls) }}枚）</p>
+            <div class="confirm-images">
+                @foreach ($uploadedImageUrls as $imgUrl)
+                    <div class="img-cell"><img src="{{ $imgUrl }}" alt="" data-src="{{ $imgUrl }}"></div>
+                @endforeach
+            </div>
+            <button type="button" class="btn-save-photos" id="savePhotosBtn">
+                <span>📱</span><span>撮影した写真を端末に保存</span>
+            </button>
+            <p class="save-photos-hint">
+                Googleマップでも添付するために、お使いの端末（iPhone/Android）に保存できます
+            </p>
+        </div>
+
+        {{-- 保存方法ガイド（Web Share API 非対応端末向けフォールバック） --}}
+        <div class="save-modal" id="saveModal" aria-hidden="true">
+            <div class="save-modal-inner">
+                <h3>📱 写真を端末に保存する方法</h3>
+                <p class="save-modal-instruction">
+                    下の写真を <strong>長押し</strong> → <strong>「写真に追加」</strong>（iPhone）<br>
+                    または <strong>「画像をダウンロード」</strong>（Android）を選んでください
+                </p>
+                <div class="save-modal-images" id="saveModalImages"></div>
+                <button type="button" class="save-modal-close" id="saveModalClose">閉じる</button>
+            </div>
+        </div>
+        @endif
+
         {{-- 高評価の場合：口コミ文コピー＋Googleマップ誘導セクション --}}
-        @if ($rating >= 4)
+        @php $threshold = $store->notify_threshold ?? 3; @endphp
+        @if ($rating > $threshold)
         <div class="google-post-section">
             <div class="google-post-notice">
                 <p>📍 下のボタンを押すと口コミ文が<strong>自動コピー</strong>され、<strong>Googleマップ</strong>が開きます</p>
                 <p style="margin-top: 6px; font-size: 0.75rem; color: #000;"><strong>※ Googleアカウントがない場合は弊社システムに口コミが送信されます</strong></p>
                 <p id="meoGuide" style="display:none; margin-top: 6px; font-size: 0.75rem; color: #1e3a5f;">店舗が表示されたら<strong>タップ</strong>→<strong>「クチコミ」</strong>→ 貼り付けてください</p>
             </div>
+            @if (!empty($uploadedImageUrls ?? []))
+            <div class="photo-cta">
+                <p><span class="icon">📷</span> Googleマップ画面で<strong>写真も忘れずに添付</strong>してください！</p>
+                <p style="margin-top: 4px; font-size: 0.72rem; color: #92400e; font-weight: 400;">写真付きの口コミは検索で表示されやすくなります🌟</p>
+            </div>
+            @endif
         </div>
         @endif
     </div>
@@ -131,15 +295,20 @@
             <input type="hidden" name="rating" value="{{ $rating }}">
             <input type="hidden" name="comment" value="{{ $comment }}">
             <input type="hidden" name="is_ai_generated" value="{{ $is_ai_generated }}">
-            <input type="hidden" name="gender" value="{{ $gender }}">
-            <input type="hidden" name="age" value="{{ $age }}">
-            <input type="hidden" name="visit_type" value="{{ $visit_type }}">
-            <button type="submit" class="btn btn-primary {{ $rating >= 4 ? 'btn-google-submit' : '' }}" id="submitBtn">
-                <span id="submitText">{{ $rating >= 4 ? '📍 コピーしてGoogleマップへ →' : '送信する →' }}</span>
+            {{-- 動的 persona（各質問グループの回答）--}}
+            @foreach (($persona ?? []) as $pKey => $pVal)
+                <input type="hidden" name="{{ $pKey }}" value="{{ $pVal }}">
+            @endforeach
+            {{-- アップロード済み画像（送信完了時にローカルから削除される） --}}
+            @foreach (($uploadedImages ?? []) as $imgFilename)
+                <input type="hidden" name="uploaded_images[]" value="{{ $imgFilename }}">
+            @endforeach
+            <button type="submit" class="btn btn-primary {{ $rating > $threshold ? 'btn-google-submit' : '' }}" id="submitBtn">
+                <span id="submitText">{{ $rating > $threshold ? '📍 コピーしてGoogleマップへ →' : '送信する →' }}</span>
                 <div class="loading-spinner" id="loadingSpinner" style="display:none;width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
             </button>
         </form>
-        @if ($rating >= 4)
+        @if ($rating > $threshold)
         <input type="hidden" id="googleReviewUrl" value="{{ $store->google_review_url }}">
         <input type="hidden" id="storeName" value="{{ $store->name }}">
         <input type="hidden" id="meoKeywords" value="{{ $store->meo_keywords }}">
@@ -154,9 +323,12 @@
             <input type="hidden" name="rating" value="{{ $rating }}">
             <input type="hidden" name="comment" value="{{ $comment }}">
             <input type="hidden" name="is_ai_generated" value="{{ $is_ai_generated }}">
-            <input type="hidden" name="gender" value="{{ $gender }}">
-            <input type="hidden" name="age" value="{{ $age }}">
-            <input type="hidden" name="visit_type" value="{{ $visit_type }}">
+            @foreach (($persona ?? []) as $pKey => $pVal)
+                <input type="hidden" name="{{ $pKey }}" value="{{ $pVal }}">
+            @endforeach
+            @foreach (($uploadedImages ?? []) as $imgFilename)
+                <input type="hidden" name="uploaded_images[]" value="{{ $imgFilename }}">
+            @endforeach
             <button type="submit" class="btn btn-back">✏️ 修正する</button>
         </form>
     </div>
@@ -166,8 +338,75 @@
 @push('scripts')
 <script>
     var rating = {{ $rating }};
+    var threshold = {{ $threshold }};
 
     var thankyouUrl = '{{ url("/review/" . $store->slug . "/thankyou") }}';
+
+    // ===== 写真を端末に保存 =====
+    (function() {
+        var btn = document.getElementById('savePhotosBtn');
+        if (!btn) return;
+
+        var modal = document.getElementById('saveModal');
+        var modalImages = document.getElementById('saveModalImages');
+        var modalClose = document.getElementById('saveModalClose');
+
+        modalClose.addEventListener('click', function() { modal.classList.remove('active'); });
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
+
+        async function urlsToFiles(urls) {
+            var files = [];
+            for (var i = 0; i < urls.length; i++) {
+                try {
+                    var res = await fetch(urls[i]);
+                    var blob = await res.blob();
+                    var ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+                    var fname = 'photo-' + (i + 1) + '.' + ext;
+                    files.push(new File([blob], fname, { type: blob.type }));
+                } catch (e) { /* skip */ }
+            }
+            return files;
+        }
+
+        function showFallbackModal(urls) {
+            modalImages.innerHTML = '';
+            urls.forEach(function(u) {
+                var img = document.createElement('img');
+                img.src = u;
+                modalImages.appendChild(img);
+            });
+            modal.classList.add('active');
+        }
+
+        btn.addEventListener('click', async function() {
+            var urls = Array.from(document.querySelectorAll('.confirm-images img')).map(function(i) { return i.dataset.src || i.src; });
+            if (!urls.length) return;
+
+            btn.disabled = true;
+            var originalText = btn.innerHTML;
+            btn.innerHTML = '<span>📱</span><span>準備中...</span>';
+
+            try {
+                // Web Share API (HTTPS環境のiOS/Androidで「写真に保存」が選べる)
+                if (navigator.canShare) {
+                    var files = await urlsToFiles(urls);
+                    if (files.length && navigator.canShare({ files: files })) {
+                        try {
+                            await navigator.share({ files: files, title: '口コミ用の写真' });
+                            return;
+                        } catch (e) {
+                            if (e.name === 'AbortError') return; // ユーザーキャンセル
+                        }
+                    }
+                }
+                // フォールバック: 長押し保存ガイドを表示
+                showFallbackModal(urls);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    })();
 
     // Googleマップから戻った時にthankyouページへリダイレクト
     window.addEventListener('pageshow', function(event) {
@@ -182,12 +421,12 @@
         var btn = document.getElementById('submitBtn');
 
         // 高評価の場合：fetchでバックグラウンド送信し、現在のタブでGoogleマップへ遷移
-        if (rating >= 4) {
+        if (rating > threshold) {
             e.preventDefault();
 
             // MEO検索経由かどうかを先に決定
             var meoData = document.getElementById('meoKeywords').value;
-            var meoKeywords = meoData ? meoData.split(',').map(function(k) { return k.trim(); }).filter(Boolean) : ['買取', '質屋', '査定', '鑑定', '宝石', 'ブランド'];
+            var meoKeywords = meoData ? meoData.split(',').map(function(k) { return k.trim(); }).filter(Boolean) : [];
             var shuffled = meoKeywords.sort(function() { return 0.5 - Math.random(); });
             var picked = shuffled.slice(0, 2);
             var meoRatioRaw = parseInt(document.getElementById('meoRatio').value);

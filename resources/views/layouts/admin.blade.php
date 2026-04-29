@@ -42,17 +42,74 @@
             gap: 4px;
             list-style: none;
         }
-        .navbar-nav a {
+        .navbar-nav > li {
+            position: relative;
+        }
+        .navbar-nav a,
+        .navbar-nav .nav-dropdown-toggle {
             color: rgba(255,255,255,0.8);
             text-decoration: none;
             padding: 8px 16px;
             border-radius: 8px;
             font-size: 0.85rem;
             transition: all 0.2s;
+            cursor: pointer;
+            display: inline-block;
+            background: none;
+            border: none;
+            font-family: inherit;
         }
-        .navbar-nav a:hover, .navbar-nav a.active {
+        .navbar-nav a:hover, .navbar-nav a.active,
+        .navbar-nav .nav-dropdown-toggle:hover,
+        .navbar-nav li:hover > .nav-dropdown-toggle {
             background: rgba(255,255,255,0.15);
             color: white;
+        }
+        .nav-dropdown-toggle::after {
+            content: ' ▾';
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+        .nav-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            min-width: 200px;
+            padding: 6px 0;
+            z-index: 1000;
+            margin-top: 0;
+        }
+        .nav-dropdown::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 0;
+            right: 0;
+            height: 12px;
+        }
+        .navbar-nav li:hover > .nav-dropdown {
+            display: block;
+        }
+        .nav-dropdown a {
+            color: #374151 !important;
+            padding: 10px 18px !important;
+            border-radius: 0 !important;
+            display: block !important;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .nav-dropdown a:hover {
+            background: #f3f4f6 !important;
+            color: #1e1b4b !important;
+        }
+        .nav-dropdown a.active {
+            background: #eef2ff !important;
+            color: #4338ca !important;
+            font-weight: 600;
         }
         .navbar-right {
             display: flex;
@@ -124,6 +181,8 @@
         }
         .card-body {
             padding: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         table {
             width: 100%;
@@ -272,6 +331,13 @@
             table { font-size: 0.8rem; }
             table th, table td { padding: 8px; }
         }
+        /* ④ バリデーションエラーを見やすく */
+        p[style*="color:#ef4444"] {
+            font-size: 0.9rem !important;
+            font-weight: 500;
+        }
+        /* ⑤ 小さすぎるフォントの底上げ */
+        .form-hint { font-size: 0.8rem; }
     </style>
     @stack('styles')
 </head>
@@ -282,20 +348,65 @@
             <span>QRレビュー管理</span>
         </a>
         <ul class="navbar-nav">
-            <li><a href="/admin/dashboard" class="{{ request()->is('admin/dashboard*') ? 'active' : '' }}">📊 統計</a></li>
-            <li><a href="/admin/stores" class="{{ request()->is('admin/stores*') ? 'active' : '' }}">🏪 店舗管理</a></li>
-            <li><a href="/admin/google-reviews" class="{{ request()->is('admin/google-reviews*') ? 'active' : '' }}">🌐 Google口コミ</a></li>
-            <li><a href="/admin/reviews" class="{{ request()->is('admin/reviews*') ? 'active' : '' }}">📝 口コミ一覧</a></li>
-            <li><a href="/admin/suggestion-themes" class="{{ request()->is('admin/suggestion-themes*') ? 'active' : '' }}">🏷️ テーマ</a></li>
-            <li><a href="/admin/reply-categories" class="{{ request()->is('admin/reply-categories*') ? 'active' : '' }}">💬 返信カテゴリ</a></li>
-            <li><a href="/admin/purchase-posts" class="{{ request()->is('admin/purchase-posts*') ? 'active' : '' }}">📦 買取投稿</a></li>
-            @if(Auth::user() && Auth::user()->isAdmin())
-            <li><a href="/admin/google-settings" class="{{ request()->is('admin/google-settings*') ? 'active' : '' }}">⚙️ Google設定</a></li>
-            <li><a href="/admin/users" class="{{ request()->is('admin/users*') ? 'active' : '' }}">👥 ユーザー</a></li>
-            @endif
+            <li><a href="/admin/dashboard" class="{{ request()->is('admin/dashboard*') ? 'active' : '' }}">🏠 ホーム</a></li>
+            <li>
+                <span class="nav-dropdown-toggle {{ request()->is('admin/google-reviews*') || request()->is('admin/reviews*') || request()->is('admin/ai-reply-preview*') ? 'active' : '' }}">💬 口コミ</span>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/google-reviews" class="{{ request()->is('admin/google-reviews*') ? 'active' : '' }}">🌐 Google 口コミ（返信）</a></li>
+                    <li><a href="/admin/reviews" class="{{ request()->is('admin/reviews*') ? 'active' : '' }}">📝 アンケート口コミ</a></li>
+                    <li><a href="/admin/ai-reply-preview" class="{{ request()->is('admin/ai-reply-preview*') ? 'active' : '' }}">🔍 AI返信プレビュー＆学習</a></li>
+                </ul>
+            </li>
+            <li><a href="/admin/purchase-posts" class="{{ request()->is('admin/purchase-posts*') ? 'active' : '' }}">📦 投稿</a></li>
+            <li><a href="/admin/stores" class="{{ request()->is('admin/stores*') ? 'active' : '' }}">🏪 店舗設定</a></li>
+            <li>
+                @php
+                    try {
+                        $unpaidInvoiceCount = \App\Models\Invoice::where('tenant_id', \App\Models\Tenant::current()?->id ?? 0)
+                            ->whereIn('status', ['sent', 'overdue'])->count();
+                    } catch (\Throwable $e) { $unpaidInvoiceCount = 0; }
+                @endphp
+                <a href="/admin/invoices" class="{{ request()->is('admin/invoices*') ? 'active' : '' }}">
+                    📄 請求書
+                    @if($unpaidInvoiceCount > 0)
+                        <span style="background:#ef4444;color:white;border-radius:10px;padding:1px 7px;font-size:0.7rem;font-weight:600;margin-left:4px;">{{ $unpaidInvoiceCount }}</span>
+                    @endif
+                </a>
+            </li>
+            <li>
+                <span class="nav-dropdown-toggle {{ request()->is('admin/business-types*') || request()->is('admin/suggestion-themes*') || request()->is('admin/reply-categories*') || request()->is('admin/google-settings*') || request()->is('admin/users*') ? 'active' : '' }}">⚙️ 詳細設定</span>
+                <ul class="nav-dropdown">
+                    <li><a href="/admin/suggestion-themes" class="{{ request()->is('admin/suggestion-themes*') ? 'active' : '' }}">🏷️ 口コミテーマ</a></li>
+                    <li><a href="/admin/reply-categories" class="{{ request()->is('admin/reply-categories*') ? 'active' : '' }}">💬 返信カテゴリ</a></li>
+                    <li><a href="/admin/business-types" class="{{ request()->is('admin/business-types*') ? 'active' : '' }}">🏢 業種マスタ</a></li>
+                    @if(Auth::user() && Auth::user()->isAdmin())
+                    <li><a href="/admin/google-settings" class="{{ request()->is('admin/google-settings*') ? 'active' : '' }}">🌐 Google 連携</a></li>
+                    <li><a href="/admin/users" class="{{ request()->is('admin/users*') ? 'active' : '' }}">👥 ユーザー管理</a></li>
+                    @endif
+                </ul>
+            </li>
+            <li><a href="/manual.html" target="_blank">📖 使い方</a></li>
         </ul>
         <div class="navbar-right">
             <span class="user-name">{{ Auth::user()->name ?? '' }}</span>
+            @php
+                // 運営管理切替ボタン表示判定:
+                //   - 既に super_admins テーブルに登録済み、または
+                //   - .env の ADMIN_EMAIL と一致するメールアドレス（マスター管理者）
+                $userEmail = Auth::user()->email ?? '';
+                $isSuperAdminEligible = $userEmail && (
+                    \App\Models\SuperAdmin::where('email', $userEmail)->exists()
+                    || $userEmail === env('ADMIN_EMAIL')
+                );
+            @endphp
+            @if($isSuperAdminEligible)
+            <form method="POST" action="/super-admin/switch-from-admin" style="display:inline;">
+                @csrf
+                <button type="submit" class="logout-btn" style="background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);margin-right:8px;" title="運営管理画面に切り替え">
+                    🛡️ 運営管理
+                </button>
+            </form>
+            @endif
             <form method="POST" action="/admin/logout" style="display:inline;">
                 @csrf
                 <button type="submit" class="logout-btn">ログアウト</button>
@@ -309,6 +420,15 @@
         @endif
         @if(session('error'))
             <div class="alert alert-error">{{ session('error') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-error">
+                <ul style="margin:0;padding-left:18px;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
         @yield('content')
     </div>

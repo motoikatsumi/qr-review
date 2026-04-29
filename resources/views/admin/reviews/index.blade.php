@@ -101,7 +101,7 @@
                     <span class="review-badge review-badge-ai">🤖 AI生成</span>
                 @endif
                 @if(Auth::user()->isAdmin())
-                <form action="/admin/reviews/{{ $review->id }}" method="POST" style="display:inline;margin-left:auto;" onsubmit="return confirm('この口コミを削除しますか？');">
+                <form action="/admin/reviews/{{ $review->id }}" method="POST" style="display:inline;margin-left:auto;" onsubmit="return confirm('この口コミを削除しますか？\nこの操作は元に戻せません。');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger btn-sm" style="padding:2px 10px;font-size:0.75rem;">🗑 削除</button>

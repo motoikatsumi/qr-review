@@ -1,0 +1,2852 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRコード口コミ支援システム 操作マニュアル</title>
+<style>
+  /* ============================
+     基本スタイル
+     ============================ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    line-height: 1.8;
+    color: #333;
+    background: #f5f7fa;
+    font-size: 15px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 40px 50px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+  }
+
+  /* ============================
+     表紙
+     ============================ */
+  .cover {
+    text-align: center;
+    padding: 80px 20px;
+    border-bottom: 3px solid #2563eb;
+    margin-bottom: 40px;
+    page-break-after: always;
+  }
+
+  .cover h1 {
+    font-size: 32px;
+    color: #1e40af;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+
+  .cover .subtitle {
+    font-size: 20px;
+    color: #64748b;
+    margin-bottom: 40px;
+  }
+
+  .cover .version {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-top: 30px;
+  }
+
+  .cover .logo-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+  }
+
+  /* ============================
+     目次
+     ============================ */
+  .toc {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 30px 40px;
+    margin-bottom: 40px;
+    page-break-after: always;
+  }
+
+  .toc h2 {
+    font-size: 22px;
+    color: #1e40af;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #dbeafe;
+    padding-bottom: 10px;
+  }
+
+  .toc ol {
+    counter-reset: toc-counter;
+    list-style: none;
+  }
+
+  .toc > ol > li {
+    counter-increment: toc-counter;
+    margin-bottom: 6px;
+  }
+
+  .toc > ol > li > a {
+    display: flex;
+    align-items: baseline;
+    text-decoration: none;
+    color: #334155;
+    padding: 6px 0;
+    border-bottom: 1px dotted #cbd5e1;
+    transition: color 0.2s;
+  }
+
+  .toc > ol > li > a:hover { color: #2563eb; }
+
+  .toc > ol > li > a::before {
+    content: counter(toc-counter) ".";
+    font-weight: bold;
+    color: #2563eb;
+    min-width: 30px;
+    margin-right: 8px;
+  }
+
+  .toc .toc-sub {
+    list-style: none;
+    padding-left: 38px;
+  }
+
+  .toc .toc-sub li a {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 14px;
+    display: block;
+    padding: 2px 0;
+  }
+
+  .toc .toc-sub li a:hover { color: #2563eb; }
+
+  /* ============================
+     見出し
+     ============================ */
+  h2 {
+    font-size: 24px;
+    color: #1e40af;
+    border-left: 5px solid #2563eb;
+    padding-left: 15px;
+    margin-top: 50px;
+    margin-bottom: 20px;
+    page-break-before: always;
+  }
+
+  h2:first-of-type { page-break-before: auto; }
+
+  h3 {
+    font-size: 18px;
+    color: #1e3a8a;
+    margin-top: 30px;
+    margin-bottom: 12px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  h4 {
+    font-size: 16px;
+    color: #475569;
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+
+  /* ============================
+     本文コンテンツ
+     ============================ */
+  p { margin-bottom: 12px; }
+
+  .section { margin-bottom: 40px; }
+
+  /* 手順リスト */
+  .steps {
+    list-style: none;
+    counter-reset: step-counter;
+    margin: 16px 0;
+    padding: 0;
+  }
+
+  .steps > li {
+    counter-increment: step-counter;
+    position: relative;
+    padding: 14px 16px 14px 60px;
+    margin-bottom: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    min-height: 48px;
+  }
+
+  .steps > li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 14px;
+    top: 12px;
+    background: #2563eb;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  /* 通常のリスト */
+  ul, ol { margin: 12px 0 12px 24px; }
+  li { margin-bottom: 6px; }
+
+  /* 注意・ポイントボックス */
+  .note {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .note::before {
+    content: "💡 ポイント";
+    display: block;
+    font-weight: bold;
+    color: #b45309;
+    margin-bottom: 6px;
+  }
+
+  .warning {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-left: 4px solid #ef4444;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .warning::before {
+    content: "⚠️ ご注意";
+    display: block;
+    font-weight: bold;
+    color: #dc2626;
+    margin-bottom: 6px;
+  }
+
+  .info {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-left: 4px solid #3b82f6;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .info::before {
+    content: "ℹ️ 補足";
+    display: block;
+    font-weight: bold;
+    color: #1d4ed8;
+    margin-bottom: 6px;
+  }
+
+  .google-required {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-left: 4px solid #22c55e;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+
+  .google-required::before {
+    content: "🔗 Google連携が必要な機能";
+    display: block;
+    font-weight: bold;
+    color: #15803d;
+    margin-bottom: 6px;
+  }
+
+  .new-badge {
+    display: inline-block;
+    background: #dc2626;
+    color: #fff;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* テーブル */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  th {
+    background: #1e40af;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* キーワード・ボタン表記 */
+  .btn {
+    display: inline-block;
+    background: #2563eb;
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .btn-secondary {
+    background: #64748b;
+  }
+
+  .btn-green {
+    background: #16a34a;
+  }
+
+  .btn-orange {
+    background: #ea580c;
+  }
+
+  .menu-path {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #334155;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+  }
+
+  .menu-path .sep { color: #94a3b8; margin: 0 4px; }
+
+  kbd {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  code {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e11d48;
+  }
+
+  /* 画面イメージ枠 */
+  .screen-image {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 30px;
+    margin: 16px 0;
+    background: #f8fafc;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+
+  /* フロー図 */
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+  }
+
+  .flow-step {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .flow-arrow {
+    color: #94a3b8;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .flow-step.highlight {
+    background: #2563eb;
+    color: #fff;
+  }
+
+  /* 区切り線 */
+  hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 30px 0;
+  }
+
+  /* ============================
+     印刷用スタイル
+     ============================ */
+  @media print {
+    body { background: #fff; font-size: 12pt; }
+    .container { box-shadow: none; padding: 0; max-width: 100%; }
+    .cover { padding: 60px 20px; }
+    h2 { page-break-before: always; font-size: 18pt; }
+    h2:first-of-type { page-break-before: auto; }
+    .steps > li, .note, .warning, .info, .google-required { break-inside: avoid; }
+    table { break-inside: avoid; }
+    a { color: #333; text-decoration: none; }
+    .toc > ol > li > a::after { content: none; }
+    .no-print { display: none; }
+  }
+
+  @media (max-width: 768px) {
+    .container { padding: 20px; }
+    .cover { padding: 40px 10px; }
+    .cover h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ============================
+     表紙
+     ============================ -->
+<div class="cover">
+  <div class="logo-icon">📱⭐</div>
+  <h1>QRコード口コミ支援システム</h1>
+  <p class="subtitle">管理者向け 操作マニュアル</p>
+  <p style="color:#64748b; font-size:16px;">
+    飲食店・美容室・小売店・サービス業など、<br>
+    あらゆる業種のお店で使える口コミ収集＆Googleマップ評価アップ支援システムです
+  </p>
+  <p class="version">
+    バージョン 3.0　|　最終更新日：2026年4月<br>
+    お問い合わせ：システム管理者までご連絡ください
+  </p>
+</div>
+
+<!-- ============================
+     目次
+     ============================ -->
+<div class="toc">
+  <h2 style="border-left:none; padding-left:0; margin-top:0; page-break-before:auto;">📋 目次</h2>
+  <ol>
+    <li>
+      <a href="#about">このシステムでできること</a>
+    </li>
+    <li>
+      <a href="#login">ログインする</a>
+    </li>
+    <li>
+      <a href="#dashboard">ダッシュボード（トップ画面）</a>
+    </li>
+    <li>
+      <a href="#business-types">業種を管理する <span class="new-badge">NEW</span></a>
+      <ul class="toc-sub">
+        <li><a href="#business-types-about">業種とは</a></li>
+        <li><a href="#business-types-create">業種を追加する</a></li>
+        <li><a href="#business-types-edit">業種を編集する</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#stores">店舗を登録・管理する</a>
+      <ul class="toc-sub">
+        <li><a href="#stores-create">新しい店舗を登録する</a></li>
+        <li><a href="#stores-edit">店舗情報を編集する</a></li>
+        <li><a href="#stores-ai">AI設定をカスタマイズする</a></li>
+        <li><a href="#stores-qr">QRコードを作成・印刷する</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#integrations">外部連携を設定する <span class="new-badge">NEW</span></a>
+      <ul class="toc-sub">
+        <li><a href="#integrations-about">外部連携とは</a></li>
+        <li><a href="#integrations-instagram">Instagram連携</a></li>
+        <li><a href="#integrations-facebook">Facebook連携</a></li>
+        <li><a href="#integrations-wordpress">WordPress連携</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#reviews">口コミを確認する</a>
+      <ul class="toc-sub">
+        <li><a href="#reviews-list">口コミ一覧を見る</a></li>
+        <li><a href="#reviews-export">CSVエクスポート</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#themes">口コミテーマを設定する</a>
+      <ul class="toc-sub">
+        <li><a href="#themes-about">テーマとは</a></li>
+        <li><a href="#themes-category">カテゴリの管理</a></li>
+        <li><a href="#themes-manage">テーマの追加・編集</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#google-settings">Google連携を設定する</a>
+      <ul class="toc-sub">
+        <li><a href="#google-settings-flow">設定の全体フロー</a></li>
+        <li><a href="#google-settings-step1">ステップ1：API情報を入力する</a></li>
+        <li><a href="#google-settings-step2">ステップ2：Googleアカウントと連携する</a></li>
+        <li><a href="#google-settings-step3">ステップ3：店舗とGoogleを紐づける</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#google-reviews">Googleの口コミを管理する</a>
+      <ul class="toc-sub">
+        <li><a href="#google-reviews-sync">口コミを取り込む</a></li>
+        <li><a href="#google-reviews-reply">返信を作成・投稿する</a></li>
+        <li><a href="#google-reviews-bulk">一括返信</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#reply-categories">返信カテゴリを管理する</a>
+    </li>
+    <li>
+      <a href="#purchase-posts">投稿を作成する</a>
+      <ul class="toc-sub">
+        <li><a href="#purchase-posts-about">投稿とは</a></li>
+        <li><a href="#purchase-posts-create">投稿の作成手順</a></li>
+        <li><a href="#purchase-posts-publish">投稿を公開する</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#store-owner">店舗オーナー向けポータル <span class="new-badge">NEW</span></a>
+      <ul class="toc-sub">
+        <li><a href="#store-owner-about">店舗オーナーとは</a></li>
+        <li><a href="#store-owner-login">ログインと基本操作</a></li>
+        <li><a href="#store-owner-features">使える機能</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#customer-flow">来店客から見た画面の流れ</a>
+    </li>
+    <li>
+      <a href="#super-admin">Super Admin（テナント管理） <span class="new-badge">NEW</span></a>
+      <ul class="toc-sub">
+        <li><a href="#super-admin-about">Super Adminとは</a></li>
+        <li><a href="#super-admin-login">ログイン</a></li>
+        <li><a href="#super-admin-dashboard">ダッシュボード</a></li>
+        <li><a href="#super-admin-tenants">テナント管理</a></li>
+        <li><a href="#super-admin-impersonate">代理ログイン</a></li>
+        <li><a href="#super-admin-ai-usage">AI利用ログ</a></li>
+        <li><a href="#super-admin-password">パスワード変更</a></li>
+        <li><a href="#super-admin-setup">初期セットアップ手順</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#faq">よくある質問（FAQ）</a>
+    </li>
+  </ol>
+</div>
+
+<!-- ====================================================================
+     1. このシステムでできること
+     ==================================================================== -->
+<div class="section" id="about">
+  <h2>1. このシステムでできること</h2>
+
+  <p>
+    このシステムは、お店に来たお客様から<strong>Googleマップの口コミ</strong>を効率よく集めるためのツールです。<br>
+    お店にQRコードを置くだけで、お客様がスマートフォンから簡単に口コミを投稿できます。
+  </p>
+
+  <p>
+    <strong>飲食店・美容室・整体院・小売店・質屋・車販売店</strong>など、お客様が来店するあらゆる業種でお使いいただけます。<br>
+    業種ごとにAIの応答やテーマ設定を最適化できるため、どの業界でも自然な口コミが集まります。
+  </p>
+
+  <h3>🔰 基本の使い方（Google連携なしで今すぐ使えます）</h3>
+
+  <div class="flow">
+    <div class="flow-step">① 業種を選んで<br>店舗を登録</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">② QRコードを印刷</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">③ 店頭に設置</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step highlight">④ お客様が口コミ投稿</div>
+  </div>
+
+  <table>
+    <tr>
+      <th style="width:40%;">できること</th>
+      <th>説明</th>
+    </tr>
+    <tr>
+      <td><strong>📱 QRコードで口コミ収集</strong></td>
+      <td>お客様がQRコードを読み取ると、口コミ入力画面が開きます。星評価とコメントを入力して送信できます。</td>
+    </tr>
+    <tr>
+      <td><strong>🤖 AI口コミ文の自動生成</strong></td>
+      <td>高評価（星4～5）の場合、AIが業種に合った自然な口コミ文を作成してくれます。お客様はそれをコピーしてGoogleマップに投稿できます。</td>
+    </tr>
+    <tr>
+      <td><strong>📧 低評価の即時通知</strong></td>
+      <td>低評価（星1～3）が投稿されると、設定したメールアドレスにすぐ通知が届きます。</td>
+    </tr>
+    <tr>
+      <td><strong>📊 口コミの統計・管理</strong></td>
+      <td>ダッシュボードで評価の平均、件数推移、分布などをひと目で確認できます。</td>
+    </tr>
+    <tr>
+      <td><strong>📥 CSVエクスポート</strong></td>
+      <td>口コミデータをExcelで開ける形式でダウンロードできます。</td>
+    </tr>
+    <tr>
+      <td><strong>🏢 多業種対応</strong></td>
+      <td>飲食店・美容室・整体院・小売店・質屋など、業種ごとにAI設定やテーマを最適化できます。</td>
+    </tr>
+  </table>
+
+  <h3>🔗 Google連携で使える追加機能</h3>
+  <p>Googleビジネスプロフィールと連携すると、さらに以下の機能が使えるようになります。<br>
+  <strong>※ Google連携は後からいつでも設定できます。まずは上の基本機能だけで使い始めてOKです。</strong></p>
+
+  <table>
+    <tr>
+      <th style="width:40%;">できること</th>
+      <th>説明</th>
+    </tr>
+    <tr>
+      <td><strong>🔄 Google口コミの取り込み</strong></td>
+      <td>Googleマップに投稿された口コミを管理画面に取り込んで一覧で確認できます。</td>
+    </tr>
+    <tr>
+      <td><strong>💬 AIで返信文を自動作成</strong></td>
+      <td>Google口コミへの返信文をAIが自動で作成。お店の特徴を盛り込んだ返信が簡単にできます。</td>
+    </tr>
+    <tr>
+      <td><strong>📮 返信をGoogleに直接投稿</strong></td>
+      <td>作成した返信をワンクリックでGoogleマップに投稿できます。</td>
+    </tr>
+  </table>
+
+  <h3>📡 外部連携で使える追加機能</h3>
+  <p>Instagram・Facebook・WordPressと連携すると、さらに以下の機能が使えるようになります。</p>
+
+  <table>
+    <tr>
+      <th style="width:40%;">できること</th>
+      <th>説明</th>
+    </tr>
+    <tr>
+      <td><strong>📰 投稿（SNS一括配信）</strong></td>
+      <td>商品やサービスの紹介記事を、WordPress・Google・Facebook・Instagramに一括で投稿できます。</td>
+    </tr>
+    <tr>
+      <td><strong>🏪 店舗オーナーポータル</strong></td>
+      <td>各店舗のオーナーが自分の店舗の口コミ確認・返信・外部連携設定を行えるマイページ機能です。</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ====================================================================
+     2. ログインする
+     ==================================================================== -->
+<div class="section" id="login">
+  <h2>2. ログインする</h2>
+
+  <p>管理画面にアクセスするには、ログインが必要です。</p>
+
+  <ol class="steps">
+    <li>
+      パソコンまたはスマートフォンのブラウザ（Google Chrome推奨）を開きます。
+    </li>
+    <li>
+      アドレスバーに以下のURLを入力して、Enterキーを押します。<br>
+      <code>https://review-navi.com/admin/login</code>
+    </li>
+    <li>
+      ログイン画面が表示されたら、事前にお伝えした<strong>メールアドレス</strong>と<strong>パスワード</strong>を入力します。
+    </li>
+    <li>
+      <span class="btn">ログイン</span> ボタンをクリックします。
+    </li>
+    <li>
+      ダッシュボード（トップ画面）が表示されれば、ログイン完了です。
+    </li>
+  </ol>
+
+  <div class="info">
+    アカウントの種類によって、ログイン後に表示される画面が異なります。
+    <table>
+      <tr>
+        <th>アカウント種類</th>
+        <th>ログイン後の画面</th>
+        <th>できること</th>
+      </tr>
+      <tr>
+        <td><strong>管理者</strong></td>
+        <td>管理ダッシュボード</td>
+        <td>全店舗の管理・設定すべて</td>
+      </tr>
+      <tr>
+        <td><strong>メンバー</strong></td>
+        <td>管理ダッシュボード</td>
+        <td>管理者と同様（権限は管理者が設定）</td>
+      </tr>
+      <tr>
+        <td><strong>店舗オーナー</strong></td>
+        <td>店舗オーナーポータル</td>
+        <td>自分の店舗のみ管理（<a href="#store-owner">→ 第13章</a>）</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="warning">
+    ログイン情報（メールアドレス・パスワード）は、初期設定時にお渡ししたものをご使用ください。<br>
+    パスワードを忘れた場合は、システム管理者にご連絡ください。
+  </div>
+
+  <div class="note">
+    セキュリティのため、一定の場所（IPアドレス）以外からはアクセスできない設定になっている場合があります。<br>
+    ログイン画面が表示されない場合は、システム管理者にお使いのネットワーク環境をお伝えください。
+  </div>
+</div>
+
+<!-- ====================================================================
+     3. ダッシュボード
+     ==================================================================== -->
+<div class="section" id="dashboard">
+  <h2>3. ダッシュボード（トップ画面）</h2>
+
+  <p>
+    ログイン直後に表示される画面です。口コミの全体状況をひと目で確認できます。<br>
+    画面は<strong>左右2つのエリア</strong>に分かれています。
+  </p>
+
+  <h3>管理画面のメニュー構成</h3>
+  <p>画面上部のナビゲーションバーに、以下のメニューが並んでいます。</p>
+
+  <table>
+    <tr>
+      <th style="width:30%;">メニュー名</th>
+      <th>内容</th>
+    </tr>
+    <tr>
+      <td><strong>🏠 ホーム</strong></td>
+      <td>ダッシュボード（この画面）。今日の状況やよく使う操作へのショートカットが並びます。</td>
+    </tr>
+    <tr>
+      <td><strong>💬 口コミ ▾</strong></td>
+      <td>
+        プルダウンメニュー：<br>
+        ・<strong>🌐 Google 口コミ（返信）</strong>：Google マップの口コミ管理・返信<br>
+        ・<strong>📝 アンケート口コミ</strong>：QR コード経由の口コミ確認
+      </td>
+    </tr>
+    <tr>
+      <td><strong>📦 買取投稿</strong></td>
+      <td>商品・サービスの紹介記事を一括投稿します。</td>
+    </tr>
+    <tr>
+      <td><strong>🏪 店舗設定</strong></td>
+      <td>店舗の登録・編集・AI 設定・外部連携・QR コード生成。</td>
+    </tr>
+    <tr>
+      <td><strong>⚙️ 詳細設定 ▾</strong></td>
+      <td>
+        プルダウンメニュー：<br>
+        ・<strong>🏷️ 口コミテーマ</strong>：口コミ生成で使うテーマの設定<br>
+        ・<strong>💬 返信カテゴリ</strong>：AI 返信のキーワード管理<br>
+        ・<strong>🏢 業種マスタ</strong>：業種の追加・編集（AI の振る舞いに影響）<br>
+        ・<strong>🌐 Google 連携</strong>：Google API 連携の設定（管理者のみ）<br>
+        ・<strong>👥 ユーザー管理</strong>：管理者・オーナーアカウントの管理（管理者のみ）
+      </td>
+    </tr>
+    <tr>
+      <td><strong>📖 使い方</strong></td>
+      <td>このマニュアルを開きます。</td>
+    </tr>
+  </table>
+
+  <div class="info">
+    「口コミ」「詳細設定」メニューにカーソルを合わせると、サブメニューが表示されます。<br>
+    本マニュアルでは <span class="menu-path">詳細設定 <span class="sep">›</span> 業種マスタ</span> のように、メニューの階層を「›」で表記しています。
+  </div>
+
+  <h3>ダッシュボードの見方</h3>
+  <p>ホーム画面は、一番上に「今やるべきこと」、真ん中に「よく使う操作」、下に「統計情報」が並んでいます。</p>
+
+  <h4>📌 今日の状況（ダッシュボード上部の 4 枚のカード）</h4>
+  <table>
+    <tr>
+      <th style="width:30%;">カード</th>
+      <th>内容</th>
+    </tr>
+    <tr>
+      <td><strong>💬 未返信の Google 口コミ</strong></td>
+      <td>Google マップに投稿された口コミのうち、まだ返信していない件数です。クリックすると返信画面に移動します。</td>
+    </tr>
+    <tr>
+      <td><strong>⚠️ 直近 7 日の低評価口コミ</strong></td>
+      <td>星 3 以下のアンケート口コミ件数（過去 7 日）。対応が必要な可能性があります。</td>
+    </tr>
+    <tr>
+      <td><strong>📦 投稿失敗の買取投稿</strong></td>
+      <td>WordPress / Google / Instagram / Facebook のいずれかへの投稿に失敗した件数。クリックしてリトライできます。</td>
+    </tr>
+    <tr>
+      <td><strong>📝 本日の新着口コミ</strong></td>
+      <td>今日投稿されたアンケート口コミと Google 口コミの合計件数です。</td>
+    </tr>
+  </table>
+
+  <div class="info">
+    件数が 0 件のカードは緑色、1 件以上ある場合は黄色または赤色で表示されます。色が付いているカードは対応が必要な可能性があるので優先的にチェックしてください。
+  </div>
+
+  <h4>⚠️ 設定が未完了の項目</h4>
+  <p>
+    業種未設定の店舗、通知メール未設定の店舗、Google マップ URL 未設定の店舗がある場合、黄色いアラート枠で通知されます。該当リンクから設定画面に移動できます。
+  </p>
+
+  <h4>🚀 よく使う操作</h4>
+  <p>
+    「口コミ一覧を見る」「Google 口コミを返信」「買取投稿を作る」「店舗設定」「テーマ管理」「業種設定」のショートカットボタンです。よく使う機能にワンクリックでアクセスできます。
+  </p>
+
+  <h4>📊 統計情報</h4>
+  <table>
+    <tr>
+      <th style="width:30%;">表示エリア</th>
+      <th>内容</th>
+    </tr>
+    <tr>
+      <td><strong>左側：システム口コミ</strong></td>
+      <td>
+        QR コード経由で集めた口コミの統計です。<br>
+        ・口コミ総件数<br>
+        ・平均評価（星の平均）<br>
+        ・星ごとの件数グラフ<br>
+        ・高評価率（星 4〜5 の割合）<br>
+        ・Google 誘導率<br>
+        ・性別・年代・来店タイプの分布<br>
+        ・直近 30 日間の推移グラフ
+      </td>
+    </tr>
+    <tr>
+      <td><strong>右側：Google 口コミ</strong></td>
+      <td>
+        Google マップ上の口コミ統計です。<br>
+        ・口コミ総件数<br>
+        ・平均評価<br>
+        ・高評価率<br>
+        ・返信率（返信済みの割合）<br>
+        ・直近 30 日間の推移グラフ<br>
+        <em>※ Google 連携を設定するまでは表示されません</em>
+      </td>
+    </tr>
+  </table>
+
+  <h3>店舗で絞り込む</h3>
+  <p>
+    画面上部の<strong>店舗選択プルダウン</strong>から、特定の店舗を選ぶとその店舗だけの数字が表示されます。<br>
+    「すべて」を選ぶと全店舗の合計が表示されます。
+  </p>
+
+  <div class="note">
+    ダッシュボードのデータは画面を開くたびに最新の情報が表示されます。<br>
+    数値がおかしいと感じたら、ブラウザの再読み込み（F5キー）をお試しください。
+  </div>
+</div>
+
+<!-- ====================================================================
+     4. 業種を管理する
+     ==================================================================== -->
+<div class="section" id="business-types">
+  <h2>4. 業種を管理する</h2>
+
+  <p>
+    このシステムは<strong>多業種対応</strong>です。店舗を登録する前に、その店舗が属する「業種」を設定しておくと、
+    AIが業種に合った口コミ文や返信文を自動で作成してくれます。
+  </p>
+
+  <h3 id="business-types-about">4-1. 業種とは</h3>
+
+  <p>「業種」を設定すると、以下の内容が業種ごとに自動的に最適化されます。</p>
+
+  <table>
+    <tr>
+      <th style="width:30%;">最適化される内容</th>
+      <th>説明</th>
+    </tr>
+    <tr>
+      <td><strong>AIの基本プロンプト</strong></td>
+      <td>AIが口コミ文や返信文を作るとき、業種の特性を理解した上で文章を作成します。</td>
+    </tr>
+    <tr>
+      <td><strong>NGワード</strong></td>
+      <td>業種ごとに使ってはいけない言葉（競合サービス名、不適切な表現など）を設定できます。</td>
+    </tr>
+    <tr>
+      <td><strong>記事の視点</strong></td>
+      <td>商品投稿で使えるAIの記事の視点（「お客様の声」「プロの解説」など）のプリセットが用意されます。</td>
+    </tr>
+    <tr>
+      <td><strong>文章スタイル</strong></td>
+      <td>投稿文のスタイル（「カジュアル」「フォーマル」「専門的」など）のプリセットが用意されます。</td>
+    </tr>
+    <tr>
+      <td><strong>口コミフォームの質問項目</strong></td>
+      <td>
+        口コミページでお客様に表示される質問（性別・来店・年代・品目など）を最大 5 個まで自由に設定できます。<br>
+        各項目は「表示する／しない」「項目名」「選択肢」がすべて編集可能です。<br>
+        例：質屋なら「品目 = ブランド品 / 貴金属 / 時計 / お酒 / スマホ / その他」、焼肉店なら「注文メニュー = 焼肉コース / 単品メニュー / …」のように業種に合わせてカスタマイズ可能。
+      </td>
+    </tr>
+    <tr>
+      <td><strong>口コミテーマの絞り込み</strong></td>
+      <td>口コミテーマのカテゴリを業種ごとに分けて表示できます。</td>
+    </tr>
+  </table>
+
+  <div class="info">
+    よく使われる業種はあらかじめ登録されています。<br>
+    新しい業種を追加したい場合のみ、この章の手順で追加してください。
+  </div>
+
+  <h4>登録済み業種の例</h4>
+  <table>
+    <tr>
+      <th>業種名</th>
+      <th>対象となるお店の例</th>
+    </tr>
+    <tr>
+      <td><strong>飲食店</strong></td>
+      <td>レストラン、居酒屋、カフェ、焼肉店、ラーメン店など</td>
+    </tr>
+    <tr>
+      <td><strong>美容・サロン</strong></td>
+      <td>美容室、ネイルサロン、エステサロン、まつげサロンなど</td>
+    </tr>
+    <tr>
+      <td><strong>医療・整体</strong></td>
+      <td>整体院、鍼灸院、整骨院、歯科医院、クリニックなど</td>
+    </tr>
+    <tr>
+      <td><strong>小売・買取</strong></td>
+      <td>質屋、リサイクルショップ、ブランド買取店、アパレルショップなど</td>
+    </tr>
+    <tr>
+      <td><strong>自動車販売</strong></td>
+      <td>中古車販売、カーディーラー、車検・整備工場など</td>
+    </tr>
+    <tr>
+      <td><strong>その他サービス</strong></td>
+      <td>不動産、学習塾、フィットネスジム、ペットショップなど</td>
+    </tr>
+  </table>
+
+  <h3 id="business-types-create">4-2. 業種を追加する</h3>
+
+  <p>新しい業種を追加する手順です。</p>
+
+  <ol class="steps">
+    <li>
+      上部メニューの <span class="menu-path">設定 <span class="sep">›</span> 業種管理</span> をクリックします。
+    </li>
+    <li>
+      <span class="btn">＋ 新しい業種を追加</span> ボタンをクリックします。
+    </li>
+    <li>
+      以下の項目を入力します。
+
+      <table>
+        <tr>
+          <th style="width:30%;">項目名</th>
+          <th style="width:15%;">必須/任意</th>
+          <th>入力例・説明</th>
+        </tr>
+        <tr>
+          <td><strong>業種名</strong></td>
+          <td>必須</td>
+          <td>例：「焼肉店」「美容室」「整体院」<br>管理画面やプルダウンに表示される名前です。<br><em>※ 業種名を入れると、内部で使う識別子は自動生成されるので入力不要になりました。</em></td>
+        </tr>
+        <tr>
+          <td><strong>AI への業種説明</strong></td>
+          <td>任意</td>
+          <td>AIに伝える業種の説明文です。<br>例：「焼肉店は、肉質や焼き加減、サイドメニューの充実度、店内の清潔さなどが重要なポイントです。」</td>
+        </tr>
+        <tr>
+          <td><strong>NGワード</strong></td>
+          <td>任意</td>
+          <td>AIが使ってはいけない言葉のリストです。1行に1つずつ入力します。</td>
+        </tr>
+        <tr>
+          <td><strong>記事の視点プリセット</strong></td>
+          <td>任意</td>
+          <td>商品投稿で選べる記事の視点です。<br>例：「お客様の声」「シェフのこだわり」「季節のおすすめ」</td>
+        </tr>
+        <tr>
+          <td><strong>文章スタイルプリセット</strong></td>
+          <td>任意</td>
+          <td>文章のトーンの選択肢です。<br>例：「カジュアル」「フォーマル」「親しみやすい」</td>
+        </tr>
+        <tr>
+          <td><strong>口コミフォームの質問項目（最大 5 個）</strong></td>
+          <td>任意</td>
+          <td>
+            口コミページで回答者に表示される質問項目です。<br>
+            各項目のチェックボックスで「表示する／しない」、項目名と選択肢も自由に編集できます。<br>
+            <strong>設定例：</strong><br>
+            ・項目 1：<em>表示する ☑</em>　項目名「性別」　選択肢「男性 / 女性」<br>
+            ・項目 2：<em>表示する ☑</em>　項目名「来店」　選択肢「初めて / リピーター / 家族と / 友人の紹介」<br>
+            ・項目 3：<em>表示する ☑</em>　項目名「年代」　選択肢「20 代 / 30 代 / …」<br>
+            ・項目 4：<em>表示する ☑</em>　項目名「品目」　選択肢「ブランド品 / 貴金属 / 時計 / …」<br>
+            ・項目 5：<em>表示する ☐</em>　（必要に応じて追加できる空きスロット）
+          </td>
+        </tr>
+      </table>
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックして完了です。
+    </li>
+  </ol>
+
+  <div class="note">
+    AI への業種説明は空欄でも動作しますが、入力しておくと AI がより業種に合った文章を作成してくれます。<br>
+    「このお店のお客様が何を期待して来店するか」を意識して書くのがコツです。
+  </div>
+
+  <h3 id="business-types-edit">4-3. 業種を編集する</h3>
+
+  <ol class="steps">
+    <li>
+      業種一覧で、編集したい業種の <span class="btn btn-secondary">編集</span> ボタンをクリックします。
+    </li>
+    <li>
+      変更したい項目を修正します。
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックして完了です。
+    </li>
+  </ol>
+
+  <div class="warning">
+    業種を削除すると、その業種に紐づいた店舗の業種設定が「未設定」になります。<br>
+    必要に応じて店舗の編集画面から別の業種を選び直してください。
+  </div>
+</div>
+
+<!-- ====================================================================
+     5. 店舗を登録・管理する
+     ==================================================================== -->
+<div class="section" id="stores">
+  <h2>5. 店舗を登録・管理する</h2>
+
+  <p>
+    口コミを集めるには、まず<strong>店舗の登録</strong>が必要です。<br>
+    上部メニューの <span class="menu-path">店舗管理</span> をクリックすると、登録済みの店舗一覧が表示されます。
+  </p>
+
+  <!-- 店舗新規登録 -->
+  <h3 id="stores-create">5-1. 新しい店舗を登録する</h3>
+
+  <ol class="steps">
+    <li>
+      店舗一覧ページで <span class="btn">＋ 新しい店舗を追加</span> ボタンをクリックします。
+    </li>
+    <li>
+      以下の項目を入力します。
+
+      <table>
+        <tr>
+          <th style="width:30%;">項目名</th>
+          <th style="width:15%;">必須/任意</th>
+          <th>入力例・説明</th>
+        </tr>
+        <tr>
+          <td><strong>店舗名</strong></td>
+          <td>必須</td>
+          <td>例：「渋谷本店」「梅田中央店」<br>お客様の画面にも表示される名前です。</td>
+        </tr>
+        <tr>
+          <td><strong>業種</strong></td>
+          <td>必須</td>
+          <td>
+            プルダウンから業種を選択します。<br>
+            業種を選ぶとAIの動作が最適化されます。<br>
+            <a href="#business-types" style="color:#2563eb;">→ 業種の設定は第4章をご覧ください</a>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Google口コミURL</strong></td>
+          <td>必須</td>
+          <td>
+            Googleマップで口コミを書くページのURLです。<br>
+            <a href="#faq-google-url" style="color:#2563eb;">→ 取得方法はFAQをご覧ください</a>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>通知先メールアドレス</strong></td>
+          <td>任意</td>
+          <td>
+            低評価の口コミがあった場合に通知を受け取るメールアドレスです。<br>
+            空欄の場合は初期設定のアドレスに届きます。
+          </td>
+        </tr>
+      </table>
+    </li>
+    <li>
+      入力内容を確認し、<span class="btn btn-green">保存</span> ボタンをクリックします。
+    </li>
+    <li>
+      店舗一覧に戻り、登録した店舗が表示されていれば完了です。
+    </li>
+  </ol>
+
+  <div class="note">
+    店舗名を入力すると、URLの一部に使われる「スラッグ」が自動生成されます（例：<code>shibuya-honten</code>）。<br>
+    これはお客様がアクセスするURLに使われます。変更する必要は通常ありません。
+  </div>
+
+  <!-- 店舗編集 -->
+  <h3 id="stores-edit">5-2. 店舗情報を編集する</h3>
+
+  <p>店舗の編集画面は<strong>3つのタブ</strong>に分かれています。</p>
+
+  <table>
+    <tr>
+      <th style="width:25%;">タブ名</th>
+      <th>内容</th>
+    </tr>
+    <tr>
+      <td><strong>🏪 基本情報</strong></td>
+      <td>店舗名・業種・Google口コミURL・通知先メールアドレスなど基本的な設定</td>
+    </tr>
+    <tr>
+      <td><strong>🤖 AI設定</strong></td>
+      <td>AIの文体・追加指示・NGワード・MEOキーワードなど、AI動作のカスタマイズ（<a href="#stores-ai">→ 5-3参照</a>）</td>
+    </tr>
+    <tr>
+      <td><strong>🔗 外部連携</strong></td>
+      <td>Instagram・Facebook・WordPress・Googleビジネスプロフィールの連携設定（<a href="#integrations">→ 第6章参照</a>）</td>
+    </tr>
+  </table>
+
+  <ol class="steps">
+    <li>
+      店舗一覧で、編集したい店舗の <span class="btn btn-secondary">編集</span> ボタンをクリックします。
+    </li>
+    <li>
+      編集したい内容に応じて、画面上部の<strong>タブ</strong>を切り替えます。
+    </li>
+    <li>
+      変更したい項目を修正します。
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックして完了です。
+    </li>
+  </ol>
+
+  <div class="info">
+    店舗を「無効」にすると、QRコードを読み取ってもお客様の画面にアクセスできなくなります。<br>
+    一時的に口コミ受付を停止したい場合にお使いください。
+  </div>
+
+  <!-- AI設定 -->
+  <h3 id="stores-ai">5-3. AI設定をカスタマイズする</h3>
+
+  <p>
+    店舗ごとにAIの動作を細かく調整できます。店舗の編集画面の<strong>「🤖 AI設定」タブ</strong>で以下の項目を設定してください。
+  </p>
+
+  <div class="info">
+    <strong>💡 初心者向けヒント</strong><br>
+    よく使う「文体」「返信の文字数」「提案文の長さ」は画面上部に表示されます。<br>
+    それ以下の項目は<strong>「⚙️ AI 詳細設定」</strong>のクリックで開閉する折りたたみになっています。慣れてから詳細設定を開いて調整すると分かりやすいです。
+  </div>
+
+  <table>
+    <tr>
+      <th style="width:30%;">設定項目</th>
+      <th style="width:15%;">必須/任意</th>
+      <th>説明</th>
+    </tr>
+    <tr>
+      <td><strong>お店の特徴・基本方針</strong></td>
+      <td>任意</td>
+      <td>
+        お店独自の特徴をAIに伝える文章です。具体的に書くほどAIが的確な文章を作ります。<br>
+        <strong>例</strong>：
+        <ul>
+          <li>飲食店：「うちは家族連れのお客様が多いです。個室が自慢のお店です。」</li>
+          <li>美容室：「カラーリングとヘッドスパが得意なサロンです。」</li>
+          <li>整体院：「肩こり・腰痛専門。完全個室でリラックスできる空間が特徴です。」</li>
+          <li>小売店：「ブランドバッグと時計の買取専門店です。鑑定歴20年の専門家がいます。」</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>文体の方向性</strong></td>
+      <td>任意</td>
+      <td>
+        AIが作成する文章のトーン（雰囲気）を選べます。
+        <ul>
+          <li><strong>自動（ランダム）</strong>：AIがランダムな文体で作成します（初期値）</li>
+          <li><strong>フォーマル寄り</strong>：丁寧で落ち着いた文体になります</li>
+          <li><strong>カジュアル寄り</strong>：親しみやすくフレンドリーな文体になります</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>追加NGワード</strong></td>
+      <td>任意</td>
+      <td>
+        AIが使ってはいけない言葉を追加できます。1行に1つずつ入力してください。<br>
+        業種の共通NGワードに加えて、お店独自のNGワードを設定できます。<br>
+        <strong>例</strong>：競合店名、特定の商品名など
+      </td>
+    </tr>
+    <tr>
+      <td><strong>地名キーワード（MEO対策）</strong></td>
+      <td>任意</td>
+      <td>
+        Google口コミへの返信文に自然に盛り込む<strong>地名キーワード</strong>です。1行に1つずつ入力してください。<br>
+        Googleマップの検索順位アップ（MEO対策）に効果があります。<br>
+        <strong>例</strong>：「○○市」「△△駅前」「□□通り」
+      </td>
+    </tr>
+    <tr>
+      <td><strong>サービスキーワード（MEO対策）</strong></td>
+      <td>任意</td>
+      <td>
+        Google口コミへの返信文に自然に盛り込む<strong>サービス名や商品名</strong>です。1行に1つずつ入力してください。<br>
+        <strong>例</strong>：
+        <ul>
+          <li>飲食店：「ランチ」「コース料理」「個室ディナー」</li>
+          <li>美容室：「カット」「カラー」「ヘッドスパ」</li>
+          <li>小売店：「ブランド買取」「時計査定」「宝石鑑定」</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>口コミ返信の方針</strong></td>
+      <td>任意</td>
+      <td>
+        AIがGoogle口コミに返信する際の方針やスタイルを指定できます。<br>
+        <strong>例</strong>：「必ず来店への感謝から始めてください」「紹介やクーポンの案内は含めないでください」
+      </td>
+    </tr>
+    <tr>
+      <td><strong>店舗紹介文</strong></td>
+      <td>任意</td>
+      <td>
+        買取エピソードの自動生成やGoogleビジネスプロフィール投稿のフッター生成時に、AIが「○○のスタッフ」のように自己紹介に使う文章です。<br>
+        空欄の場合は店舗名がそのまま使われます。<br>
+        <strong>例</strong>：「イタリアンレストラン ○○ のオーナーシェフ」「創業30年の老舗 ○○ のスタッフ」
+      </td>
+    </tr>
+    <tr>
+      <td><strong>口コミ返信の文字数</strong></td>
+      <td>任意</td>
+      <td>
+        Google口コミへのAI返信文のボリュームを3段階で調整できます。
+        <ul>
+          <li><strong>コンパクト</strong>：150〜250文字程度</li>
+          <li><strong>標準（おすすめ）</strong>：300〜500文字程度（初期値）</li>
+          <li><strong>しっかり</strong>：500〜700文字程度</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>口コミ提案文の長さ</strong></td>
+      <td>任意</td>
+      <td>
+        QRコードからの口コミ投稿時にお客様に提案する文章の長さを3段階で調整できます。<br>
+        短めにすると投稿しやすく、長めにすると詳しい口コミが集まりやすくなります。
+        <ul>
+          <li><strong>短め</strong>：15〜50文字程度</li>
+          <li><strong>標準（おすすめ）</strong>：20〜90文字程度（初期値）</li>
+          <li><strong>長め</strong>：50〜150文字程度</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <div class="note">
+    AI設定は保存した瞬間から反映されます。次回のAI生成（口コミ提案・Google口コミ返信・投稿エピソード）から新しい設定で動作します。<br>
+    「お店の特徴・基本方針」は、業種の基本設定に<strong>追加</strong>される形で適用されます。業種の基本設定を上書きすることはありません。<br>
+    「文体の方向性」を変更すると、口コミ提案文とGoogle口コミ返信文の両方に反映されます。<br>
+    各項目が未設定の場合は、業種のデフォルト設定が使用されます。
+  </div>
+
+  <!-- QRコード -->
+  <h3 id="stores-qr">5-4. QRコードを作成・印刷する</h3>
+
+  <p>店舗ごとに専用のQRコードを生成できます。これをお店に設置して、お客様に読み取ってもらいます。</p>
+
+  <ol class="steps">
+    <li>
+      店舗一覧で、QRコードを作りたい店舗の <span class="btn">QR</span> ボタンをクリックします。
+    </li>
+    <li>
+      QRコードのプレビューが表示されます。<br>
+      読み取り先のURL（例：<code>https://review-navi.com/review/shibuya-honten</code>）も確認できます。
+    </li>
+    <li>
+      <span class="btn btn-green">📥 ダウンロード</span> ボタンをクリックすると、PNG画像としてダウンロードされます。
+    </li>
+    <li>
+      ダウンロードした画像を印刷して、レジ横やテーブルなどに設置してください。
+    </li>
+  </ol>
+
+  <div class="note">
+    QRコード画像は<strong>600px×600px</strong>のサイズでダウンロードされます。<br>
+    名刺サイズ～A4サイズまで、きれいに印刷できます。
+  </div>
+
+  <h4>📌 QRコード設置のコツ（業種別）</h4>
+  <table>
+    <tr>
+      <th style="width:25%;">業種</th>
+      <th>おすすめの設置場所</th>
+    </tr>
+    <tr>
+      <td><strong>飲食店</strong></td>
+      <td>テーブルやメニュー立て、レジ横。お会計時に「口コミにご協力ください」と声がけすると効果的です。</td>
+    </tr>
+    <tr>
+      <td><strong>美容室</strong></td>
+      <td>鏡の横、受付カウンター。施術後の仕上がり確認時にお渡しすると自然です。</td>
+    </tr>
+    <tr>
+      <td><strong>整体院</strong></td>
+      <td>受付、待合室。施術後にお声がけするのが最も効果的です。</td>
+    </tr>
+    <tr>
+      <td><strong>小売店</strong></td>
+      <td>レジ横、商品棚、ショッパー（紙袋）に印刷。お買い上げ後にお声がけしてください。</td>
+    </tr>
+    <tr>
+      <td><strong>共通</strong></td>
+      <td>名刺やチラシに印刷して配布するのも有効です。QRコードの周りに「<strong>Googleで口コミを書いてください</strong>」等の文言を添えると効果的です。</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ====================================================================
+     6. 外部連携を設定する
+     ==================================================================== -->
+<div class="section" id="integrations">
+  <h2>6. 外部連携を設定する（Instagram・Facebook・WordPress）</h2>
+
+  <h3 id="integrations-about">6-1. 外部連携とは</h3>
+
+  <p>
+    店舗ごとに<strong>Instagram・Facebook・WordPress</strong>との連携を設定できます。<br>
+    連携を設定すると、商品投稿機能で各プラットフォームへの一括配信が可能になります。
+  </p>
+
+  <table>
+    <tr>
+      <th style="width:25%;">連携サービス</th>
+      <th>できること</th>
+    </tr>
+    <tr>
+      <td><strong>Instagram</strong></td>
+      <td>ビジネスアカウントに写真＋ハッシュタグ付きの投稿ができます。</td>
+    </tr>
+    <tr>
+      <td><strong>Facebook</strong></td>
+      <td>Facebookページに写真＋テキストの投稿ができます。</td>
+    </tr>
+    <tr>
+      <td><strong>WordPress</strong></td>
+      <td>WordPressサイトにブログ記事として投稿できます（カテゴリ・タグ付き）。</td>
+    </tr>
+  </table>
+
+  <p>外部連携の設定画面へのアクセス方法は2通りあります。</p>
+  <ul>
+    <li><strong>管理者の場合</strong>：店舗一覧 → 店舗の編集画面 → <strong>「🔗 外部連携」タブ</strong>をクリック</li>
+    <li><strong>店舗オーナーの場合</strong>：上部メニューの <span class="menu-path">外部連携設定</span> をクリック</li>
+  </ul>
+
+  <div class="info">
+    外部連携はすべて<strong>任意</strong>です。必要なサービスだけ設定してください。<br>
+    連携を設定しなくても、QRコード口コミ収集やGoogle口コミ管理は通常通り使えます。
+  </div>
+
+  <h3 id="integrations-instagram">6-2. Instagram連携</h3>
+
+  <p>Instagramのビジネスアカウントと連携して、投稿を自動配信できます。</p>
+
+  <h4>必要なもの</h4>
+  <ul>
+    <li>Instagramの<strong>ビジネスアカウント</strong>（個人アカウントでは連携できません）</li>
+    <li><strong>アクセストークン</strong>：Meta for Developers から取得します</li>
+    <li><strong>InstagramユーザーID</strong>：ビジネスアカウントの数字IDです</li>
+  </ul>
+
+  <h4>設定手順</h4>
+  <ol class="steps">
+    <li>
+      外部連携設定画面を開きます。
+    </li>
+    <li>
+      「Instagram連携」セクションで、<strong>アクセストークン</strong>を入力します。
+    </li>
+    <li>
+      <strong>InstagramユーザーID</strong> を入力します。
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックします。
+    </li>
+    <li>
+      <span class="btn btn-secondary">接続テスト</span> ボタンをクリックして、正常に接続できるか確認します。<br>
+      「接続OK」と表示されれば設定完了です。
+    </li>
+  </ol>
+
+  <div class="note">
+    アクセストークンは各サービスの開発者向け画面（Meta for Developersなど）から取得できます。
+  </div>
+
+  <h4>連携を解除する</h4>
+  <p>
+    Instagram連携セクションの <span class="btn" style="background:#ef4444;">🗑 連携解除</span> ボタンをクリックすると、連携が解除されます。<br>
+    解除後に再度連携したい場合は、同じ手順でトークンを設定し直してください。
+  </p>
+
+  <h3 id="integrations-facebook">6-3. Facebook連携</h3>
+
+  <p>Facebookページと連携して、投稿を自動配信できます。</p>
+
+  <h4>必要なもの</h4>
+  <ul>
+    <li>Facebookの<strong>ページ</strong>（個人プロフィールではなく「ページ」が必要です）</li>
+    <li><strong>ページアクセストークン</strong>：Meta for Developers から取得します</li>
+    <li><strong>ページID</strong>：Facebookページの数字IDです</li>
+  </ul>
+
+  <h4>設定手順</h4>
+  <ol class="steps">
+    <li>
+      外部連携設定画面を開きます。
+    </li>
+    <li>
+      「Facebook連携」セクションで、<strong>ページアクセストークン</strong>を入力します。
+    </li>
+    <li>
+      <strong>ページID</strong> を入力します。
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックします。
+    </li>
+    <li>
+      <span class="btn btn-secondary">接続テスト</span> ボタンをクリックして、接続を確認します。
+    </li>
+  </ol>
+
+  <div class="note">
+    FacebookページIDは、Facebookページの「ページ情報」→「ページID」で確認できます。<br>
+    または、ページのURLの末尾が数字の場合、それがページIDです。
+  </div>
+
+  <h3 id="integrations-wordpress">6-4. WordPress連携</h3>
+
+  <p>WordPressサイトと連携して、ブログ記事として投稿できます。</p>
+
+  <h4>必要なもの</h4>
+  <ul>
+    <li>WordPressサイトの<strong>URL</strong>（例：<code>https://www.example.com</code>）</li>
+    <li>WordPressの<strong>ユーザー名</strong></li>
+    <li><strong>アプリケーションパスワード</strong>（通常のログインパスワードとは異なります）</li>
+  </ul>
+
+  <h4>設定手順</h4>
+  <ol class="steps">
+    <li>
+      外部連携設定画面を開きます。
+    </li>
+    <li>
+      「WordPress連携」セクションで、<strong>サイトURL</strong>を入力します。
+    </li>
+    <li>
+      <strong>ユーザー名</strong>を入力します（WordPressの管理画面にログインするユーザー名と同じです）。
+    </li>
+    <li>
+      <strong>アプリケーションパスワード</strong>を入力します。
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックします。
+    </li>
+    <li>
+      <span class="btn btn-secondary">接続テスト</span> ボタンをクリックして、接続を確認します。
+    </li>
+  </ol>
+
+  <h4>アプリケーションパスワードの取得方法</h4>
+  <ol class="steps">
+    <li>
+      WordPressの管理画面にログインします。
+    </li>
+    <li>
+      左メニューの「ユーザー」→「プロフィール」をクリックします。
+    </li>
+    <li>
+      画面を下にスクロールし、「<strong>アプリケーションパスワード</strong>」セクションを見つけます。
+    </li>
+    <li>
+      「新しいアプリケーションパスワード名」に「口コミシステム」などの名前を入力し、<strong>「新しいアプリケーションパスワードを追加」</strong>をクリックします。
+    </li>
+    <li>
+      表示されたパスワードをコピーします。<strong>このパスワードは一度しか表示されません</strong>ので、必ずコピーしてください。
+    </li>
+    <li>
+      コピーしたパスワードを、QRコード口コミシステムのWordPress連携設定に貼り付けます。
+    </li>
+  </ol>
+
+  <div class="warning">
+    アプリケーションパスワードは<strong>表示された時に必ずコピー</strong>してください。<br>
+    画面を閉じると二度と表示されません。コピーし忘れた場合は、新しいパスワードを再発行してください。
+  </div>
+
+  <div class="info">
+    WordPress 5.6以降で「アプリケーションパスワード」機能が使えます。<br>
+    「アプリケーションパスワード」セクションが表示されない場合は、WordPressのバージョンをご確認ください。
+  </div>
+</div>
+
+<!-- ====================================================================
+     7. 口コミを確認する
+     ==================================================================== -->
+<div class="section" id="reviews">
+  <h2>7. 口コミを確認する</h2>
+
+  <p>上部メニューの <span class="menu-path">口コミ <span class="sep">›</span> 口コミ一覧</span> をクリックすると、QRコード経由で集まった口コミの一覧が表示されます。</p>
+
+  <h3 id="reviews-list">7-1. 口コミ一覧を見る</h3>
+
+  <p>各口コミには以下の情報が表示されます。</p>
+
+  <table>
+    <tr>
+      <th style="width:25%;">項目</th>
+      <th>説明</th>
+    </tr>
+    <tr>
+      <td><strong>投稿日時</strong></td>
+      <td>口コミが送信された日時。</td>
+    </tr>
+    <tr>
+      <td><strong>店舗名</strong></td>
+      <td>どの店舗に対する口コミか。</td>
+    </tr>
+    <tr>
+      <td><strong>星評価</strong></td>
+      <td>
+        ★1～5で表示されます。<br>
+        <span style="color:#ef4444;">★1～3（赤）</span>= 低評価、
+        <span style="color:#22c55e;">★4～5（緑）</span>= 高評価
+      </td>
+    </tr>
+    <tr>
+      <td><strong>お客様情報</strong></td>
+      <td>性別・年代・来店タイプ（新規/リピーター）がバッジで表示されます。</td>
+    </tr>
+    <tr>
+      <td><strong>コメント</strong></td>
+      <td>お客様が入力したコメントの全文。</td>
+    </tr>
+    <tr>
+      <td><strong>ステータス</strong></td>
+      <td>
+        🔗 <strong>Google誘導</strong>：高評価でGoogleへ誘導された口コミ<br>
+        📧 <strong>メール送信</strong>：低評価でメール通知された口コミ
+      </td>
+    </tr>
+  </table>
+
+  <h4>絞り込み機能</h4>
+  <p>一覧の上部にあるフィルターで、表示する口コミを絞り込めます。</p>
+  <ul>
+    <li><strong>店舗</strong>：特定の店舗の口コミだけを表示</li>
+    <li><strong>評価</strong>：「低評価のみ（★1～3）」「高評価のみ（★4～5）」「すべて」</li>
+  </ul>
+
+  <div class="note">
+    <strong>低評価の口コミを優先的に確認しましょう。</strong><br>
+    低評価にはお客様の不満が含まれていることが多く、早期に対応するとリピート率の改善につながります。
+  </div>
+
+  <!-- CSVエクスポート -->
+  <h3 id="reviews-export">7-2. CSVエクスポート</h3>
+
+  <p>口コミデータをCSVファイルとしてダウンロードできます。Excelで開いて分析に活用できます。</p>
+
+  <ol class="steps">
+    <li>
+      口コミ一覧ページで、必要に応じてフィルターで絞り込みます。
+    </li>
+    <li>
+      <span class="btn">📥 CSVエクスポート</span> ボタンをクリックします。
+    </li>
+    <li>
+      CSVファイルが自動的にダウンロードされます。<br>
+      ファイル名は <code>reviews_20260407_120000.csv</code> のように日時が付きます。
+    </li>
+  </ol>
+
+  <div class="info">
+    CSVファイルには、ID・店舗名・星評価・性別・年代・来店タイプ・コメント・AI生成文・ステータス・投稿日時が含まれます。
+  </div>
+</div>
+
+<!-- ====================================================================
+     8. 口コミテーマを設定する
+     ==================================================================== -->
+<div class="section" id="themes">
+  <h2>8. 口コミテーマを設定する</h2>
+
+  <h3 id="themes-about">8-1. テーマとは</h3>
+
+  <p>
+    「テーマ」とは、お客様が口コミを書くときに表示される<strong>選択ボタン</strong>のことです。<br>
+    たとえば飲食店なら「🍖 お肉が美味しい」「🌟 接客が丁寧」、美容室なら「✂️ カットが上手」「💆 リラックスできた」のようなボタンが並びます。
+  </p>
+
+  <p>
+    お客様がテーマボタンをタップすると、そのテーマに合わせた口コミ文がAIで自動生成されます。<br>
+    <strong>「何を書けばいいかわからない」というお客様でも、簡単に口コミが書けるようになります。</strong>
+  </p>
+
+  <div class="flow">
+    <div class="flow-step">お客様がテーマボタンをタップ</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">AIが口コミ文を自動作成</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step highlight">お客様が内容を確認して送信</div>
+  </div>
+
+  <h3 id="themes-category">8-2. カテゴリの管理</h3>
+
+  <p>
+    テーマは<strong>カテゴリごとにグループ分け</strong>されています。<br>
+    上部メニューの <span class="menu-path">設定 <span class="sep">›</span> テーマ管理</span> をクリックして設定します。
+  </p>
+
+  <p>
+    カテゴリは<strong>業種ごとに絞り込み</strong>ができます。<br>
+    例えば「飲食店」カテゴリと「美容室」カテゴリを分けて管理することで、各店舗に適したテーマだけを表示できます。
+  </p>
+
+  <h4>カテゴリを追加する</h4>
+  <ol class="steps">
+    <li>画面下部の「カテゴリ追加」エリアにカテゴリ名を入力します。</li>
+    <li>必要に応じて対象の<strong>業種</strong>をプルダウンから選択します（全業種共通なら「すべて」）。</li>
+    <li><span class="btn">追加</span> ボタンをクリックします。</li>
+  </ol>
+
+  <h4>業種別カテゴリの例</h4>
+  <table>
+    <tr>
+      <th>業種</th>
+      <th>カテゴリ例</th>
+    </tr>
+    <tr>
+      <td><strong>飲食店</strong></td>
+      <td>「料理の味」「接客・サービス」「店内の雰囲気」「コスパ」</td>
+    </tr>
+    <tr>
+      <td><strong>美容室</strong></td>
+      <td>「カット技術」「カラー・パーマ」「接客・居心地」「ヘアケア」</td>
+    </tr>
+    <tr>
+      <td><strong>整体院</strong></td>
+      <td>「施術効果」「接客・対応」「院内の雰囲気」「通いやすさ」</td>
+    </tr>
+    <tr>
+      <td><strong>小売店</strong></td>
+      <td>「商品品揃え」「接客体験」「店舗環境」「価格・買取額」</td>
+    </tr>
+    <tr>
+      <td><strong>共通</strong></td>
+      <td>「接客が丁寧」「清潔感がある」「また来たい」</td>
+    </tr>
+  </table>
+
+  <h4>カテゴリを編集・削除する</h4>
+  <ul>
+    <li>カテゴリ名の横にある「編集」でカテゴリ名を変更できます。</li>
+    <li>「削除」で不要なカテゴリを削除できます（所属するテーマも非表示になります）。</li>
+    <li>「有効/無効」の切り替えで、一時的にカテゴリごと非表示にできます。</li>
+  </ul>
+
+  <h3 id="themes-manage">8-3. テーマの追加・編集</h3>
+
+  <h4>テーマを追加する</h4>
+  <ol class="steps">
+    <li>
+      追加先のカテゴリを選びます。
+    </li>
+    <li>
+      以下の項目を入力します。
+
+      <table>
+        <tr>
+          <th style="width:25%;">項目</th>
+          <th>入力例</th>
+          <th>説明</th>
+        </tr>
+        <tr>
+          <td><strong>アイコン</strong></td>
+          <td>🌟</td>
+          <td>絵文字1つ。お客様の画面でボタンに表示されます。</td>
+        </tr>
+        <tr>
+          <td><strong>ラベル</strong></td>
+          <td>接客が丁寧</td>
+          <td>ボタンに表示される短い文言です。</td>
+        </tr>
+        <tr>
+          <td><strong>キーワード</strong></td>
+          <td>店員の接客が丁寧で安心できた</td>
+          <td>AIが口コミ文を作るときに参考にする文章です。</td>
+        </tr>
+      </table>
+    </li>
+    <li>
+      <span class="btn">追加</span> ボタンで保存します。
+    </li>
+  </ol>
+
+  <h4>表示するテーマ数を変更する</h4>
+  <p>
+    画面上部の「<strong>表示テーマ数</strong>」で、お客様の画面に一度に表示するテーマの数を設定できます（初期値：6個）。<br>
+    テーマが多すぎるとお客様が迷うので、<strong>6～8個程度</strong>がおすすめです。
+  </p>
+
+  <div class="note">
+    テーマの「キーワード」はお客様には直接見えません。AIへの指示として使われます。<br>
+    具体的で詳しいキーワードほど、自然な口コミ文が生成されます。
+  </div>
+</div>
+
+<!-- ====================================================================
+     9. Google連携を設定する
+     ==================================================================== -->
+<div class="section" id="google-settings">
+  <h2>9. Google連携を設定する</h2>
+
+  <div class="google-required">
+    この章の内容は、Googleビジネスプロフィールとの連携機能を使う場合に必要です。<br>
+    <strong>基本的な口コミ収集機能（QRコード → 口コミ → 通知メール）だけを使う場合は、この設定は不要です。</strong><br>
+    Google連携を始めたくなったら、いつでもこの手順に戻ってきてください。
+  </div>
+
+  <h3 id="google-settings-flow">9-1. 設定の全体フロー</h3>
+
+  <p>Google連携は以下の<strong>3ステップ</strong>で設定します。順番に進めてください。</p>
+
+  <div class="flow">
+    <div class="flow-step">ステップ1<br>API情報を入力</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">ステップ2<br>Googleアカウントと連携</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step highlight">ステップ3<br>店舗とGoogleを紐づけ</div>
+  </div>
+
+  <div class="warning">
+    Google連携の設定には<strong>Googleビジネスプロフィールのオーナー権限</strong>が必要です。<br>
+    お持ちでない場合は、Googleビジネスプロフィールの管理画面からオーナー権限を取得してください。
+  </div>
+
+  <h3 id="google-settings-step1">9-2. ステップ1：API情報を入力する</h3>
+
+  <p>上部メニューの <span class="menu-path">設定 <span class="sep">›</span> Google設定</span> をクリックして設定画面を開きます。</p>
+
+  <ol class="steps">
+    <li>
+      <strong>「クライアントID」</strong>と<strong>「クライアントシークレット」</strong>の2つを入力します。<br>
+      これらの情報は、システム管理者からお渡しするか、以下の手順で取得できます。
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックします。
+    </li>
+  </ol>
+
+  <div class="info">
+    クライアントID・シークレットは、Google Cloud Console（Googleの開発者向け管理画面）で取得するものです。<br>
+    通常はシステム管理者が用意しますので、ご自身で取得する必要はありません。<br>
+    ご自身で取得される場合は、以下の手順に沿ってください。
+  </div>
+
+  <h4>（参考）Google Cloud Consoleでの取得手順</h4>
+  <ol class="steps">
+    <li>
+      Googleアカウントでログインした状態で <code>https://console.cloud.google.com/</code> にアクセスします。
+    </li>
+    <li>
+      「新しいプロジェクト」を作成し、プロジェクト名を入力します（例：「口コミ管理システム」）。
+    </li>
+    <li>
+      左メニュー「APIとサービス」→「ライブラリ」で、<strong>「My Business Account Management API」</strong>と<strong>「My Business Business Information API」</strong>を検索して有効化します。
+    </li>
+    <li>
+      「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuthクライアントID」を選択します。
+    </li>
+    <li>
+      アプリケーションの種類で「ウェブアプリケーション」を選び、<strong>承認済みリダイレクトURI</strong>に以下を入力します。<br>
+      <code>https://review-navi.com/admin/google-settings/callback</code>
+    </li>
+    <li>
+      作成後に表示される<strong>「クライアントID」</strong>と<strong>「クライアントシークレット」</strong>をコピーして、システムの設定画面に入力します。
+    </li>
+  </ol>
+
+  <h3 id="google-settings-step2">9-3. ステップ2：Googleアカウントと連携する</h3>
+
+  <ol class="steps">
+    <li>
+      API情報を保存すると、<span class="btn">🔗 Googleアカウントと連携</span> ボタンが表示されます。<br>
+      このボタンをクリックします。
+    </li>
+    <li>
+      Googleのログイン画面が開きます。<br>
+      <strong>Googleビジネスプロフィールのオーナーアカウント</strong>でログインしてください。
+    </li>
+    <li>
+      「このアプリがアクセスをリクエストしています」という画面が表示されます。<br>
+      内容を確認し、<span class="btn btn-green">許可</span> をクリックします。
+    </li>
+    <li>
+      自動的にシステムの画面に戻ります。<br>
+      「連携済み」と表示されていれば完了です。
+    </li>
+  </ol>
+
+  <div class="note">
+    連携後、<span class="btn btn-secondary">接続テスト</span> ボタンで正常に接続できているか確認できます。<br>
+    問題があれば画面にエラーメッセージが表示されます。
+  </div>
+
+  <h3 id="google-settings-step3">9-4. ステップ3：店舗とGoogleを紐づける</h3>
+
+  <p>Googleアカウントと連携すると、そのアカウントで管理しているGoogleビジネスの「場所（ロケーション）」がリストで表示されます。</p>
+
+  <ol class="steps">
+    <li>
+      「店舗とロケーションの紐づけ」セクションで、各店舗の横にあるプルダウンを開きます。
+    </li>
+    <li>
+      表示されるGoogleビジネスのロケーション一覧から、対応する場所を選びます。
+    </li>
+    <li>
+      すべての店舗の紐づけが完了したら、<span class="btn btn-green">保存</span> ボタンをクリックします。
+    </li>
+  </ol>
+
+  <div class="info">
+    この紐づけにより、「どの店舗のGoogle口コミを取り込むか」がシステムにわかるようになります。<br>
+    紐づけが完了すると、次章の「Google口コミ管理」機能が使えるようになります。
+  </div>
+</div>
+
+<!-- ====================================================================
+     10. Googleの口コミを管理する
+     ==================================================================== -->
+<div class="section" id="google-reviews">
+  <h2>10. Googleの口コミを管理する</h2>
+
+  <div class="google-required">
+    この機能はGoogle連携の設定（第9章）が完了している必要があります。
+  </div>
+
+  <p>
+    上部メニューの <span class="menu-path">口コミ <span class="sep">›</span> Google口コミ</span> をクリックすると、Googleマップに投稿された口コミの管理画面が開きます。
+  </p>
+
+  <h3 id="google-reviews-sync">10-1. 口コミを取り込む（同期）</h3>
+
+  <p>Googleマップ上の口コミをシステムに取り込む操作です。</p>
+
+  <ol class="steps">
+    <li>
+      画面上部の <span class="btn">🔄 口コミを同期</span> ボタンをクリックします。
+    </li>
+    <li>
+      数秒～数十秒で取り込みが完了します。<br>
+      「○件の新しい口コミを取り込みました」と表示されます。
+    </li>
+  </ol>
+
+  <div class="note">
+    同期は手動で行います。<strong>定期的に（1日1回程度）同期することをおすすめします。</strong><br>
+    すでに取り込み済みの口コミは重複しませんのでご安心ください。
+  </div>
+
+  <h4>絞り込み機能</h4>
+  <ul>
+    <li><strong>店舗</strong>：特定の店舗のGoogle口コミだけを表示</li>
+    <li><strong>星評価</strong>：★1～5の各評価で絞り込み</li>
+    <li><strong>返信状態</strong>：「未返信」「返信済み」「すべて」</li>
+  </ul>
+
+  <h3 id="google-reviews-reply">10-2. 返信を作成・投稿する</h3>
+
+  <p>Googleマップの口コミに対して、お店のオーナーとして返信できます。<br>
+  AIが返信文を自動作成してくれるので、手間がかかりません。</p>
+
+  <ol class="steps">
+    <li>
+      返信したい口コミを見つけます（「未返信」で絞り込むと便利です）。
+    </li>
+    <li>
+      口コミの下にある<strong>お客様タイプ</strong>を選びます。<br>
+      <ul>
+        <li>「新規」：初めて来店したお客様</li>
+        <li>「リピーター」：何度も来店しているお客様</li>
+        <li>「不明」：わからない場合</li>
+      </ul>
+    </li>
+    <li>
+      必要に応じて<strong>カテゴリ・キーワード</strong>を選びます（後述の「返信カテゴリ」で設定した内容）。<br>
+      AIが返信に盛り込む内容のヒントになります。
+    </li>
+    <li>
+      <span class="btn">🤖 返信を作成</span> ボタンをクリックします。
+    </li>
+    <li>
+      AIが作成した返信文がテキスト欄に表示されます。<br>
+      内容を確認し、必要に応じて<strong>自由に修正</strong>してください。
+    </li>
+    <li>
+      返信内容がOKなら、<span class="btn btn-green">投稿する</span> ボタンをクリックします。<br>
+      Googleマップに返信が投稿されます。
+    </li>
+  </ol>
+
+  <div class="note">
+    AIが作る返信文には、お店のMEOキーワード（地域名や取扱商品名など）が自然に盛り込まれます。<br>
+    Googleマップの検索順位アップ（MEO対策）にも効果があります。
+  </div>
+
+  <div class="info">
+    返信文のトーン（カジュアル・フォーマル）や文字数は、店舗の<strong>AI設定</strong>（<a href="#stores-ai">→ 5-3参照</a>）に従って生成されます。<br>
+    「文体の方向性」「口コミ返信の文字数」を変更すると、返信の雰囲気やボリュームが変わります。<br>
+    また、「追加NGワード」「口コミ返信の方針」「店舗紹介文」なども返信文に反映されます。
+  </div>
+
+  <h4>返信を修正・削除する</h4>
+  <ul>
+    <li>返信済みの口コミにカーソルを合わせると、「編集」「削除」ボタンが表示されます。</li>
+    <li>「編集」で返信内容を書き換えてGoogleに再投稿できます。</li>
+    <li>「削除」で返信をGoogleから取り消せます。</li>
+  </ul>
+
+  <h3 id="google-reviews-bulk">10-3. 一括返信</h3>
+
+  <p>未返信の口コミが多い場合、まとめて処理できます。</p>
+
+  <ol class="steps">
+    <li>
+      <span class="btn">🤖 一括返信作成</span> ボタンをクリックすると、表示中のすべての未返信口コミに対してAIが返信文を一括生成します。
+    </li>
+    <li>
+      各口コミの返信文を目で確認します。修正が必要なものは個別に書き換えます。
+    </li>
+    <li>
+      確認が済んだら <span class="btn btn-green">📤 一括返信投稿</span> ボタンをクリックします。<br>
+      すべての返信がGoogleマップに投稿されます。
+    </li>
+  </ol>
+
+  <div class="warning">
+    一括投稿前に、<strong>必ずすべての返信内容に目を通してください</strong>。<br>
+    AIが作成した文章がお店の意図と異なる場合がありますので、投稿前の確認が大切です。
+  </div>
+</div>
+
+<!-- ====================================================================
+     11. 返信カテゴリを管理する
+     ==================================================================== -->
+<div class="section" id="reply-categories">
+  <h2>11. 返信カテゴリを管理する</h2>
+
+  <p>
+    上部メニューの <span class="menu-path">設定 <span class="sep">›</span> 返信カテゴリ</span> をクリックすると設定画面が開きます。<br>
+    Google口コミに返信するとき、AIへのヒントとして使う<strong>キーワード</strong>を整理する機能です。
+  </p>
+
+  <h3>返信カテゴリとは</h3>
+  <p>
+    たとえば「お店の特徴」というカテゴリの中に、お店のアピールポイントをキーワードとして登録しておきます。<br>
+    Google口コミに返信するとき、これらのキーワードを選ぶと、AIがそれに合った内容を返信文に盛り込みます。
+  </p>
+
+  <h4>業種別の登録キーワード例</h4>
+  <table>
+    <tr>
+      <th>業種</th>
+      <th>カテゴリ例</th>
+      <th>キーワード例</th>
+    </tr>
+    <tr>
+      <td><strong>飲食店</strong></td>
+      <td>メニューの特徴</td>
+      <td>「A5ランク和牛」「自家製スープ」「季節限定メニュー」</td>
+    </tr>
+    <tr>
+      <td><strong>美容室</strong></td>
+      <td>得意メニュー</td>
+      <td>「イルミナカラー」「ヘッドスパ」「似合わせカット」</td>
+    </tr>
+    <tr>
+      <td><strong>整体院</strong></td>
+      <td>施術メニュー</td>
+      <td>「骨盤矯正」「肩こり専門」「産後ケア」</td>
+    </tr>
+    <tr>
+      <td><strong>小売店</strong></td>
+      <td>取扱品目</td>
+      <td>「高級時計」「ブランドバッグ」「ジュエリー」</td>
+    </tr>
+  </table>
+
+  <h4>カテゴリを追加する</h4>
+  <ol class="steps">
+    <li>「カテゴリ追加」エリアにカテゴリ名を入力します（例：「お店の強み」「取扱メニュー」）。</li>
+    <li><span class="btn">追加</span> ボタンをクリックします。</li>
+  </ol>
+
+  <h4>キーワードを追加する</h4>
+  <ol class="steps">
+    <li>キーワードを追加したいカテゴリを選びます。</li>
+    <li>
+      <strong>ラベル</strong>（表示名）と<strong>キーワード</strong>（AIへの指示文）を入力します。<br>
+      例：ラベル「カラー」、キーワード「イルミナカラーやアディクシーカラーなどの透明感のあるヘアカラー」
+    </li>
+    <li><span class="btn">追加</span> ボタンをクリックします。</li>
+  </ol>
+
+  <div class="note">
+    返信カテゴリは<strong>Google口コミへの返信時</strong>に使います。<br>
+    お客様が見る口コミ入力画面（QRコード経由）のテーマとは別の設定です。
+  </div>
+</div>
+
+<!-- ====================================================================
+     12. 投稿を作成する
+     ==================================================================== -->
+<div class="section" id="purchase-posts">
+  <h2>12. 投稿を作成する</h2>
+
+  <div class="google-required">
+    一部の配信先（Google・Facebook・Instagram）を使うには外部連携の設定（<a href="#integrations">第6章</a>）が必要です。<br>
+    WordPress単体への投稿は、WordPress接続情報があれば可能です。
+  </div>
+
+  <div class="info">
+    この機能は主に<strong>小売店・買取店・自動車販売店</strong>など、商品を紹介したい業種向けの機能です。<br>
+    飲食店や美容室では、メニューやキャンペーンの紹介にも活用できます。<br>
+    業種設定で「商品投稿を使用する」が有効になっている場合に利用できます。<br>
+    メニューでは <span class="menu-path">投稿</span> と表示されます。
+  </div>
+
+  <h3 id="purchase-posts-about">12-1. 投稿とは</h3>
+
+  <p>
+    商品やサービスを、複数のプラットフォームに一括で紹介記事として投稿できる機能です。<br>
+    AIが紹介文を自動作成するので、文章を考える手間が省けます。
+  </p>
+
+  <table>
+    <tr>
+      <th>配信先</th>
+      <th>投稿内容</th>
+    </tr>
+    <tr>
+      <td><strong>WordPress</strong></td>
+      <td>ブログ記事として公開（カテゴリ・タグ付き）</td>
+    </tr>
+    <tr>
+      <td><strong>Googleビジネス</strong></td>
+      <td>商品投稿として公開（写真付き）</td>
+    </tr>
+    <tr>
+      <td><strong>Googleフォト</strong></td>
+      <td>Googleビジネスに写真をアップロード</td>
+    </tr>
+    <tr>
+      <td><strong>Facebook</strong></td>
+      <td>Facebookページに写真＋テキストで投稿</td>
+    </tr>
+    <tr>
+      <td><strong>Instagram</strong></td>
+      <td>ハッシュタグ付きで画像投稿</td>
+    </tr>
+  </table>
+
+  <h3 id="purchase-posts-create">12-2. 投稿の作成手順</h3>
+
+  <div class="info">
+    <strong>💡 画面上部に 5 ステップの進捗表示があります</strong><br>
+    <strong>1. 店舗・商品 → 2. お客様情報 → 3. AI で文章作成 → 4. 画像アップロード → 5. 投稿</strong><br>
+    上から順に入力していけば完成するようになっています。初めての方はこの順番で進めてください。
+  </div>
+
+  <ol class="steps">
+    <li>
+      上部メニューの <span class="menu-path">買取投稿 <span class="sep">›</span> 新規作成</span> をクリックします。
+    </li>
+    <li>
+      <strong>店舗を選択</strong>します。選択した店舗の業種によって、入力フォームの項目が自動的に切り替わります。
+    </li>
+    <li>
+      <strong>カテゴリ</strong>を選択します。業種ごとに設定されたカテゴリの中から選べます。
+    </li>
+    <li>
+      必要な項目を入力します。<strong>業種によって表示される項目が異なります。</strong>
+    </li>
+    <li>
+      <span class="btn">AIでエピソードを生成</span> をクリックすると、入力内容をもとにAIが紹介文を自動作成します。
+    </li>
+    <li>
+      生成された文章を確認・編集し、画像をアップロードします。
+    </li>
+  </ol>
+
+  <div class="info">
+    <strong>業種によるフォームの違い</strong><br>
+    店舗が属する業種の設定に応じて、投稿フォームに表示される入力項目が自動的に変わります。
+  </div>
+
+  <table>
+    <tr>
+      <th style="width:30%;">業種タイプ</th>
+      <th>表示される入力項目</th>
+      <th>タイトル生成</th>
+    </tr>
+    <tr>
+      <td><strong>質屋・買取店</strong></td>
+      <td>ブランド名、商品名、商品の状態、付属品、お客様情報</td>
+      <td>ブランド名＋商品名から自動生成</td>
+    </tr>
+    <tr>
+      <td><strong>飲食店</strong></td>
+      <td>カテゴリ、お客様情報<br>（ブランド名・商品名・状態・付属品は非表示）</td>
+      <td>カテゴリ名から自動生成</td>
+    </tr>
+    <tr>
+      <td><strong>その他の業種</strong></td>
+      <td>業種管理の「投稿の非表示フィールド」設定に従います</td>
+      <td>業種ごとのタイトルテンプレートに従います</td>
+    </tr>
+  </table>
+
+  <div class="tip">
+    どの項目を表示するかは、<span class="menu-path">設定 <span class="sep">›</span> 業種管理</span> の「投稿の非表示フィールド」で業種ごとに設定できます。
+  </div>
+
+  <h4>ハッシュタグの設定</h4>
+
+  <p>
+    Instagram・Facebookへの投稿時に、ハッシュタグ（#付きキーワード）が自動で付与されます。<br>
+    ハッシュタグは<strong>3つのレベル</strong>で設定でき、それぞれ異なる用途があります。
+  </p>
+
+  <table>
+    <tr>
+      <th style="width:25%;">設定レベル</th>
+      <th>設定場所</th>
+      <th>用途</th>
+    </tr>
+    <tr>
+      <td><strong>① 業種</strong></td>
+      <td><span class="menu-path">設定 <span class="sep">›</span> 業種管理</span> の「デフォルトハッシュタグ」</td>
+      <td>その業種の全店舗に共通するタグ（例：#買取 #高価買取）</td>
+    </tr>
+    <tr>
+      <td><strong>② 店舗</strong></td>
+      <td><span class="menu-path">店舗 <span class="sep">›</span> 編集 <span class="sep">›</span> AI設定</span> の「店舗ハッシュタグ」</td>
+      <td>その店舗固有のタグ（例：#店舗名 #地域名）</td>
+    </tr>
+    <tr>
+      <td><strong>③ 投稿</strong></td>
+      <td>投稿作成フォームの「ハッシュタグ」欄</td>
+      <td>投稿ごとに自由に編集可能。①②の内容が初期値としてセットされます</td>
+    </tr>
+  </table>
+
+  <div class="tip">
+    投稿作成時、店舗を選択すると業種＋店舗のデフォルトハッシュタグが自動セットされます。<br>
+    そこから追加・削除して、その投稿に最適なハッシュタグにカスタマイズできます。
+  </div>
+
+  <h3 id="purchase-posts-publish">12-3. 投稿を公開する</h3>
+
+  <ol class="steps">
+    <li>
+      紹介文と画像の準備ができたら、配信先ごとのチェックを確認します。<br>
+      投稿したくない配信先があれば、チェックを外してください。
+    </li>
+    <li>
+      <span class="btn btn-green">投稿する</span> ボタンをクリックします。
+    </li>
+    <li>
+      投稿結果が表示されます。各配信先のステータスを確認してください。<br>
+      <ul>
+        <li>✅ <strong>完了</strong>：正常に投稿されました</li>
+        <li>⏳ <strong>未実行</strong>：まだ投稿されていません</li>
+        <li>❌ <strong>失敗</strong>：エラーが発生しました（エラー内容が表示されます）</li>
+      </ul>
+    </li>
+  </ol>
+
+  <div class="warning">
+    投稿後の取り消しは各プラットフォーム側で行う必要があります。<br>
+    投稿前に紹介文・画像の内容をよく確認してください。
+  </div>
+</div>
+
+<!-- ====================================================================
+     13. 店舗オーナー向けポータル
+     ==================================================================== -->
+<div class="section" id="store-owner">
+  <h2>13. 店舗オーナー向けポータル</h2>
+
+  <h3 id="store-owner-about">13-1. 店舗オーナーとは</h3>
+
+  <p>
+    「店舗オーナー」は、<strong>特定の1店舗だけを管理できるアカウント</strong>です。<br>
+    フランチャイズ店のオーナーや、各店舗の責任者に個別のアカウントを発行する場合に使います。
+  </p>
+
+  <table>
+    <tr>
+      <th style="width:30%;">機能</th>
+      <th>管理者</th>
+      <th>店舗オーナー</th>
+    </tr>
+    <tr>
+      <td><strong>全店舗の管理</strong></td>
+      <td>✅ すべての店舗</td>
+      <td>❌ 自分の店舗のみ</td>
+    </tr>
+    <tr>
+      <td><strong>口コミの確認</strong></td>
+      <td>✅</td>
+      <td>✅ 自分の店舗のみ</td>
+    </tr>
+    <tr>
+      <td><strong>Google口コミの返信</strong></td>
+      <td>✅</td>
+      <td>✅ 自分の店舗のみ</td>
+    </tr>
+    <tr>
+      <td><strong>外部連携設定</strong></td>
+      <td>✅ すべて</td>
+      <td>✅ 自分の店舗のみ</td>
+    </tr>
+    <tr>
+      <td><strong>店舗の追加・削除</strong></td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><strong>業種管理</strong></td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+    <tr>
+      <td><strong>ユーザー管理</strong></td>
+      <td>✅</td>
+      <td>❌</td>
+    </tr>
+  </table>
+
+  <h4>店舗オーナーアカウントを作成する（管理者の操作）</h4>
+  <ol class="steps">
+    <li>
+      上部メニューの <span class="menu-path">設定 <span class="sep">›</span> ユーザー管理</span> をクリックします。
+    </li>
+    <li>
+      <span class="btn">＋ 新規ユーザーを追加</span> ボタンをクリックします。
+    </li>
+    <li>
+      アカウント情報を入力します。
+      <table>
+        <tr>
+          <th style="width:25%;">項目</th>
+          <th>説明</th>
+        </tr>
+        <tr>
+          <td><strong>名前</strong></td>
+          <td>オーナーの名前</td>
+        </tr>
+        <tr>
+          <td><strong>メールアドレス</strong></td>
+          <td>ログインに使うメールアドレス</td>
+        </tr>
+        <tr>
+          <td><strong>パスワード</strong></td>
+          <td>8文字以上のパスワード</td>
+        </tr>
+        <tr>
+          <td><strong>権限</strong></td>
+          <td><strong>「店舗オーナー」</strong>を選択します</td>
+        </tr>
+        <tr>
+          <td><strong>担当店舗</strong></td>
+          <td>このオーナーが管理する<strong>店舗をプルダウンから選択</strong>します</td>
+        </tr>
+      </table>
+    </li>
+    <li>
+      <span class="btn btn-green">保存</span> ボタンをクリックして完了です。
+    </li>
+  </ol>
+
+  <div class="note">
+    作成したアカウント情報（メールアドレスとパスワード）を店舗オーナーにお伝えください。<br>
+    店舗オーナーは通常の管理画面と同じURLからログインできます。
+  </div>
+
+  <h3 id="store-owner-login">13-2. ログインと基本操作</h3>
+
+  <p>
+    店舗オーナーは通常のログインURLからログインします。<br>
+    ログイン後は<strong>店舗オーナー専用のポータル画面</strong>が表示されます（管理者の画面とは異なります）。
+  </p>
+
+  <ol class="steps">
+    <li>
+      ブラウザで <code>https://review-navi.com/admin/login</code> にアクセスします。
+    </li>
+    <li>
+      管理者から伝えられた<strong>メールアドレス</strong>と<strong>パスワード</strong>でログインします。
+    </li>
+    <li>
+      自分の店舗のダッシュボードが表示されます。
+    </li>
+  </ol>
+
+  <div class="info">
+    店舗オーナーが管理者用のURL（<code>/admin/...</code>）にアクセスしようとした場合、自動的に店舗オーナーポータルにリダイレクトされます。<br>
+    他の店舗の情報にアクセスすることはできませんのでご安心ください。
+  </div>
+
+  <h3 id="store-owner-features">13-3. 使える機能</h3>
+
+  <h4>ダッシュボード</h4>
+  <p>
+    自分の店舗の口コミ統計（総件数、平均評価、最近の口コミなど）を確認できます。<br>
+    Google口コミの未返信件数も表示されるので、返信が必要な口コミをすぐに把握できます。
+  </p>
+
+  <h4>QRコード口コミの確認</h4>
+  <p>
+    上部メニューの <span class="menu-path">口コミ一覧</span> から、自分の店舗に投稿された口コミを一覧で確認できます。<br>
+    評価でのフィルタリングも可能です。
+  </p>
+
+  <h4>Google口コミの確認・返信</h4>
+  <p>
+    上部メニューの <span class="menu-path">Google口コミ</span> から、Googleマップに投稿された口コミを確認し、AIを使った返信ができます。<br>
+    操作方法は管理者向け（<a href="#google-reviews">第10章</a>）と同じです。
+  </p>
+
+  <h4>外部連携設定</h4>
+  <p>
+    上部メニューの <span class="menu-path">外部連携設定</span> から、Instagram・Facebook・WordPressの連携を自分で設定できます。<br>
+    操作方法は管理者向け（<a href="#integrations">第6章</a>）と同じです。
+  </p>
+</div>
+
+<!-- ====================================================================
+     14. 来店客から見た画面の流れ
+     ==================================================================== -->
+<div class="section" id="customer-flow">
+  <h2>14. 来店客から見た画面の流れ</h2>
+
+  <p>
+    お客様がQRコードを読み取ったとき、どのような画面が表示されるかをご説明します。<br>
+    この章は設定ではなく、<strong>「お客様にはこう見えている」という参考情報</strong>です。
+  </p>
+
+  <div class="flow">
+    <div class="flow-step">QRコード<br>読み取り</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">口コミ<br>入力画面</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">確認画面</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step highlight">結果画面</div>
+  </div>
+
+  <h3>画面① 口コミ入力画面</h3>
+  <p>お客様がQRコードを読み取ると、この画面がスマートフォンに表示されます。</p>
+  <ul>
+    <li>画面上部にお店の名前が表示されます</li>
+    <li>★マークをタップして、1～5の星評価を付けます</li>
+    <li>テーマボタンが表示されます。タップすると、AIがその内容に合った口コミ文を自動作成します</li>
+    <li>自分で自由にコメントを書くこともできます</li>
+    <li>任意で、性別・年代・来店タイプ（新規/リピーター）を選べます</li>
+  </ul>
+
+  <div class="info">
+    テーマボタンの内容は、店舗の業種や管理者の設定によって変わります。<br>
+    飲食店なら「🍖 料理が美味しい」、美容室なら「✂️ カットが上手」など、業種に合ったテーマが表示されます。
+  </div>
+
+  <h3>画面② 確認画面</h3>
+  <p>入力内容のプレビューが表示されます。</p>
+  <ul>
+    <li>「修正する」ボタンで前の画面に戻って修正できます</li>
+    <li>「投稿する」ボタンで口コミが送信されます</li>
+  </ul>
+
+  <h3>画面③ 結果画面</h3>
+
+  <h4>高評価の場合（★4～5）</h4>
+  <p>
+    AIが作成した口コミ文とともに、<strong>「Googleでも口コミを書いてもらえませんか？」</strong>というお願い画面が表示されます。<br>
+    「コピー」ボタンでAI生成文をコピーし、「Googleマップで口コミを投稿」ボタンをタップすると、Googleマップの口コミ投稿ページが開きます。
+  </p>
+
+  <h4>低評価の場合（★1～3）</h4>
+  <p>
+    「ご意見ありがとうございます。サービス改善に活用させていただきます。」というお礼画面が表示されます。<br>
+    Googleマップへの誘導は行いません。同時に、管理者にメールで通知されます。
+  </p>
+
+  <div class="info">
+    このように、<strong>高評価のお客様だけをGoogleマップに誘導する</strong>ことで、Googleの評価が自然に上がっていく仕組みです。<br>
+    低評価のお客様には、お礼をしつつ内部で改善に活かす形になります。
+  </div>
+</div>
+
+<!-- ====================================================================
+     15. Super Admin（テナント管理）
+     ==================================================================== -->
+<div class="section" id="super-admin">
+  <h2>15. Super Admin（テナント管理）</h2>
+
+  <h3 id="super-admin-about">15-1. Super Adminとは</h3>
+  <p>
+    Super Adminは、<strong>システム全体を管理するための最上位の管理者画面</strong>です。<br>
+    契約テナント（利用企業）の追加・編集・削除、AI利用量の監視、代理ログインなどを行います。
+  </p>
+  <p>
+    通常の管理画面（Admin）とは<strong>完全に別のログイン画面</strong>を使用します。<br>
+    Super Adminのデータはマスターデータベース（<code>qr_master</code>）に保存されており、各テナントのデータとは分離されています。
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>項目</th><th>Super Admin</th><th>テナント管理者（Admin）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ログインURL</td><td><code>/super-admin/login</code></td><td><code>/admin/login</code></td></tr>
+      <tr><td>管理範囲</td><td>全テナント</td><td>自社テナントのみ</td></tr>
+      <tr><td>データベース</td><td>マスターDB</td><td>テナント専用DB</td></tr>
+      <tr><td>主な操作</td><td>テナント追加・削除・監視</td><td>店舗・口コミ・連携管理</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h3 id="super-admin-login">15-2. ログイン</h3>
+  <div class="step-box">
+    <h4>Super Adminログイン手順</h4>
+    <ol class="steps">
+      <li>ブラウザで <code>https://{ドメイン}/super-admin/login</code> にアクセスします。<br>
+          ローカル環境の場合は <code>http://127.0.0.1:8000/super-admin/login</code> です。</li>
+      <li>メールアドレスとパスワードを入力してログインします。</li>
+      <li>ログイン成功後、<strong>ダッシュボード</strong>が表示されます。</li>
+    </ol>
+  </div>
+  <div class="warning">
+    セキュリティのため、ログインは<strong>1分間に5回まで</strong>に制限されています。連続で失敗した場合は、1分待ってから再試行してください。
+  </div>
+
+  <hr>
+
+  <h3 id="super-admin-dashboard">15-3. ダッシュボード</h3>
+  <p>
+    ログイン後最初に表示される画面です。システム全体の状況を一目で確認できます。
+  </p>
+
+  <h4>統計カード</h4>
+  <table>
+    <thead>
+      <tr><th>カード</th><th>表示内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>総テナント数</td><td>登録されている全テナントの数</td></tr>
+      <tr><td>有効テナント</td><td>現在アクティブなテナントの数</td></tr>
+      <tr><td>停止テナント</td><td>無効化されているテナントの数</td></tr>
+      <tr><td>総店舗数</td><td>全テナントの店舗数合計</td></tr>
+      <tr><td>AI利用合計（今月）</td><td>全テナントの今月のAI利用回数合計</td></tr>
+    </tbody>
+  </table>
+
+  <h4>AI利用状況</h4>
+  <p>テナントごとのAI利用回数・上限・利用率がランキング形式で表示されます。利用率が高いテナントが上に表示され、<span style="color:#dc2626;">90%以上は赤</span>、<span style="color:#f59e0b;">70%以上は黄色</span>のバーで警告されます。</p>
+
+  <h4>契約終了まもなく</h4>
+  <p>契約終了日が30日以内のテナントが一覧表示されます。残日数が7日以下のテナントは赤字で強調されます。</p>
+
+  <h4>プラン別テナント数</h4>
+  <p>ライト・スタンダード・プロの各プランに何社が契約しているかを表示します。</p>
+
+  <hr>
+
+  <h3 id="super-admin-tenants">15-4. テナント管理</h3>
+
+  <h4>テナント一覧</h4>
+  <p>ナビバーの「テナント一覧」をクリックすると、全テナントの一覧が表示されます。</p>
+  <table>
+    <thead>
+      <tr><th>列</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>会社名</td><td>テナントの会社名</td></tr>
+      <tr><td>サブドメイン</td><td>テナントのサブドメイン（URL識別子）</td></tr>
+      <tr><td>プラン</td><td>ライト / スタンダード / プロ</td></tr>
+      <tr><td>店舗</td><td>登録店舗数（ホバーで店舗名一覧を表示）</td></tr>
+      <tr><td>AI利用（今月）</td><td>今月の利用回数 / 月間上限</td></tr>
+      <tr><td>状態</td><td>有効 / 停止</td></tr>
+      <tr><td>契約開始</td><td>契約開始日</td></tr>
+      <tr><td>操作</td><td>編集・AI詳細・代理ログイン</td></tr>
+    </tbody>
+  </table>
+
+  <h4>テナントを追加する</h4>
+  <div class="step-box">
+    <h4>追加手順</h4>
+    <ol class="steps">
+      <li>テナント一覧画面で「<strong>＋ 新規テナント追加</strong>」ボタンをクリック。</li>
+      <li>以下の情報を入力します：
+        <ul>
+          <li><strong>会社名</strong>（必須）</li>
+          <li><strong>サブドメイン</strong>（必須）：英小文字・数字・ハイフンのみ</li>
+          <li><strong>データベース名</strong>（必須）：テナント専用DB名</li>
+          <li><strong>プラン</strong>（必須）：ライト / スタンダード / プロ</li>
+          <li><strong>連絡先メール</strong>（必須）</li>
+          <li>担当者名、契約開始日・終了日、AI月間上限、備考（任意）</li>
+        </ul>
+      </li>
+      <li>「追加」ボタンをクリック。</li>
+      <li>追加後、テナント専用データベースの作成とマイグレーションが必要です（→「<a href="#super-admin-setup">初期セットアップ手順</a>」参照）。</li>
+    </ol>
+  </div>
+
+  <h4>テナントを編集する</h4>
+  <p>テナント一覧の「編集」ボタンから、会社名・プラン・AI上限・契約情報などを変更できます。「テナント有効」のチェックを外すと、そのテナントのシステムへのアクセスが停止されます。</p>
+
+  <h4>テナントを削除する</h4>
+  <p>テナント編集画面の下部「⚠️ 危険な操作」エリアから削除できます。</p>
+  <div class="warning">
+    <strong>削除するとマスターDBからテナント情報が除去されます。</strong><br>
+    安全のため、テナントのデータベース自体は削除されません。データベースの削除が必要な場合は、別途手動で行ってください。
+  </div>
+
+  <hr>
+
+  <h3 id="super-admin-impersonate">15-5. 代理ログイン</h3>
+  <p>
+    テナント一覧の「<strong>代理ログイン</strong>」ボタンをクリックすると、そのテナントの管理者としてログインできます。
+  </p>
+  <div class="step-box">
+    <h4>使い方</h4>
+    <ol class="steps">
+      <li>テナント一覧で対象テナントの「代理ログイン」をクリック。</li>
+      <li>確認ダイアログで「OK」をクリック。</li>
+      <li>テナントの管理画面（<code>/admin/stores</code>）に自動でリダイレクトされます。</li>
+      <li>テナント内の操作（店舗追加、ユーザー作成、連携設定など）を行えます。</li>
+    </ol>
+  </div>
+  <div class="info">
+    代理ログイン中はテナントの管理者として操作しています。Super Adminに戻るには、ログアウトしてから <code>/super-admin/login</code> に再度アクセスしてください。
+  </div>
+
+  <hr>
+
+  <h3 id="super-admin-ai-usage">15-6. AI利用ログ</h3>
+  <p>テナント一覧の「<strong>AI詳細</strong>」ボタンから、テナントのAI利用状況を詳しく確認できます。</p>
+
+  <h4>表示内容</h4>
+  <table>
+    <thead>
+      <tr><th>セクション</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>サマリーカード</td><td>今月の利用回数・月間上限・利用率</td></tr>
+      <tr><td>日別利用数</td><td>過去30日間の日ごとの利用回数（バーグラフ付き）</td></tr>
+      <tr><td>アクション別</td><td>今月の利用をアクションタイプ別に集計</td></tr>
+      <tr><td>最近のログ</td><td>直近50件のAI利用ログ（日時・アクション・店舗ID・トークン数）</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h3 id="super-admin-password">15-7. パスワード変更</h3>
+  <div class="step-box">
+    <h4>パスワード変更手順</h4>
+    <ol class="steps">
+      <li>ナビバー右側の「<strong>パスワード変更</strong>」をクリック。</li>
+      <li>現在のパスワードを入力。</li>
+      <li>新しいパスワード（8文字以上）を入力。</li>
+      <li>新しいパスワード（確認）を再入力。</li>
+      <li>「パスワードを変更」ボタンをクリック。</li>
+    </ol>
+  </div>
+  <div class="warning">
+    初期パスワード（<code>password</code>）は必ず変更してください。
+  </div>
+
+  <hr>
+
+  <h3 id="super-admin-setup">15-8. 初期セットアップ手順</h3>
+  <p>新しくシステムを導入する際の手順です。サーバーへのSSH接続が必要です。</p>
+
+  <div class="step-box">
+    <h4>ステップ1：マスターDBの作成</h4>
+    <pre><code>mysql -u root -p -e "CREATE DATABASE qr_master CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"</code></pre>
+  </div>
+
+  <div class="step-box">
+    <h4>ステップ2：.env に設定追加</h4>
+    <p><code>.env</code> ファイルに以下を追加します：</p>
+    <pre><code>DB_MASTER_DATABASE=qr_master</code></pre>
+  </div>
+
+  <div class="step-box">
+    <h4>ステップ3：マスターDBのマイグレーション</h4>
+    <pre><code>php artisan migrate --database=master --path=database/migrations/2026_04_10_182354_create_tenants_table.php</code></pre>
+  </div>
+
+  <div class="step-box">
+    <h4>ステップ4：Super Admin初期アカウント作成</h4>
+    <pre><code>php artisan db:seed --class=SuperAdminSeeder</code></pre>
+    <p>以下のアカウントが作成されます：</p>
+    <table>
+      <tbody>
+        <tr><td>メールアドレス</td><td><code>admin@example.com</code></td></tr>
+        <tr><td>パスワード</td><td><code>password</code></td></tr>
+      </tbody>
+    </table>
+    <p>⚠️ ログイン後、必ずパスワードを変更してください。</p>
+  </div>
+
+  <div class="step-box">
+    <h4>ステップ5：テナント追加後のDB作成</h4>
+    <p>Super Admin画面でテナントを追加した後、テナント専用DBを作成してマイグレーションを実行します：</p>
+    <pre><code># テナントDB作成
+mysql -u root -p -e "CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# マイグレーション実行（.envのDB_DATABASEを一時的にテナントDB名に変更）
+php artisan migrate --force
+
+# 初期データ投入
+php artisan db:seed --class=BusinessTypeSeeder
+php artisan db:seed --class=SuggestionThemeSeeder</code></pre>
+  </div>
+
+  <div class="step-box">
+    <h4>ステップ6：テナント管理ユーザーの作成</h4>
+    <p>以下のいずれかの方法でテナントの管理ユーザーを作成します：</p>
+    <ul>
+      <li>Super Admin画面から「<strong>代理ログイン</strong>」→ テナント管理画面の「ユーザー管理」から追加</li>
+      <li>artisan tinker で直接作成</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ====================================================================
+     16. よくある質問（FAQ）
+     ==================================================================== -->
+<div class="section" id="faq">
+  <h2>16. よくある質問（FAQ）</h2>
+
+  <h3>はじめに（セットアップ関連）</h3>
+
+  <h3 id="faq-google-url">Q. 店舗登録に必要な「Google口コミURL」はどこで取得できますか？</h3>
+  <ol class="steps">
+    <li>パソコンでGoogleマップ（<code>https://maps.google.com</code>）を開きます。</li>
+    <li>検索欄にお店の名前を入力して検索します。</li>
+    <li>お店の情報が表示されたら、「<strong>クチコミを書く</strong>」と書かれたリンクをクリックします。</li>
+    <li>開いたページのURLをコピーします。<br>
+    <code>https://search.google.com/local/writereview?placeid=XXXXX</code> のような形式です。</li>
+    <li>このURLを店舗登録画面の「Google口コミURL」に貼り付けます。</li>
+  </ol>
+  <div class="note">
+    URLが見つからない場合は、Googleで「<strong>お店の名前 + Google 口コミ</strong>」と検索すると見つけやすいです。<br>
+    それでも分からない場合は、システム管理者にご連絡ください。
+  </div>
+
+  <hr>
+
+  <h3>Q. うちの業種がリストにないのですが、使えますか？</h3>
+  <p>はい、<strong>どの業種でも使えます</strong>。<br>
+  管理者が「業種管理」画面から新しい業種を簡単に追加できます（<a href="#business-types-create">→ 4-2. 業種を追加する</a>）。<br>
+  既存の業種で近いものを選んで使うこともできます。</p>
+
+  <hr>
+
+  <h3>Q. 業種を選ぶと何が変わりますか？</h3>
+  <p>業種を選ぶと、AIが生成する口コミ文や返信文のトーンや内容が<strong>その業界に合ったもの</strong>になります。<br>
+  例えば飲食店なら「味」「雰囲気」に関する表現が、美容室なら「技術」「仕上がり」に関する表現が使われやすくなります。<br>
+  また、業種ごとにNGワードやテーマのカテゴリを分けて管理できます。</p>
+
+  <hr>
+
+  <h3>Q. QRコードは何枚でも作れますか？</h3>
+  <p>はい、<strong>登録した店舗の数だけ</strong>QRコードを作成できます。それぞれ各店舗専用のQRコードになります。<br>
+  同じ店舗のQRコードを何枚印刷しても問題ありません。</p>
+
+  <hr>
+
+  <h3>Q. QRコードを変更したいのですが、作り直せますか？</h3>
+  <p>QRコードは店舗のURL（スラッグ）から自動生成しています。<br>
+  店舗のスラッグが変わらない限りQRコードも変わりませんので、<strong>何度ダウンロードしても同じQRコード</strong>です。<br>
+  印刷物の更新が不要なのでご安心ください。</p>
+
+  <hr>
+
+  <h3>Q. 低評価の口コミがあったとき、通知メールはいつ届きますか？</h3>
+  <p><strong>口コミが送信された直後</strong>に届きます。通常は数秒～数分以内です。<br>
+  迷惑メールフォルダに振り分けられる場合がありますので、届かない場合はそちらもご確認ください。</p>
+
+  <hr>
+
+  <h3>Q. 通知メールの宛先を変更できますか？</h3>
+  <p>はい、店舗の編集画面で「<strong>通知先メールアドレス</strong>」を変更できます。店舗ごとに別のアドレスを設定できます。</p>
+
+  <hr>
+
+  <h3>Q. AIが作成した口コミ文は、お客様が修正できますか？</h3>
+  <p>はい、<strong>自由に修正できます</strong>。AIが作成した文章はあくまで下書きです。<br>
+  お客様は自分の言葉を付け足したり、不要な部分を削除したりできます。</p>
+
+  <hr>
+
+  <h3>Q. お客様の個人情報は保存されますか？</h3>
+  <p>お客様の<strong>名前・住所・電話番号などの個人情報は一切収集しません</strong>。<br>
+  保存されるのは、星評価・コメント・性別（任意）・年代（任意）・来店タイプ（任意）のみです。</p>
+
+  <hr>
+
+  <h3>Q. Google連携は後から設定できますか？</h3>
+  <p>はい、<strong>いつでも設定できます</strong>。<br>
+  まずはQRコードでの口コミ収集だけを始めて、Googleビジネスプロフィールの準備ができてから連携することをおすすめします。</p>
+
+  <hr>
+
+  <h3>Q. 複数の店舗を管理できますか？</h3>
+  <p>はい、<strong>店舗数の上限はありません</strong>。店舗ごとにQRコード・通知先メール・Google連携・外部連携を個別に設定できます。</p>
+
+  <hr>
+
+  <h3>Q. 店舗オーナーアカウントとは何ですか？</h3>
+  <p>
+    特定の1店舗だけを管理できるアカウントです。複数店舗を運営している場合に、各店舗の責任者に個別のログインアカウントを発行できます。<br>
+    店舗オーナーは自分の店舗の口コミ確認・返信・外部連携設定が行えます。<br>
+    <a href="#store-owner">→ 詳しくは第13章をご覧ください</a>
+  </p>
+
+  <hr>
+
+  <h3>Q. Instagram・Facebook・WordPressの連携は必須ですか？</h3>
+  <p>いいえ、<strong>すべて任意</strong>です。必要なサービスだけ連携してください。<br>
+  連携しなくても、QRコード口コミ収集やGoogle口コミ管理は通常通り使えます。<br>
+  <a href="#integrations">→ 設定方法は第6章をご覧ください</a></p>
+
+  <hr>
+
+  <h3>Q. アクセストークンとは何ですか？</h3>
+  <p>
+    Instagram・Facebookなどの外部サービスと連携するための<strong>「鍵」</strong>のようなものです。<br>
+    各サービスの開発者向け画面（Meta for Developersなど）で取得できます。
+  </p>
+
+  <hr>
+
+  <h3>Q. ログインできなくなりました</h3>
+  <p>以下をお試しください。</p>
+  <ul>
+    <li>メールアドレスとパスワードに<strong>余分なスペースが入っていないか</strong>確認してください</li>
+    <li><strong>全角/半角</strong>が正しいか確認してください（すべて半角で入力）</li>
+    <li>ブラウザの<strong>キャッシュを削除</strong>してから再度お試しください</li>
+    <li>それでも解決しない場合は、システム管理者にご連絡ください</li>
+  </ul>
+
+  <hr>
+
+  <h3>Q. テーマの設定を変えたら、すぐにお客様の画面に反映されますか？</h3>
+  <p>はい、<strong>保存した瞬間から反映</strong>されます。お客様が次にQRコードを読み取ったときから、新しいテーマが表示されます。</p>
+
+  <hr>
+
+  <h3>Q. スマートフォンから管理画面は使えますか？</h3>
+  <p><strong>管理画面はパソコン専用です。</strong>スマートフォンからのご利用には対応しておりません。<br>
+  パソコンのブラウザ（Google Chrome推奨）からアクセスしてください。</p>
+
+  <hr>
+
+  <h3>Q. 推奨ブラウザは何ですか？</h3>
+  <p><strong>Google Chrome</strong>（最新版）を推奨しています。<br>
+  Microsoft Edge、Safari でも基本的に動作しますが、表示が崩れる場合があります。</p>
+</div>
+
+<!-- ============================
+     フッター
+     ============================ -->
+<div style="margin-top:60px; padding-top:30px; border-top:2px solid #e2e8f0; text-align:center; color:#94a3b8; font-size:13px;">
+  <p>
+    QRコード口コミ支援システム 操作マニュアル<br>
+    © QRコード口コミ支援システム
+  </p>
+  <p style="margin-top:10px;">
+    最終更新：2026年4月 ｜ バージョン 3.0
+  </p>
+</div>
+
+</div><!-- /.container -->
+</body>
+</html>

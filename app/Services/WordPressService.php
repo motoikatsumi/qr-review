@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Store;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -16,6 +17,32 @@ class WordPressService
         $this->baseUrl = rtrim(config('services.wordpress.url', ''), '/');
         $this->username = config('services.wordpress.username', '');
         $this->appPassword = config('services.wordpress.app_password', '');
+    }
+
+    /**
+     * 店舗ごとの設定でインスタンス生成（store_integrations優先、なければconfig）
+     */
+    public static function forStore(Store $store): self
+    {
+        $instance = new self();
+        $integration = $store->integration('wordpress');
+        if ($integration && $integration->is_active) {
+            $extra = $integration->extra_data ?? [];
+            $instance->baseUrl     = rtrim($extra['wp_url'] ?? '', '/');
+            $instance->username    = $extra['wp_username'] ?? '';
+            $instance->appPassword = $integration->access_token ?? '';
+        }
+        return $instance;
+    }
+
+    /**
+     * 外部から認証情報をセット（接続テスト用）
+     */
+    public function setCredentials(string $baseUrl, string $username, string $appPassword): void
+    {
+        $this->baseUrl     = $baseUrl;
+        $this->username    = $username;
+        $this->appPassword = $appPassword;
     }
 
     protected function api()

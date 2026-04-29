@@ -22,6 +22,12 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
+
+            // 店舗オーナーは店舗ダッシュボードへ
+            if (Auth::user()->isStoreOwner()) {
+                return redirect()->intended('/store/dashboard');
+            }
+
             return redirect()->intended('/admin/stores');
         }
 

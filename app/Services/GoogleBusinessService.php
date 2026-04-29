@@ -24,7 +24,7 @@ class GoogleBusinessService
     public function getAuthUrl(string $redirectUri): string
     {
         $params = http_build_query([
-            'client_id' => SiteSetting::get('google_client_id'),
+            'client_id' => config('services.google.client_id'),
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'scope' => 'https://www.googleapis.com/auth/business.manage',
@@ -42,8 +42,8 @@ class GoogleBusinessService
     {
         $response = Http::post($this->tokenUrl, [
             'code' => $code,
-            'client_id' => SiteSetting::get('google_client_id'),
-            'client_secret' => SiteSetting::get('google_client_secret'),
+            'client_id' => config('services.google.client_id'),
+            'client_secret' => config('services.google.client_secret'),
             'redirect_uri' => $redirectUri,
             'grant_type' => 'authorization_code',
         ]);
@@ -73,8 +73,8 @@ class GoogleBusinessService
 
         $response = Http::post($this->tokenUrl, [
             'refresh_token' => $refreshToken,
-            'client_id' => SiteSetting::get('google_client_id'),
-            'client_secret' => SiteSetting::get('google_client_secret'),
+            'client_id' => config('services.google.client_id'),
+            'client_secret' => config('services.google.client_secret'),
             'grant_type' => 'refresh_token',
         ]);
 
@@ -327,6 +327,15 @@ class GoogleBusinessService
         $synced = 0;
         $pageToken = null;
 
+        // DB上で返信済みとなっている口コミIDを収集（返信確認のため早期終了を制御する）
+        // 返信済みIDが全てGoogleから取得できるまで早期終了しないようにする
+        $unverifiedReplyIds = array_flip(
+            GoogleReview::where('store_id', $store->id)
+                ->whereNotNull('reply_comment')
+                ->pluck('google_review_id')
+                ->toArray()
+        );
+
         do {
             $result = $this->fetchReviews($store, $pageToken);
             if (!$result) {
@@ -341,6 +350,9 @@ class GoogleBusinessService
                 if (!$reviewId) {
                     continue;
                 }
+
+                // 返信確認待ちリストから除外（Googleから取得できたので確認済み）
+                unset($unverifiedReplyIds[$reviewId]);
 
                 // 既存口コミの内容を比較し、変更がなければスキップ
                 $existing = GoogleReview::where('google_review_id', $reviewId)->first();
@@ -376,9 +388,10 @@ class GoogleBusinessService
                 }
             }
 
-            // ページ内の全口コミが既存かつ未変更なら、それ以降のページも同じなので打ち切り
-            if ($unchangedCount === count($reviews) && count($reviews) > 0) {
-                Log::info("Google sync: 既存口コミに到達、同期を打ち切り", [
+            // ページ内の全口コミが既存かつ未変更で、かつDB上の返信済み口コミを全て確認済みなら打ち切り
+            // ※ 未確認の返信済みIDが残っている場合は次ページも確認する（DBとGoogleの返信乖離を検出するため）
+            if ($unchangedCount === count($reviews) && count($reviews) > 0 && empty($unverifiedReplyIds)) {
+                Log::info("Google sync: 既存口コミに到達かつ返信確認済み、同期を打ち切り", [
                     'store' => $store->name,
                     'synced' => $synced,
                 ]);
@@ -457,8 +470,9 @@ class GoogleBusinessService
             ]
         );
 
-        // 新規の低評価口コミ（★1-2）の場合、通知メール送信
-        if ($isNew && $rating <= 2 && $store->notify_email) {
+        // 新規の低評価口コミの場合、通知メール送信
+        $threshold = $store->notify_threshold ?? 3;
+        if ($isNew && $rating <= $threshold && $store->notify_email) {
             try {
                 Mail::to($store->notify_email)
                     ->send(new \App\Mail\GoogleLowRatingNotification($review, $store));
@@ -497,6 +511,19 @@ class GoogleBusinessService
             Log::error('Google API: replyToReview failed', [
                 'review' => $review->id,
                 'body' => $response?->body(),
+            ]);
+            return false;
+        }
+
+        // レスポンスボディに返信内容が含まれているか検証する
+        // Google API v4 の返信エンドポイントは成功時に ReviewReply オブジェクト（comment フィールドあり）を返す
+        // comment が空の場合は実際には反映されていない可能性が高いためDBを更新しない
+        $responseData = $response->json();
+        if (empty($responseData['comment'])) {
+            Log::warning('Google API: replyToReview - PUT は成功したが返信内容がレスポンスに含まれていません（Googleへの反映失敗の可能性）', [
+                'review_id'        => $review->id,
+                'google_review_id' => $review->google_review_id,
+                'response_body'    => $response->body(),
             ]);
             return false;
         }

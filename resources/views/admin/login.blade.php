@@ -135,10 +135,13 @@
             </div>
             <div class="remember-row">
                 <input type="checkbox" id="remember" name="remember">
-                <label for="remember" style="margin:0;font-weight:400;">ログイン状態を保持する</label>
+                <label for="remember" style="margin:0;font-weight:400;">次回以降ログインを省略する</label>
             </div>
             <button type="submit" class="btn">ログイン</button>
         </form>
+        <p style="text-align:center;margin-top:20px;font-size:0.82rem;color:#999;">
+            パスワードを忘れた場合は管理者にお問い合わせください
+        </p>
     </div>
 </body>
 </html>

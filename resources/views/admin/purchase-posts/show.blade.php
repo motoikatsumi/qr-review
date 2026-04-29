@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
-@section('title', '買取投稿詳細')
+@section('title', '投稿詳細')
 
 @section('content')
 <div class="page-header">
-    <h1>📦 買取投稿詳細</h1>
+    <h1>📦 投稿詳細</h1>
     <a href="{{ route('admin.purchase-posts.index') }}" class="btn btn-secondary">← 一覧に戻る</a>
 </div>
 
@@ -146,7 +146,7 @@
             <button type="submit" class="btn btn-primary" style="padding:12px 32px;">🔄 失敗分をリトライ</button>
         </form>
     @endif
-    <form method="POST" action="{{ route('admin.purchase-posts.destroy', $purchasePost) }}" onsubmit="return confirm('この投稿を削除しますか？WordPress・Googleビジネスからも削除されます。');">
+    <form method="POST" action="{{ route('admin.purchase-posts.destroy', $purchasePost) }}" onsubmit="return confirm('この投稿を削除しますか？\nWordPress・Googleビジネスからも削除されます。\nこの操作は元に戻せません。');">
         @csrf
         @method('DELETE')
         <button type="submit" class="btn btn-danger" style="padding:12px 32px;">🗑 投稿を削除</button>

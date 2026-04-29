@@ -16,8 +16,8 @@ class GoogleSettingController extends Controller
     public function index(GoogleBusinessService $google)
     {
         $settings = [
-            'client_id' => SiteSetting::get('google_client_id'),
-            'client_secret' => SiteSetting::get('google_client_secret'),
+            'client_id' => config('services.google.client_id'),
+            'client_secret' => config('services.google.client_secret') ? '********' : '',
             'account_id' => SiteSetting::get('google_account_id'),
             'is_connected' => $google->isConnected(),
         ];
@@ -37,17 +37,13 @@ class GoogleSettingController extends Controller
     /**
      * クライアントID・シークレットを保存
      */
+    /**
+     * クライアントID・シークレットは.envで管理されるため、このメソッドは不要
+     * 後方互換のため残しておくが、何もしない
+     */
     public function saveCredentials(Request $request)
     {
-        $validated = $request->validate([
-            'client_id' => 'required|string|max:255',
-            'client_secret' => 'required|string|max:255',
-        ]);
-
-        SiteSetting::set('google_client_id', $validated['client_id']);
-        SiteSetting::set('google_client_secret', $validated['client_secret']);
-
-        return redirect('/admin/google-settings')->with('success', 'Google API認証情報を保存しました。');
+        return redirect('/admin/google-settings')->with('info', 'Google API認証情報は管理者により設定済みです。');
     }
 
     /**

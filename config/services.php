@@ -41,9 +41,14 @@ return [
     ],
 
     'wordpress' => [
-        'url' => env('WORDPRESS_URL', 'https://78assist.com'),
+        'url' => env('WORDPRESS_URL', ''),
         'username' => env('WORDPRESS_USERNAME', ''),
         'app_password' => env('WORDPRESS_APP_PASSWORD', ''),
+    ],
+
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
     ],
 
     'pawn_system' => [

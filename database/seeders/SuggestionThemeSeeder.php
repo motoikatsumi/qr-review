@@ -53,10 +53,16 @@ class SuggestionThemeSeeder extends Seeder
             $themes = $catData['themes'];
             unset($catData['themes']);
 
-            $category = SuggestionCategory::create($catData);
+            $category = SuggestionCategory::firstOrCreate(
+                ['name' => $catData['name']],
+                $catData
+            );
 
             foreach ($themes as $theme) {
-                $category->themes()->create($theme);
+                $category->themes()->firstOrCreate(
+                    ['label' => $theme['label']],
+                    $theme
+                );
             }
         }
     }

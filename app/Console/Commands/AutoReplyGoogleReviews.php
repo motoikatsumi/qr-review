@@ -56,7 +56,7 @@ class AutoReplyGoogleReviews extends Command
         // ステップ2: 未返信口コミに自動返信
         $this->info('=== 自動返信開始 ===');
 
-        $unrepliedQuery = GoogleReview::with('store')
+        $unrepliedQuery = GoogleReview::with(['store', 'store.businessType'])
             ->whereNull('reply_comment')
             ->where('reviewed_at', '>=', now()->subYear())
             ->whereIn('store_id', $stores->pluck('id'));
@@ -84,7 +84,7 @@ class AutoReplyGoogleReviews extends Command
 
             // AI で返信文を生成（カテゴリ・キーワードなし）
             $replyText = $gemini->generateReplyComment(
-                $storeName,
+                $review->store,
                 $review->rating,
                 $review->comment ?? '',
                 '',   // category なし

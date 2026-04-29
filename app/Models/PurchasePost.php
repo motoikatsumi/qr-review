@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchasePost extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'store_id',
         'brand_name',
@@ -45,6 +48,7 @@ class PurchasePost extends Model
         'facebook_error',
         'wp_category_slug',
         'wp_tag_name',
+        'custom_hashtags',
         'published_at',
     ];
 

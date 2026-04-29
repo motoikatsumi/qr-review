@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', '買取投稿作成')
+@section('title', '投稿作成')
 
 @push('styles')
 <style>
@@ -114,21 +114,159 @@
         color: #1d4ed8;
         font-weight: 600;
     }
+    .dynamic-section { transition: opacity 0.2s; }
+    .dynamic-section.hidden { display: none !important; }
+</style>
+@endpush
+
+@push('styles')
+<style>
+    /* === ステップインジケータ（スクロール追従） === */
+    .step-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 12px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        position: sticky;
+        top: 10px;
+        z-index: 50;
+        border: 1px solid #e5e7eb;
+    }
+    .step-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6b7280;
+        background: #f3f4f6;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .step-item.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        transform: scale(1.05);
+    }
+    .step-item.done {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .step-item:hover:not(.active) {
+        background: #e5e7eb;
+    }
+    .step-item .step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.25);
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+    .step-item:not(.active):not(.done) .step-num {
+        background: #d1d5db;
+        color: white;
+    }
+    .step-item.done .step-num {
+        background: #16a34a;
+        color: white;
+    }
+    .step-item.done .step-num::before {
+        content: '✓';
+    }
+    .step-item.done .step-num { font-size: 0; }
+    .step-item.done .step-num::before { font-size: 0.85rem; }
+    .step-arrow {
+        color: #9ca3af;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+    @media (max-width: 600px) {
+        .step-item { font-size: 0.7rem; padding: 4px 7px; }
+        .step-item .step-num { width: 18px; height: 18px; font-size: 0.68rem; }
+        .step-item span:not(.step-num) { font-size: 0.72rem; }
+    }
+
+    /* 各セクションに scroll margin を入れて sticky のヘッダに被らないように */
+    .step-target { scroll-margin-top: 80px; transition: border-color 0.3s, box-shadow 0.3s; }
+
+    /* 入力完了したセクションは緑の枠で表示 */
+    .step-target.completed { border: 2px solid #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12); }
+    .step-target.completed .card-header { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; }
+    .step-target.completed .card-header::after { content: ' ✓ 入力済み'; font-weight: 700; color: #16a34a; }
+    .step-target.completed h3 { color: #166534; }
+
+    /* 未入力の必須項目があるセクションは薄い黄色 */
+    .step-target.pending input[required]:placeholder-shown + label,
+    .step-target.pending textarea[required]:placeholder-shown,
+    .step-target.pending select[required]:invalid {
+        border-color: #fde68a;
+    }
 </style>
 @endpush
 
 @section('content')
 <div class="page-header">
-    <h1>📦 買取投稿を作成</h1>
+    <h1>📦 投稿を作成</h1>
     <a href="{{ route('admin.purchase-posts.index') }}" class="btn btn-secondary">← 一覧に戻る</a>
+</div>
+
+{{-- ステップインジケータ（スクロール追従・クリックで該当セクションへジャンプ） --}}
+<div class="step-indicator" id="stepIndicator">
+    <a href="#step-1" class="step-item active" data-step="1">
+        <span class="step-num">1</span>
+        <span>商品・画像</span>
+    </a>
+    <span class="step-arrow">→</span>
+    <a href="#step-2" class="step-item" data-step="2">
+        <span class="step-num">2</span>
+        <span>お客様情報</span>
+    </a>
+    <span class="step-arrow">→</span>
+    <a href="#step-3" class="step-item" data-step="3">
+        <span class="step-num">3</span>
+        <span>AI で本文作成</span>
+    </a>
+    <span class="step-arrow">→</span>
+    <a href="#step-4" class="step-item" data-step="4">
+        <span class="step-num">4</span>
+        <span>プレビュー</span>
+    </a>
+    <span class="step-arrow">→</span>
+    <a href="#step-5" class="step-item" data-step="5">
+        <span class="step-num">5</span>
+        <span>投稿</span>
+    </a>
 </div>
 
 <form method="POST" action="{{ route('admin.purchase-posts.store') }}" enctype="multipart/form-data" id="postForm">
     @csrf
 
-    {{-- pawn-system連携 --}}
-    <div class="card" style="margin-bottom:20px;">
-        <div class="card-header">🔗 在庫連携（pawn-system）</div>
+    {{-- 業種モード インジケーター（店舗選択後に動的更新） --}}
+    <div id="businessTypeIndicator" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:0.85rem;color:#075985;">
+        🏷️ 業種モード: <strong id="bt_indicator_name"></strong>
+        <span style="font-size:0.75rem;color:#0369a1;margin-left:6px;">（業種に合わせてフォームの項目とプリセットが自動で切り替わります）</span>
+    </div>
+
+    {{-- pawn-system連携（管理番号API連携が有効な場合のみ表示） --}}
+    @if(\App\Models\SiteSetting::get('pawn_system_enabled'))
+    <div class="card" style="margin-bottom:20px;" id="pawnSystemSection">
+        <div class="card-header">🔗 管理番号API連携</div>
         <div class="card-body">
             <div style="display:flex;gap:8px;align-items:flex-end;">
                 <div class="form-group" style="flex:1;margin-bottom:0;">
@@ -142,10 +280,11 @@
             <div id="fetchResult" style="margin-top:8px;font-size:0.85rem;display:none;"></div>
         </div>
     </div>
+    @endif
 
-    {{-- 基本情報 --}}
-    <div class="card" style="margin-bottom:20px;">
-        <div class="card-header">📋 基本情報</div>
+    {{-- 基本情報 + 画像 --}}
+    <div class="card step-target" id="step-1" style="margin-bottom:20px;">
+        <div class="card-header">📋 ステップ 1：商品情報と画像</div>
         <div class="card-body">
             <div class="two-col">
                 <div class="form-group">
@@ -162,25 +301,24 @@
                 <div class="form-group">
                     <label for="category">カテゴリ <span style="color:#ef4444">*</span></label>
                     <select id="category" name="category" required>
-                        <option value="">カテゴリを選択</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                        @endforeach
+                        <option value="">先に店舗を選択してください</option>
                     </select>
                     @error('category') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
                 </div>
             </div>
 
-            <div class="two-col">
+            <div class="two-col dynamic-section" id="brandProductSection">
                 <div class="form-group">
-                    <label for="brand_name">ブランド名（メーカー） <span style="color:#ef4444">*</span></label>
-                    <input type="text" id="brand_name" name="brand_name" value="{{ old('brand_name') }}" required placeholder="例：ROLEX ロレックス">
+                    <label for="brand_name" id="label_brand_name">ブランド名 <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="brand_name" name="brand_name" value="{{ old('brand_name') }}" required placeholder="例：メーカー名・ブランド名・タイトルなど">
+                    <p class="form-hint" id="hint_brand_name" style="font-size:0.74rem;color:#9ca3af;margin-top:3px;"></p>
                     @error('brand_name') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="product_name">商品名 <span style="color:#ef4444">*</span></label>
-                    <input type="text" id="product_name" name="product_name" value="{{ old('product_name') }}" required placeholder="例：オイスターパーペチュアル 69160">
+                    <label for="product_name" id="label_product_name">商品名 <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="product_name" name="product_name" value="{{ old('product_name') }}" required placeholder="例：商品名・型番・モデル名など">
+                    <p class="form-hint" id="hint_product_name" style="font-size:0.74rem;color:#9ca3af;margin-top:3px;"></p>
                     @error('product_name') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -189,13 +327,12 @@
                 <div class="form-group">
                     <label for="product_status">状態 <span style="color:#ef4444">*</span></label>
                     <select id="product_status" name="product_status" required>
-                        <option value="中古品" {{ old('product_status', '中古品') === '中古品' ? 'selected' : '' }}>中古品</option>
-                        <option value="新品" {{ old('product_status') === '新品' ? 'selected' : '' }}>新品</option>
-                        <option value="未使用品" {{ old('product_status') === '未使用品' ? 'selected' : '' }}>未使用品</option>
+                        {{-- JS で動的に更新 --}}
+                        <option value="">先に店舗を選択してください</option>
                     </select>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group dynamic-section" id="rankSection">
                     <label for="rank">ランク</label>
                     <select id="rank" name="rank">
                         <option value="" {{ old('rank') === '' ? 'selected' : '' }}>選択してください</option>
@@ -210,14 +347,20 @@
 
             <div class="two-col">
                 <div class="form-group">
-                    <label for="wp_tag_name">タグ（ブランド名）</label>
-                    <input type="text" id="wp_tag_name" name="wp_tag_name" value="{{ old('wp_tag_name') }}" placeholder="例：ロレックス">
+                    <label for="wp_tag_name">タグ</label>
+                    <input type="text" id="wp_tag_name" name="wp_tag_name" value="{{ old('wp_tag_name') }}" placeholder="例：WordPress用のタグ名">
                     <p class="form-hint">WordPressのタグに設定されます</p>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>商品画像 <span style="color:#ef4444">*</span></label>
+                <label for="custom_hashtags">#️⃣ ハッシュタグ（Instagram・Facebook用）</label>
+                <textarea id="custom_hashtags" name="custom_hashtags" rows="3" placeholder="店舗を選択するとデフォルトのハッシュタグがセットされます" style="font-size:0.9rem;line-height:1.6;">{{ old('custom_hashtags') }}</textarea>
+                <p class="form-hint">1行に1つ、#なしで入力。投稿時にここの内容が #付きで付与されます。</p>
+            </div>
+
+            <div class="form-group">
+                <label>画像 <span style="color:#ef4444">*</span></label>
                 <div style="display:flex;gap:20px;align-items:flex-start;">
                     <div class="image-preview" onclick="document.getElementById('image').click()">
                         <div class="placeholder" id="imagePlaceholder">
@@ -226,7 +369,7 @@
                         <img id="imagePreviewImg" style="display:none;" alt="プレビュー">
                     </div>
                     <div>
-                        <input type="file" id="image" name="image" accept="image/jpeg,image/png" required style="display:none;">
+                        <input type="file" id="image" name="image" accept="image/jpeg,image/png" style="display:none;">
                         <button type="button" class="btn btn-secondary" onclick="document.getElementById('image').click()">📁 ファイルを選択</button>
                         <p class="form-hint" style="margin-top:8px;">推奨: 1080×1080px（正方形）<br>JPG/PNG、10MB以内</p>
                         @error('image') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
@@ -236,9 +379,9 @@
         </div>
     </div>
 
-    {{-- お客様情報（AI生成用） --}}
-    <div class="card" style="margin-bottom:20px;">
-        <div class="card-header">👤 お客様情報（AI生成の参考情報・任意）</div>
+    {{-- お客様・取引情報（AI生成用） --}}
+    <div class="card step-target" id="step-2" style="margin-bottom:20px;">
+        <div class="card-header" id="step2_header">👤 ステップ 2：お客様情報（AI 生成の参考・任意）</div>
         <div class="card-body">
             <div class="two-col">
                 <div class="form-group">
@@ -262,30 +405,24 @@
                 </div>
             </div>
             <div class="form-group">
-                <label for="customer_reason">売却理由</label>
+                <label for="customer_reason" id="label_customer_reason">ご利用の経緯</label>
                 <div id="tags_customer_reason" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                    @foreach(['使わなくなったため', '引っ越しのため', '買い替えのため', '資金が必要なため', '断捨離・整理のため', '遺品整理のため', 'プレゼントだが不要になった'] as $reason)
-                        <button type="button" class="tag-btn" data-field="customer_reason" data-value="{{ $reason }}" onclick="toggleTag(this)">{{ $reason }}</button>
-                    @endforeach
+                    {{-- JS で動的に更新 --}}
                 </div>
                 <input type="text" id="customer_reason" name="customer_reason" value="{{ old('customer_reason') }}" placeholder="選択するか直接入力">
             </div>
-            <div class="two-col">
+            <div class="two-col dynamic-section" id="conditionAccessoriesSection">
                 <div class="form-group">
-                    <label for="product_condition">商品の状態</label>
+                    <label for="product_condition" id="label_product_condition">状態の補足</label>
                     <div id="tags_product_condition" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                        @foreach(['目立つキズなし', '全体的に良好', '多少の使用感あり', '未使用品', '新品同様', '小キズあり', '汚れあり', '動作確認済み', 'ジャンク品'] as $cond)
-                            <button type="button" class="tag-btn" data-field="product_condition" data-value="{{ $cond }}" onclick="toggleTag(this)">{{ $cond }}</button>
-                        @endforeach
+                        {{-- JS で業種ごとに動的更新 --}}
                     </div>
                     <input type="text" id="product_condition" name="product_condition" value="{{ old('product_condition') }}" placeholder="選択するか直接入力">
                 </div>
                 <div class="form-group">
-                    <label for="accessories">付属品</label>
+                    <label for="accessories" id="label_accessories">付属品・備考</label>
                     <div id="tags_accessories" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                        @foreach(['箱', '保証書', '説明書', '替えベルト', '充電器', 'ケース', '袋', 'ギャランティカード', '鑑定書', 'コマ'] as $acc)
-                            <button type="button" class="tag-btn" data-field="accessories" data-value="{{ $acc }}" onclick="toggleTag(this)">{{ $acc }}</button>
-                        @endforeach
+                        {{-- JS で動的に更新 --}}
                     </div>
                     <input type="text" id="accessories" name="accessories" value="{{ old('accessories') }}" placeholder="選択するか直接入力（複数可）">
                 </div>
@@ -293,10 +430,10 @@
         </div>
     </div>
 
-    {{-- ブロック① --}}
-    <div class="block-section">
-        <h3>🔷 ブロック①：タイトル行</h3>
-        <p class="form-hint" style="margin-bottom:10px;">「ブランド名 + 商品名 + 状態」をお買取りいたしました。人気の「ブランド名」の「カテゴリ」は状態を問わず高価買取中です。</p>
+    {{-- タイトル --}}
+    <div class="block-section step-target" id="step-3">
+        <h3>🔷 ステップ 3：タイトル・本文（AI で文章作成）</h3>
+        <p class="form-hint" id="block1Hint" style="margin-bottom:10px;">店舗を選択すると、業種に応じたテンプレートが自動生成されます。</p>
         <div class="form-group" style="margin-bottom:8px;">
             <textarea id="block1_text" name="block1_text" rows="3" required>{{ old('block1_text') }}</textarea>
             <div class="char-count"><span id="block1Count">0</span> / 1,500</div>
@@ -304,9 +441,9 @@
         @error('block1_text') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
     </div>
 
-    {{-- ブロック② --}}
+    {{-- 本文（エピソード） --}}
     <div class="block-section">
-        <h3>🔷 ブロック②：お客様エピソード（AI自動生成）</h3>
+        <h3>🔷 本文（エピソード）（AI自動生成）</h3>
         <div style="display:flex;gap:8px;margin-bottom:12px;">
             <button type="button" class="btn-generate" id="generateBtn" onclick="generateEpisode()">
                 ✨ AIでエピソードを生成
@@ -319,12 +456,12 @@
         @error('block2_text') <p style="color:#ef4444;font-size:0.8rem;margin-top:4px;">{{ $message }}</p> @enderror
     </div>
 
-    {{-- ブロック③ --}}
+    {{-- フッター --}}
     <div class="block-section">
-        <h3>🔷 ブロック③：店舗別エリアフッター</h3>
+        <h3>🔷 フッター（店舗別エリア情報）</h3>
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
             <div style="display:flex;gap:6px;align-items:center;">
-                <input type="text" id="footer_area" placeholder="エリア名（例：鹿児島市西千石・天文館）" style="padding:6px 10px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.8rem;width:280px;">
+                <input type="text" id="footer_area" placeholder="エリア名（例：○○市△△・□□エリア）" style="padding:6px 10px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.8rem;width:280px;">
                 <button type="button" class="btn-generate btn-sm" onclick="generateFooter()" style="padding:6px 12px;font-size:0.8rem;">✨ AI生成</button>
             </div>
         </div>
@@ -337,16 +474,17 @@
     </div>
 
     {{-- プレビュー --}}
-    <div class="card" style="margin-bottom:20px;">
-        <div class="card-header">👁️ 投稿プレビュー</div>
+    <div class="card step-target" id="step-4" style="margin-bottom:20px;">
+        <div class="card-header">👁️ ステップ 4：投稿プレビュー</div>
         <div class="card-body">
-            <div class="preview-box" id="previewBox">ブロック①②③を入力すると、ここにプレビューが表示されます</div>
+            <div class="preview-box" id="previewBox">タイトル・本文・フッターを入力すると、ここにプレビューが表示されます</div>
             <div class="char-count" style="margin-top:8px;">合計文字数: <strong id="totalCount">0</strong> / 1,500</div>
         </div>
     </div>
 
     {{-- 投稿ボタン --}}
-    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:40px;">
+    <div class="step-target" id="step-5" style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-bottom:40px;">
+        <p style="margin:0;color:#6b7280;font-size:0.88rem;">📮 ステップ 5：内容を確認したら投稿してください</p>
         <button type="submit" class="btn btn-primary" style="padding:14px 40px;font-size:1rem;" id="submitBtn">
             🚀 投稿する
         </button>
@@ -357,21 +495,448 @@
 
 @push('scripts')
 <script>
+    // ========================================
+    // ステップインジケータ スクロール連動 + 完了判定
+    // ========================================
+    (function() {
+        const stepItems = document.querySelectorAll('.step-item');
+        const targets = Array.from(document.querySelectorAll('.step-target'));
+        if (!stepItems.length || !targets.length) return;
+
+        // セクション完了判定（セクション内の必須項目が全て埋まっているか）
+        function isStepCompleted(section) {
+            if (!section) return false;
+            const id = section.id;
+
+            // Step ごとのカスタム判定
+            if (id === 'step-1') {
+                // 店舗・カテゴリ・ブランド・商品名・状態・画像
+                const storeId = document.getElementById('store_id');
+                const category = document.getElementById('category');
+                const brand = document.getElementById('brand_name');
+                const product = document.getElementById('product_name');
+                const status = document.getElementById('product_status');
+                const image = document.getElementById('image');
+                if (!storeId || !storeId.value) return false;
+                if (!category || !category.value) return false;
+                // ブランド・商品名が非表示化されている業種もあるので、表示されていれば判定
+                if (brand && brand.offsetParent !== null && !brand.value.trim()) return false;
+                if (product && product.offsetParent !== null && !product.value.trim()) return false;
+                if (!status || !status.value) return false;
+                if (!image || !image.files || !image.files.length) return false;
+                return true;
+            }
+            if (id === 'step-2') {
+                // お客様情報は任意なので、何か 1 つ以上入ったら完了扱い
+                const any = section.querySelectorAll('input[type="text"], input[type="checkbox"]:checked, select');
+                for (const el of any) {
+                    if (el.value && el.value.trim() !== '') return true;
+                }
+                // 何も入っていなくても「任意」なのでスキップ可能
+                // → step-3 に進んでいれば OK（完了ではないけど進捗は見せない）
+                return false;
+            }
+            if (id === 'step-3') {
+                // タイトル・本文・フッターが全部埋まっていれば完了
+                const b1 = document.getElementById('block1_text');
+                const b2 = document.getElementById('block2_text');
+                const b3 = document.getElementById('block3_text');
+                return (b1 && b1.value.trim()) && (b2 && b2.value.trim()) && (b3 && b3.value.trim());
+            }
+            if (id === 'step-4') {
+                // プレビューは step 1〜3 すべて埋まれば完了
+                return isStepCompleted(document.getElementById('step-1')) &&
+                       isStepCompleted(document.getElementById('step-3'));
+            }
+            if (id === 'step-5') {
+                // 投稿ボタンは step 1〜3 が終わっていれば実行可能
+                return isStepCompleted(document.getElementById('step-1')) &&
+                       isStepCompleted(document.getElementById('step-3'));
+            }
+            return false;
+        }
+
+        function updateCompletion() {
+            targets.forEach(section => {
+                if (isStepCompleted(section)) {
+                    section.classList.add('completed');
+                } else {
+                    section.classList.remove('completed');
+                }
+            });
+            // ステップインジケータの done 表示も完了ベースに
+            stepItems.forEach(item => {
+                const step = 'step-' + item.dataset.step;
+                const target = document.getElementById(step);
+                item.classList.remove('done');
+                if (target && isStepCompleted(target) && !item.classList.contains('active')) {
+                    item.classList.add('done');
+                }
+            });
+        }
+
+        function updateActiveStep() {
+            let current = null;
+            const threshold = window.innerHeight / 3;
+            for (const el of targets) {
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= threshold) current = el.id;
+            }
+            stepItems.forEach(item => {
+                const step = 'step-' + item.dataset.step;
+                item.classList.remove('active');
+                if (current === step) {
+                    item.classList.add('active');
+                }
+            });
+            updateCompletion();
+        }
+        window.addEventListener('scroll', updateActiveStep, { passive: true });
+        window.addEventListener('resize', updateActiveStep);
+        // 入力変化で完了判定を更新
+        document.addEventListener('input', updateCompletion);
+        document.addEventListener('change', updateCompletion);
+        updateActiveStep();
+        updateCompletion();
+
+        // ステップクリックで滑らかにスクロール
+        stepItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (!href || !href.startsWith('#')) return;
+                const target = document.querySelector(href);
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    })();
+
+    // ========================================
+    // 店舗・業種データ（サーバーから渡す）
+    // ========================================
+    var storeData = {!! json_encode($stores->mapWithKeys(function($store) {
+        $bt = $store->businessType;
+        return [$store->id => [
+            'name' => $store->name,
+            'business_type_name' => $bt->name ?? '',
+            'business_type_slug' => $bt->slug ?? '',
+            'use_pawn_system' => $bt->use_pawn_system ?? false,
+            'use_product_rank' => $bt->use_product_rank ?? false,
+            'post_action_word' => $bt->post_action_word ?? '投稿',
+            'post_categories' => $bt->post_categories ?? [],
+            'post_title_template' => $bt->post_title_template ?? '{brand} {product}のご紹介です。',
+            'post_status_options' => $bt->post_status_options ?? ['通常', '新着', 'おすすめ'],
+            'post_reason_presets' => $bt->post_reason_presets ?? [],
+            'post_accessory_presets' => $bt->post_accessory_presets ?? [],
+            'post_hidden_fields' => $bt->post_hidden_fields ?? [],
+            'base_context' => $bt->base_context ?? '',
+            'default_hashtags' => $bt->post_default_hashtags ?? '',
+            'store_hashtags' => $store->custom_hashtags ?? '',
+        ]];
+    }), JSON_UNESCAPED_UNICODE) !!};
+
+    var storeFooterMap = {!! json_encode($stores->mapWithKeys(function($store) {
+        $footer = $store->postTemplate->template_text ?? '';
+        if (!$footer) {
+            $footer = $store->name . 'へぜひご相談ください。';
+        }
+        return [(string)$store->id => $footer];
+    }), JSON_UNESCAPED_UNICODE) !!};
+
+    var oldCategory = {!! json_encode(old('category', '')) !!};
+    var oldStatus = {!! json_encode(old('product_status', '')) !!};
+
+    // ========================================
     // HTMLエスケープ
+    // ========================================
     function escHtml(str) {
         var div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
 
-    // 店舗別フッターテンプレート（○○はカテゴリ名に自動置換）
-    var storeFooterMap = {
-        @foreach($stores as $store)
-        '{{ $store->id }}': @if(str_contains($store->name, '西千石'))"鹿児島市西千石・天文館・中央駅周辺エリアで○○の売却や質預かりをご検討の方は、高価買取の質屋アシスト西千石本店へぜひご相談ください。LINE査定も受付中です。"@elseif(str_contains($store->name, '宇宿'))"鹿児島市宇宿・谷山エリアで○○の売却や質預かりをご検討の方は、高価買取の質屋アシスト宇宿店へぜひご相談ください。LINE査定も受付中です。"@elseif(str_contains($store->name, '伊敷'))"鹿児島市伊敷・草牟田・下伊敷・吉野エリアで○○の売却や質預かりをご検討の方は、高価買取の質屋アシスト伊敷店へぜひご相談ください。LINE査定も受付中です。"@elseif(str_contains($store->name, '鹿屋'))"鹿屋市寿・札元・川西エリアで○○の売却や質預かりをご検討の方は、高価買取の質屋アシスト鹿屋店へぜひご相談ください。LINE査定も受付中です。"@elseif(str_contains($store->name, '国分'))"霧島市国分・隼人エリアで○○の売却や質預かりをご検討の方は、高価買取の質屋アシスト国分店へぜひご相談ください。LINE査定も受付中です。"@else""@endif,
-        @endforeach
+    // ========================================
+    // 店舗選択時にフォームを業種に合わせて更新
+    // ========================================
+    function onStoreChange() {
+        var storeId = document.getElementById('store_id').value;
+        var data = storeData[storeId];
+        var hiddenFields = (data && data.post_hidden_fields) ? data.post_hidden_fields : [];
+
+        // ランクセクション表示/非表示
+        var rankSection = document.getElementById('rankSection');
+        if (data && data.use_product_rank) {
+            rankSection.classList.remove('hidden');
+        } else {
+            rankSection.classList.add('hidden');
+            document.getElementById('rank').value = '';
+        }
+
+        // 業種に応じてフィールドを動的表示/非表示
+        toggleFieldSection('brandProductSection', hiddenFields, ['brand_name', 'product_name']);
+        toggleFieldSection('conditionAccessoriesSection', hiddenFields, ['product_condition', 'accessories']);
+
+        // pawn-system連携セクション（use_pawn_system でない場合は非表示）
+        var pawnSection = document.getElementById('pawnSystemSection');
+        if (pawnSection) {
+            if (data && data.use_pawn_system) {
+                pawnSection.classList.remove('hidden');
+            } else {
+                pawnSection.classList.add('hidden');
+            }
+        }
+
+        // カテゴリ更新
+        updateCategories(data);
+
+        // 商品状態更新
+        updateStatusOptions(data);
+
+        // プリセットタグ更新
+        updateReasonPresets(data);
+        updateAccessoryPresets(data);
+        updateConditionPresets(data);
+
+        // 業種に合わせてラベル・ヒントを切り替え
+        updateLabelsForBusinessType(data);
+
+        // ハッシュタグを業種＋店舗のデフォルトでセット
+        updateDefaultHashtags(data);
+
+        // ブロック③を自動セット
+        updateBlock3();
+    }
+
+    // ========================================
+    // 業種ごとに状態の補足プリセットを切り替え
+    // 質屋・買取店：状態の細かい記述（キズ・使用感など）
+    // それ以外：もう少し汎用的な表現（ない場合は非表示）
+    // ========================================
+    var CONDITION_PRESETS_BY_TYPE = {
+        // 物販・買取系（slug or pawn-flag で判定）
+        pawn:        ['目立つキズなし', '全体的に良好', '多少の使用感あり', '未使用品', '新品同様', '小キズあり', '汚れあり', '動作確認済み', 'ジャンク品'],
+        car_dealer:  ['修復歴なし', '禁煙車', 'ワンオーナー', '記録簿あり', '走行距離少なめ', '内外装良好', '小キズあり', '要メンテナンス'],
+        general:     ['新品同様', '良好', '通常', '使用感あり'],
     };
 
+    function updateConditionPresets(data) {
+        var container = document.getElementById('tags_product_condition');
+        if (!container) return;
+        container.innerHTML = '';
+
+        var slug = data && data.business_type_slug ? data.business_type_slug : '';
+        var presets = CONDITION_PRESETS_BY_TYPE[slug];
+        if (!presets) {
+            // 未知の業種は use_pawn_system フラグで推定
+            presets = (data && data.use_pawn_system)
+                ? CONDITION_PRESETS_BY_TYPE.pawn
+                : (data && data.use_product_rank ? CONDITION_PRESETS_BY_TYPE.general : []);
+        }
+
+        presets.forEach(function(c) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tag-btn';
+            btn.dataset.field = 'product_condition';
+            btn.dataset.value = c;
+            btn.textContent = c;
+            btn.onclick = function() { toggleTag(this); };
+            container.appendChild(btn);
+        });
+
+        syncTagButtons('product_condition');
+    }
+
+    // ========================================
+    // 業種ごとにラベル・ヒントを切り替え
+    // ========================================
+    function updateLabelsForBusinessType(data) {
+        if (!data) return;
+        var slug = data.business_type_slug || '';
+
+        // 業種インジケーターを更新
+        var indicator = document.getElementById('businessTypeIndicator');
+        var indicatorName = document.getElementById('bt_indicator_name');
+        if (indicator && indicatorName) {
+            indicatorName.textContent = (data.business_type_name || '未設定') + (data.post_action_word ? '（' + data.post_action_word + '投稿）' : '');
+            indicator.style.display = '';
+        }
+
+        // ステップ 2 のヘッダーを業種に合わせて
+        var step2Header = document.getElementById('step2_header');
+        var step2HeaderText = {
+            pawn:       '👤 ステップ 2：お客様情報（AI 生成の参考・任意）',
+            car_dealer: '👤 ステップ 2：お客様情報（AI 生成の参考・任意）',
+            yakiniku:   '🍽 ステップ 2：来店情報（AI 生成の参考・任意）',
+            general:    '👤 ステップ 2：お客様情報（AI 生成の参考・任意）',
+        };
+        if (step2Header) step2Header.textContent = step2HeaderText[slug] || step2HeaderText.general;
+
+        // 業種別ラベル
+        var labels = {
+            pawn:       { brand: 'ブランド名',          brandHint: 'メーカー・ブランド・銘柄など',           product: '商品名',           productHint: '型番やモデル名（例：サブマリーナ 116610LN）', condition: '状態の補足',  accessories: '付属品・備考', reason: 'ご利用の経緯' },
+            car_dealer: { brand: 'メーカー',            brandHint: 'トヨタ・ホンダ・BMW など',                product: '車種・グレード',     productHint: 'プリウス S グレード など',                       condition: '車両の状態',  accessories: 'オプション・備考', reason: 'ご来店の目的' },
+            yakiniku:   { brand: 'メニュー / コース名',  brandHint: '黒毛和牛コース・ホルモンセット など',     product: 'お品書き・特徴',     productHint: 'A5 黒毛和牛 / 飲み放題付き など',             condition: '提供スタイル', accessories: '備考',         reason: 'ご来店の経緯' },
+            general:    { brand: 'タイトル',            brandHint: '投稿の主役となる名前',                    product: 'サブタイトル',        productHint: '補足の説明',                                 condition: '備考',         accessories: '備考',         reason: 'ご利用の経緯' },
+        };
+        var l = labels[slug] || labels.general;
+
+        function setLabelText(elId, txt, required) {
+            var el = document.getElementById(elId);
+            if (!el) return;
+            el.innerHTML = txt + (required ? ' <span style="color:#ef4444">*</span>' : '');
+        }
+        setLabelText('label_brand_name',          l.brand,       true);
+        setLabelText('label_product_name',        l.product,     true);
+        setLabelText('label_product_condition',   l.condition,   false);
+        setLabelText('label_accessories',         l.accessories, false);
+        setLabelText('label_customer_reason',     l.reason,      false);
+
+        var brandHint = document.getElementById('hint_brand_name');
+        var productHint = document.getElementById('hint_product_name');
+        if (brandHint)   brandHint.textContent = l.brandHint || '';
+        if (productHint) productHint.textContent = l.productHint || '';
+    }
+
+    // デフォルトハッシュタグをセット（業種＋店舗）
+    function updateDefaultHashtags(data) {
+        var textarea = document.getElementById('custom_hashtags');
+        if (!textarea || !data) return;
+        var tags = [];
+        // 業種のデフォルトハッシュタグ
+        if (data.default_hashtags) {
+            data.default_hashtags.split('\n').forEach(function(t) {
+                t = t.trim().replace(/^#/, '');
+                if (t) tags.push(t);
+            });
+        }
+        // 店舗のカスタムハッシュタグ
+        if (data.store_hashtags) {
+            data.store_hashtags.split('\n').forEach(function(t) {
+                t = t.trim().replace(/^#/, '');
+                if (t) tags.push(t);
+            });
+        }
+        // 重複除去
+        var unique = [];
+        tags.forEach(function(t) { if (unique.indexOf(t) === -1) unique.push(t); });
+        textarea.value = unique.join('\n');
+    }
+
+    // セクションの表示/非表示を切り替え＋required属性の管理
+    function toggleFieldSection(sectionId, hiddenFields, fieldNames) {
+        var section = document.getElementById(sectionId);
+        if (!section) return;
+
+        var shouldHide = fieldNames.some(function(f) { return hiddenFields.indexOf(f) !== -1; });
+        if (shouldHide) {
+            section.classList.add('hidden');
+            // required属性を外す＋値をクリア
+            fieldNames.forEach(function(f) {
+                var el = document.getElementById(f);
+                if (el) {
+                    el.removeAttribute('required');
+                    if (!el.value) el.value = '';
+                }
+            });
+        } else {
+            section.classList.remove('hidden');
+            // brand_name, product_name は required に戻す
+            ['brand_name', 'product_name'].forEach(function(f) {
+                if (fieldNames.indexOf(f) !== -1) {
+                    var el = document.getElementById(f);
+                    if (el) el.setAttribute('required', 'required');
+                }
+            });
+        }
+    }
+
+    // カテゴリを業種に応じて更新
+    function updateCategories(data) {
+        var select = document.getElementById('category');
+        var currentVal = select.value || oldCategory;
+        select.innerHTML = '<option value="">カテゴリを選択</option>';
+
+        if (data && data.post_categories) {
+            data.post_categories.forEach(function(cat) {
+                var opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.textContent = cat.name;
+                if (cat.name === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+        oldCategory = ''; // 初回のみ old() を使用
+    }
+
+    // 商品状態オプション更新
+    function updateStatusOptions(data) {
+        var select = document.getElementById('product_status');
+        var currentVal = select.value || oldStatus;
+        select.innerHTML = '';
+
+        var options = (data && data.post_status_options) ? data.post_status_options : ['通常', '新着', 'おすすめ'];
+        options.forEach(function(status, idx) {
+            var opt = document.createElement('option');
+            opt.value = status;
+            opt.textContent = status;
+            if (status === currentVal || (idx === 0 && !currentVal)) opt.selected = true;
+            select.appendChild(opt);
+        });
+        oldStatus = '';
+    }
+
+    // 利用経緯プリセット更新
+    function updateReasonPresets(data) {
+        var container = document.getElementById('tags_customer_reason');
+        container.innerHTML = '';
+
+        var presets = (data && data.post_reason_presets && data.post_reason_presets.length > 0)
+            ? data.post_reason_presets
+            : ['知人の紹介', 'ネットで見つけた', '以前から気になっていた', 'リピート利用'];
+
+        presets.forEach(function(reason) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tag-btn';
+            btn.dataset.field = 'customer_reason';
+            btn.dataset.value = reason;
+            btn.textContent = reason;
+            btn.onclick = function() { toggleTag(this); };
+            container.appendChild(btn);
+        });
+
+        syncTagButtons('customer_reason');
+    }
+
+    // 付属品プリセット更新
+    function updateAccessoryPresets(data) {
+        var container = document.getElementById('tags_accessories');
+        container.innerHTML = '';
+
+        var presets = (data && data.post_accessory_presets && data.post_accessory_presets.length > 0)
+            ? data.post_accessory_presets
+            : [];
+
+        presets.forEach(function(acc) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tag-btn';
+            btn.dataset.field = 'accessories';
+            btn.dataset.value = acc;
+            btn.textContent = acc;
+            btn.onclick = function() { toggleTag(this); };
+            container.appendChild(btn);
+        });
+
+        syncTagButtons('accessories');
+    }
+
+    // ========================================
     // ブロック③を店舗＋カテゴリから自動生成
+    // ========================================
     function updateBlock3() {
         var storeId = document.getElementById('store_id').value;
         var categoryName = document.getElementById('category').value;
@@ -385,10 +950,10 @@
         }
     }
 
-    // 店舗選択時にブロック③を自動セット
-    document.getElementById('store_id').addEventListener('change', function() {
-        updateBlock3();
-    });
+    // ========================================
+    // イベントリスナー
+    // ========================================
+    document.getElementById('store_id').addEventListener('change', onStoreChange);
 
     // 画像プレビュー
     document.getElementById('image').addEventListener('change', function(e) {
@@ -423,14 +988,16 @@
         if (b1) preview += b1;
         if (b2) preview += '\n\n' + b2;
         if (b3Replaced) preview += '\n\n' + b3Replaced;
-        document.getElementById('previewBox').textContent = preview || 'ブロック①②③を入力すると、ここにプレビューが表示されます';
+        document.getElementById('previewBox').textContent = preview || 'タイトル・本文・フッターを入力すると、ここにプレビューが表示されます';
     }
 
     document.getElementById('block1_text').addEventListener('input', updateCounts);
     document.getElementById('block2_text').addEventListener('input', updateCounts);
     document.getElementById('block3_text').addEventListener('input', updateCounts);
 
+    // ========================================
     // タグボタンのトグル（選択/解除）
+    // ========================================
     function toggleTag(btn) {
         var fieldId = btn.dataset.field;
         var value = btn.dataset.value;
@@ -446,7 +1013,6 @@
         syncTagButtons(fieldId);
     }
 
-    // 入力フィールドの値に基づいてボタンのactive状態を同期
     function syncTagButtons(fieldId) {
         var field = document.getElementById(fieldId);
         var container = document.getElementById('tags_' + fieldId);
@@ -461,30 +1027,52 @@
         });
     }
 
-    // 後方互換: テキスト追記用
-    function appendToField(fieldId, value) {
-        var field = document.getElementById(fieldId);
-        var current = field.value.trim();
-        if (current && !current.endsWith('、')) {
-            field.value = current + '、' + value;
-        } else {
-            field.value = current + value;
-        }
-        syncTagButtons(fieldId);
-    }
-
-    // ブロック①自動生成（ブランド名・商品名・状態・カテゴリ入力時に自動更新）
+    // ========================================
+    // ブロック①自動生成（業種テンプレート使用）
+    // ========================================
     function autoGenerateBlock1() {
         var brand = document.getElementById('brand_name').value;
         var product = document.getElementById('product_name').value;
         var status = document.getElementById('product_status').value;
         var category = document.getElementById('category').value;
+        var storeId = document.getElementById('store_id').value;
+        var data = storeData[storeId];
+        var hiddenFields = (data && data.post_hidden_fields) ? data.post_hidden_fields : [];
 
-        if (brand && product) {
-            var text = brand + ' ' + product + ' ' + status + 'をお買取りいたしました。人気の' + brand + 'の' + (category || '○○') + 'は状態を問わず高価買取中です。';
-            document.getElementById('block1_text').value = text;
-            updateCounts();
+        var template = (data && data.post_title_template)
+            ? data.post_title_template
+            : '{brand} {product}のご紹介です。';
+
+        // brand/product が非表示の場合はカテゴリ選択だけでタイトル生成
+        var brandHidden = hiddenFields.indexOf('brand_name') !== -1;
+        if (brandHidden) {
+            if (category) {
+                var text = template
+                    .replace(/{brand}/g, '')
+                    .replace(/{product}/g, '')
+                    .replace(/{status}/g, status || '')
+                    .replace(/{category}/g, category)
+                    .replace(/\s+/g, ' ').trim();
+
+                document.getElementById('block1_text').value = text;
+                updateCounts();
+            }
+        } else {
+            if (brand && product) {
+                var text = template
+                    .replace(/{brand}/g, brand)
+                    .replace(/{product}/g, product)
+                    .replace(/{status}/g, status || '')
+                    .replace(/{category}/g, category || '○○');
+
+                document.getElementById('block1_text').value = text;
+                updateCounts();
+            }
         }
+
+        // ヒントもテンプレートに合わせて更新
+        document.getElementById('block1Hint').textContent =
+            'テンプレート: ' + template.replace(/{brand}/g, '「ブランド名」').replace(/{product}/g, '「商品名」').replace(/{status}/g, '「状態」').replace(/{category}/g, '「カテゴリ」');
     }
 
     document.getElementById('brand_name').addEventListener('input', autoGenerateBlock1);
@@ -492,18 +1080,32 @@
     document.getElementById('product_status').addEventListener('change', autoGenerateBlock1);
     document.getElementById('category').addEventListener('change', function() {
         autoGenerateBlock1();
-        // ブロック③を店舗＋カテゴリで再生成
         updateBlock3();
     });
 
+    // ========================================
     // ブロック② AI生成
+    // ========================================
     function generateEpisode() {
+        var storeId = document.getElementById('store_id').value;
+        var data = storeData[storeId];
+        var hiddenFields = (data && data.post_hidden_fields) ? data.post_hidden_fields : [];
         var brand = document.getElementById('brand_name').value;
         var product = document.getElementById('product_name').value;
+        var category = document.getElementById('category').value;
 
-        if (!brand || !product) {
-            alert('ブランド名と商品名を先に入力してください');
-            return;
+        // brand/productが非表示ならカテゴリ必須、そうでなければbrand/product必須
+        var brandHidden = hiddenFields.indexOf('brand_name') !== -1;
+        if (brandHidden) {
+            if (!category) {
+                alert('カテゴリを選択してください');
+                return;
+            }
+        } else {
+            if (!brand || !product) {
+                alert('ブランド名と商品名を先に入力してください');
+                return;
+            }
         }
 
         var btn = document.getElementById('generateBtn');
@@ -511,8 +1113,10 @@
         btn.innerHTML = '<span class="spinner"></span> 生成中...';
 
         var formData = new FormData();
+        formData.append('store_id', storeId);
         formData.append('brand_name', brand);
         formData.append('product_name', product);
+        formData.append('category', category);
         formData.append('customer_gender', document.getElementById('customer_gender').value);
         formData.append('customer_age', document.getElementById('customer_age').value);
         formData.append('customer_reason', document.getElementById('customer_reason').value);
@@ -545,7 +1149,9 @@
         });
     }
 
+    // ========================================
     // ブロック③ AI生成
+    // ========================================
     function generateFooter() {
         var storeId = document.getElementById('store_id').value;
         var area = document.getElementById('footer_area').value;
@@ -590,20 +1196,30 @@
         });
     }
 
+    // ========================================
     // フォーム送信時の二重送信防止
+    // ========================================
     document.getElementById('postForm').addEventListener('submit', function() {
         var btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> 投稿中...';
     });
 
+    // ========================================
     // 初期化
+    // ========================================
     updateCounts();
-    syncTagButtons('customer_reason');
     syncTagButtons('product_condition');
-    syncTagButtons('accessories');
 
+    // old() で店舗がセットされている場合はフォームを初期化
+    var initialStoreId = document.getElementById('store_id').value;
+    if (initialStoreId) {
+        onStoreChange();
+    }
+
+    // ========================================
     // pawn-system在庫取得
+    // ========================================
     function fetchStock() {
         var manageNumber = document.getElementById('manage_number').value.trim();
         if (!manageNumber) {
@@ -661,7 +1277,7 @@
 
     // 取得したデータをフォームに自動入力
     function applyStockData(data) {
-        // 店舗を名前で選択
+        // 1. 店舗を名前で自動選択 → フォームを業種に合わせて再構築
         if (data.shop_name) {
             var storeSelect = document.getElementById('store_id');
             for (var i = 0; i < storeSelect.options.length; i++) {
@@ -671,13 +1287,36 @@
                 }
             }
         }
+        // 店舗が未選択でも最初の店舗を自動選択
+        var storeSelect = document.getElementById('store_id');
+        if (!storeSelect.value) {
+            for (var i = 0; i < storeSelect.options.length; i++) {
+                if (storeSelect.options[i].value) {
+                    storeSelect.value = storeSelect.options[i].value;
+                    break;
+                }
+            }
+        }
+        // フォーム再構築（カテゴリ・ステータスのドロップダウンが作られる）
+        onStoreChange();
 
-        // カテゴリ選択
+        // 2. 再構築後にカテゴリ選択
         if (data.category) {
             var catSelect = document.getElementById('category');
             for (var i = 0; i < catSelect.options.length; i++) {
                 if (catSelect.options[i].value === data.category) {
                     catSelect.value = data.category;
+                    break;
+                }
+            }
+        }
+
+        // 3. 再構築後にステータス選択
+        if (data.product_status) {
+            var statusSelect = document.getElementById('product_status');
+            for (var i = 0; i < statusSelect.options.length; i++) {
+                if (statusSelect.options[i].value === data.product_status) {
+                    statusSelect.value = data.product_status;
                     break;
                 }
             }
@@ -691,11 +1330,6 @@
         // 商品名
         if (data.product_name) {
             document.getElementById('product_name').value = data.product_name;
-        }
-
-        // 状態
-        if (data.product_status) {
-            document.getElementById('product_status').value = data.product_status;
         }
 
         // ランク

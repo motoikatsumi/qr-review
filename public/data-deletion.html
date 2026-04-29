@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>データ削除リクエスト | QRレビュー</title>
+    <meta name="robots" content="index, follow">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+            line-height: 1.8;
+            color: #1f2937;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+            background: #f9fafb;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        h1 {
+            font-size: 1.6rem;
+            color: #1e1b4b;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 14px;
+        }
+        h2 {
+            font-size: 1.1rem;
+            color: #1e1b4b;
+            margin-top: 30px;
+            padding-left: 12px;
+            border-left: 4px solid #667eea;
+        }
+        ol li { margin: 10px 0; }
+        .step-box {
+            background: #f0f4ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin: 20px 0;
+        }
+        .contact-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-top: 30px;
+        }
+        a { color: #667eea; }
+        code {
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "Menlo", "Consolas", monospace;
+            font-size: 0.9rem;
+        }
+        .footer-nav {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        .footer-nav a { margin: 0 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🗑️ データ削除リクエスト</h1>
+
+    <p>QRレビュー（以下「本サービス」）では、ユーザー（または Meta プラットフォーム経由で連携を解除したユーザー）からの要求に応じて、当社が保有する個人情報・連携データを削除します。</p>
+
+    <h2>削除対象のデータ</h2>
+    <ul>
+        <li>Facebook ページアクセストークン</li>
+        <li>Facebook ページ ID、ページ名</li>
+        <li>Instagram ビジネスアカウント ID、ユーザー名</li>
+        <li>本サービス上で生成された投稿履歴（Instagram メディア ID、Facebook 投稿 ID）</li>
+        <li>OAuth 認可時に取得したその他の情報</li>
+    </ul>
+
+    <h2>削除方法</h2>
+
+    <h2>方法 1: 本サービスの管理画面から</h2>
+    <div class="step-box">
+        <ol>
+            <li>QRレビュー管理画面にログインします。</li>
+            <li>「店舗管理」から対象店舗を開きます。</li>
+            <li>「連携設定」タブを開きます。</li>
+            <li>Facebook / Instagram 欄の「連携を解除」ボタンをクリックします。</li>
+            <li>ボタン押下と同時に、対象店舗のアクセストークン・連携データはサーバーから削除されます。</li>
+        </ol>
+    </div>
+
+    <h2>方法 2: Facebook 側から連携を取り消す</h2>
+    <div class="step-box">
+        <ol>
+            <li>Facebook にログインします。</li>
+            <li>「設定とプライバシー → 設定 → アプリとウェブサイト」を開きます。</li>
+            <li>一覧から「QRレビュー」（または該当するアプリ名）を選び「削除」をクリックします。</li>
+            <li>Facebook から削除通知が当社に送信され、自動的に対応するデータが削除されます（通常 24 時間以内）。</li>
+        </ol>
+        <p style="font-size:0.85rem;color:#666;margin-top:10px;">
+            ※ Meta が定める「データ削除コールバック URL」: <code>https://review.assist-grp.net/meta/data-deletion-callback</code>
+        </p>
+    </div>
+
+    <h2>方法 3: お問い合わせ窓口へメールで請求</h2>
+    <div class="step-box">
+        <p>以下の情報をメールでお送りください。本人確認の上、5 営業日以内にデータを削除し、削除完了通知をご返信します。</p>
+        <ul>
+            <li>件名: 「データ削除リクエスト」</li>
+            <li>お名前 / 会社名</li>
+            <li>連携している Facebook ページ名 または Instagram ユーザー名</li>
+            <li>連携時に使用したメールアドレス</li>
+            <li>削除を希望する理由（任意）</li>
+        </ul>
+        <p style="margin-top:14px;">
+            <strong>送信先:</strong> <a href="mailto:info@assist-grp.jp">info@assist-grp.jp</a>
+        </p>
+    </div>
+
+    <h2>削除確認コード（Meta からのリクエストの場合）</h2>
+    <p>Meta プラットフォームを通じてデータ削除リクエストが当社に送信された場合、当社は <code>confirmation_code</code> を発行し、削除状況を確認できる URL をご返信します。コードを使ってこちらのページから削除進捗を確認できます。</p>
+
+    <div class="contact-box">
+        <strong>📧 お問い合わせ窓口</strong><br>
+        株式会社アシスト QRレビュー運営事務局<br>
+        メール: <a href="mailto:info@assist-grp.jp">info@assist-grp.jp</a><br>
+        対応時間: 平日 10:00〜18:00（土日祝休）
+    </div>
+
+    <div class="footer-nav">
+        <a href="/privacy.html">プライバシーポリシー</a> | <a href="/terms.html">利用規約</a> | <a href="/manual.html">使い方マニュアル</a>
+    </div>
+</div>
+</body>
+</html>

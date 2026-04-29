@@ -19,6 +19,12 @@ class Review extends Model
         'gender',
         'age',
         'visit_type',
+        'item',
+        'persona',
+    ];
+
+    protected $casts = [
+        'persona' => 'array',
     ];
 
     public function store()

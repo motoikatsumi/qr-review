@@ -11,7 +11,7 @@ return new class extends Migration
     {
         Schema::create('site_settings', function (Blueprint $table) {
             $table->string('key')->primary();
-            $table->string('value');
+            $table->text('value');
             $table->timestamps();
         });
 
