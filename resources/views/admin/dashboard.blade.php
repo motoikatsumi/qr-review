@@ -371,8 +371,8 @@
     .todo-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-auto-rows: 1fr; /* 同じ行のすべてのカードを同じ高さに強制 */
         gap: 14px;
-        align-items: stretch;
     }
     .todo-card {
         display: flex;
@@ -384,8 +384,9 @@
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         text-decoration: none;
         transition: all 0.2s ease;
-        min-height: 110px;
         align-items: center;
+        height: 100%;
+        box-sizing: border-box;
     }
     .todo-card:hover {
         transform: translateY(-2px);
