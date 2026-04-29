@@ -393,11 +393,18 @@
                 // 運営管理切替ボタン表示判定:
                 //   - 既に super_admins テーブルに登録済み、または
                 //   - .env の ADMIN_EMAIL と一致するメールアドレス（マスター管理者）
+                // master DB に接続できない環境（単一テナント運用）では try/catch で吸収
                 $userEmail = Auth::user()->email ?? '';
-                $isSuperAdminEligible = $userEmail && (
-                    \App\Models\SuperAdmin::where('email', $userEmail)->exists()
-                    || $userEmail === env('ADMIN_EMAIL')
-                );
+                $isSuperAdminEligible = false;
+                if ($userEmail) {
+                    try {
+                        $isSuperAdminEligible = \App\Models\SuperAdmin::where('email', $userEmail)->exists()
+                            || $userEmail === env('ADMIN_EMAIL');
+                    } catch (\Throwable $e) {
+                        // master DB アクセス不可 → ENV のマスター管理者判定だけにフォールバック
+                        $isSuperAdminEligible = ($userEmail === env('ADMIN_EMAIL'));
+                    }
+                }
             @endphp
             @if($isSuperAdminEligible)
             <form method="POST" action="/super-admin/switch-from-admin" style="display:inline;">
