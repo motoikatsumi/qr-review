@@ -27,15 +27,28 @@ class TenantDatabase
             return $next($request);
         }
 
+        // 明示的に単一テナント運用を指定された場合はスキップ
+        if (env('MULTI_TENANT_ENABLED') === false || env('MULTI_TENANT_ENABLED') === '0' || env('MULTI_TENANT_ENABLED') === 'false') {
+            return $next($request);
+        }
+
         // master DBからテナント情報を取得
-        $tenant = DB::connection('master')
-            ->table('tenants')
-            ->where('subdomain', $subdomain)
-            ->where('is_active', true)
-            ->first();
+        // master DB に接続できない場合（単一テナント運用環境）は素通りでデフォルト DB を使用
+        try {
+            $tenant = DB::connection('master')
+                ->table('tenants')
+                ->where('subdomain', $subdomain)
+                ->where('is_active', true)
+                ->first();
+        } catch (\Throwable $e) {
+            // master DB 未設定 / アクセス権なし = 単一テナント運用とみなす
+            return $next($request);
+        }
 
         if (!$tenant) {
-            abort(404, 'テナントが見つかりません');
+            // master DB に該当テナントが無い場合もデフォルト DB で動作させる
+            // （マルチテナント運用前のレガシー or サブドメインが master 未登録）
+            return $next($request);
         }
 
         // テナントDBに接続を切り替え
