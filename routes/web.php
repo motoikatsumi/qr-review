@@ -77,6 +77,8 @@ Route::post('/review/{slug}', [\App\Http\Controllers\ReviewController::class, 's
 Route::post('/review/{slug}/suggest', [\App\Http\Controllers\ReviewController::class, 'suggest']);
 Route::post('/review/{slug}/upload-image', [\App\Http\Controllers\ReviewController::class, 'uploadImage']);
 Route::delete('/review/{slug}/upload-image', [\App\Http\Controllers\ReviewController::class, 'deleteImage']);
+Route::get('/review/{slug}/image/{filename}', [\App\Http\Controllers\ReviewController::class, 'serveImage'])
+    ->where('filename', '[A-Za-z0-9_\-\.]+');
 Route::get('/review/{slug}/thankyou', [\App\Http\Controllers\ReviewController::class, 'thankyou']);
 
 

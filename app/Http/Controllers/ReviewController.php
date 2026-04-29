@@ -343,6 +343,31 @@ class ReviewController extends Controller
     }
 
     /**
+     * アップロード済み画像を配信（storage シンボリックリンクに依存しない）。
+     * 共有レンタルサーバーで public/ 以下のシンボリックリンクが辿られない環境でも動くよう、
+     * セッション専用ディレクトリ内のファイルを Laravel 経由で返す。
+     */
+    public function serveImage($slug, $filename)
+    {
+        Store::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        $filename = basename($filename); // パストラバーサル対策
+        $path = $this->uploadDir($slug) . '/' . $filename;
+
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        $absolute = Storage::disk('public')->path($path);
+        $mime = @mime_content_type($absolute) ?: 'application/octet-stream';
+
+        return response()->file($absolute, [
+            'Content-Type'  => $mime,
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    /**
      * 画像削除（Ajax）
      */
     public function deleteImage(Request $request, $slug)
@@ -372,12 +397,15 @@ class ReviewController extends Controller
     }
 
     /**
-     * 現在のリクエストのベースURL基準で storage/ 以下のパブリックURLを返す
-     * （APP_URL がローカル/本番でズレても正しく解決できる）
+     * 現在のリクエストのベースURL基準でアップロード画像の公開URLを返す。
+     * シンボリックリンクで storage を公開できないホスティング環境でも確実に
+     * 配信できるよう、Laravel ルート経由で返す（serveImage）。
      */
     private function publicStorageUrl(string $relativePath): string
     {
-        return request()->getBaseUrl() . '/storage/' . ltrim($relativePath, '/');
+        $filename = basename($relativePath);
+        $slug     = request()->route('slug') ?? '';
+        return request()->getBaseUrl() . '/review/' . $slug . '/image/' . rawurlencode($filename);
     }
 
     /**
