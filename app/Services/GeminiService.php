@@ -531,7 +531,6 @@ EOT;
         for ($i = 0; $i < $attempts; $i++) {
             try {
                 $response = Http::timeout(60)
-                    ->connectTimeout(10)
                     ->withHeaders(['Content-Type' => 'application/json'])
                     ->post($this->apiUrl . '?key=' . $this->apiKey, $payload);
 
