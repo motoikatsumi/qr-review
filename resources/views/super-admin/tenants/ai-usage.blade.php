@@ -3,6 +3,17 @@
 @section('title', 'AI利用ログ - ' . $tenant->company_name)
 
 @section('content')
+@php
+    // アクション名の英語→日本語マッピング(各 GeminiService::logUsage 呼び出し箇所と対応)
+    $actionLabels = [
+        'suggest'      => '🗣️ 口コミ文の自動生成',
+        'reply'        => '💬 Google口コミ返信の生成',
+        'episode'      => '📝 買取エピソードの生成',
+        'footer'       => '🔖 投稿フッターの生成',
+        'policy_check' => '🛡️ 口コミポリシーチェック',
+    ];
+    $labelOf = fn($action) => $actionLabels[$action] ?? $action;
+@endphp
 <div class="page-header">
     <h1>🤖 AI利用ログ: {{ $tenant->company_name }}</h1>
     <a href="{{ url('/super-admin/tenants/' . $tenant->id . '/edit') }}" class="btn btn-secondary">← テナント編集に戻る</a>
@@ -76,7 +87,7 @@
                 <tbody>
                     @forelse($actionUsage as $action)
                     <tr>
-                        <td>{{ $action->action }}</td>
+                        <td>{{ $labelOf($action->action) }}</td>
                         <td><strong>{{ $action->count }}</strong></td>
                     </tr>
                     @empty
@@ -106,7 +117,7 @@
                 @forelse($recentLogs as $log)
                 <tr>
                     <td style="font-size:0.8rem;">{{ $log->created_at }}</td>
-                    <td>{{ $log->action }}</td>
+                    <td>{{ $labelOf($log->action) }}</td>
                     <td>{{ $log->store_id ?? '-' }}</td>
                     <td>{{ $log->user_id ?? '-' }}</td>
                     <td>{{ $log->tokens_used ?? '-' }}</td>
