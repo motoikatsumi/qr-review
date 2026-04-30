@@ -850,37 +850,21 @@
 
             {{-- 月別 --}}
             <div class="period-panel" id="period-system-month">
-                @php $monthMax = collect($monthlyReviews)->max('count') ?: 1; @endphp
+                @if(!empty($sAvailableYears))
+                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:10px;font-size:0.85rem;">
+                        <label for="systemYearSelect" style="color:#374151;">表示年:</label>
+                        <select id="systemYearSelect" onchange="onMonthlyYearChange('system', this.value)"
+                            style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.85rem;">
+                            <option value="" {{ $sSelectedYear === null ? 'selected' : '' }}>直近12ヶ月</option>
+                            @foreach($sAvailableYears as $y)
+                                <option value="{{ $y }}" {{ $sSelectedYear === $y ? 'selected' : '' }}>{{ $y }}年(1〜12月)</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="daily-chart">
-                    <div class="daily-bars">
-                        @foreach($monthlyReviews as $m)
-                            @php
-                                $height = max(4, ($m['count'] / $monthMax) * 140);
-                                $tip = $m['label'] . '：' . $m['count'] . '件';
-                                if ($m['avg_rating'] !== null) {
-                                    $tip .= '（平均' . number_format($m['avg_rating'], 1) . '★）';
-                                }
-                                if ($m['diff'] !== null) {
-                                    $tip .= ' / 前月比 ' . ($m['diff'] >= 0 ? '+' : '') . $m['diff'] . '件';
-                                }
-                            @endphp
-                            <div class="daily-bar-wrapper">
-                                @if($m['diff'] === null)
-                                    <span class="daily-bar-diff flat">―</span>
-                                @elseif($m['diff'] > 0)
-                                    <span class="daily-bar-diff up">+{{ $m['diff'] }}</span>
-                                @elseif($m['diff'] < 0)
-                                    <span class="daily-bar-diff down">{{ $m['diff'] }}</span>
-                                @else
-                                    <span class="daily-bar-diff flat">±0</span>
-                                @endif
-                                <span class="daily-bar-count">{{ $m['count'] }}</span>
-                                <div class="daily-bar" style="height: {{ $height }}px;">
-                                    <div class="daily-tooltip">{{ $tip }}</div>
-                                </div>
-                                <span class="daily-bar-date">{{ $m['short'] }}</span>
-                            </div>
-                        @endforeach
+                    <div class="daily-bars" id="systemMonthlyBars">
+                        @include('admin.dashboard._monthly_bars', ['bars' => $monthlyReviews, 'color' => 'purple'])
                     </div>
                 </div>
             </div>
@@ -998,7 +982,7 @@
                 @if(!empty($gAvailableYears))
                     <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:10px;font-size:0.85rem;">
                         <label for="googleYearSelect" style="color:#374151;">表示年:</label>
-                        <select id="googleYearSelect" onchange="onGoogleYearChange(this.value)"
+                        <select id="googleYearSelect" onchange="onMonthlyYearChange('google', this.value)"
                             style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.85rem;">
                             <option value="" {{ $gSelectedYear === null ? 'selected' : '' }}>直近12ヶ月</option>
                             @foreach($gAvailableYears as $y)
@@ -1007,37 +991,9 @@
                         </select>
                     </div>
                 @endif
-                @php $gMonthMax = collect($gMonthlyReviews)->max('count') ?: 1; @endphp
                 <div class="daily-chart">
-                    <div class="daily-bars">
-                        @foreach($gMonthlyReviews as $m)
-                            @php
-                                $height = max(4, ($m['count'] / $gMonthMax) * 140);
-                                $tip = $m['label'] . '：' . $m['count'] . '件';
-                                if ($m['avg_rating'] !== null) {
-                                    $tip .= '（平均' . number_format($m['avg_rating'], 1) . '★）';
-                                }
-                                if ($m['diff'] !== null) {
-                                    $tip .= ' / 前月比 ' . ($m['diff'] >= 0 ? '+' : '') . $m['diff'] . '件';
-                                }
-                            @endphp
-                            <div class="daily-bar-wrapper">
-                                @if($m['diff'] === null)
-                                    <span class="daily-bar-diff flat">―</span>
-                                @elseif($m['diff'] > 0)
-                                    <span class="daily-bar-diff up">+{{ $m['diff'] }}</span>
-                                @elseif($m['diff'] < 0)
-                                    <span class="daily-bar-diff down">{{ $m['diff'] }}</span>
-                                @else
-                                    <span class="daily-bar-diff flat">±0</span>
-                                @endif
-                                <span class="daily-bar-count" style="color:#059669;">{{ $m['count'] }}</span>
-                                <div class="daily-bar" style="height: {{ $height }}px; background: linear-gradient(180deg, #10b981, #059669);">
-                                    <div class="daily-tooltip">{{ $tip }}</div>
-                                </div>
-                                <span class="daily-bar-date">{{ $m['short'] }}</span>
-                            </div>
-                        @endforeach
+                    <div class="daily-bars" id="googleMonthlyBars">
+                        @include('admin.dashboard._monthly_bars', ['bars' => $gMonthlyReviews, 'color' => 'green'])
                     </div>
                 </div>
             </div>
@@ -1103,17 +1059,37 @@ function switchPeriod(group, period, btn) {
     if (target) target.classList.add('active');
 }
 
-// Google口コミ月別グラフの年度切替(URL クエリで再読み込み)
-function onGoogleYearChange(year) {
-    var url = new URL(window.location.href);
-    if (year) {
-        url.searchParams.set('google_year', year);
-    } else {
-        url.searchParams.delete('google_year');
-    }
-    // タブが「月別」のままになるよう hash で誘導(任意)
-    url.hash = 'period-google-month';
-    window.location.href = url.toString();
+// 月別グラフの年度切替(AJAXで非同期更新。リロード&タブ操作不要)
+function onMonthlyYearChange(type, year) {
+    var containerId = type === 'google' ? 'googleMonthlyBars' : 'systemMonthlyBars';
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    var storeId = new URLSearchParams(window.location.search).get('store_id') || '';
+    var params = new URLSearchParams();
+    params.set('type', type);
+    if (year) params.set('year', year);
+    if (storeId) params.set('store_id', storeId);
+
+    container.style.opacity = '0.5';
+    container.style.transition = 'opacity 0.15s';
+
+    fetch('{{ url('/admin/dashboard/monthly-trend') }}?' + params.toString(), {
+        headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+    })
+    .then(function(html) {
+        container.innerHTML = html;
+        container.style.opacity = '1';
+    })
+    .catch(function(err) {
+        console.error('月別データ取得失敗', err);
+        container.style.opacity = '1';
+        alert('月別データの読み込みに失敗しました');
+    });
 }
 </script>
 @endpush

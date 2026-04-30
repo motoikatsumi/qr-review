@@ -104,6 +104,7 @@ Route::middleware(['ip.restrict', 'auth', 'redirect.store_owner'])->prefix('admi
         return redirect('/admin/dashboard');
     });
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+    Route::get('/dashboard/monthly-trend', [\App\Http\Controllers\Admin\DashboardController::class, 'monthlyTrend']);
 
     // 業種管理
     Route::get('/business-types', [\App\Http\Controllers\Admin\BusinessTypeController::class, 'index']);
