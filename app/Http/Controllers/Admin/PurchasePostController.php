@@ -871,44 +871,58 @@ class PurchasePostController extends Controller
 
     /**
      * ハッシュタグを生成
+     *
+     * 構成:
+     *   1. 投稿の custom_hashtags(店舗ハッシュタグ + 業種デフォルトの結合) ─ 静的部分
+     *   2. カテゴリ + 「(カテゴリ)買取」 ─ 動的部分
+     *   3. ブランド + 「(ブランド)買取」 ─ 動的部分
+     *   4. 商品名(型番込み) ─ 動的部分
+     * 1 だけでは投稿ごとに変わる動的要素が反映されないので、必ず 2〜4 も付与する。
      */
     protected function generateHashtags(PurchasePost $post): string
     {
-        // 投稿にカスタムハッシュタグが保存されている場合はそれを使う
+        $tags = [];
+
+        // 1. 投稿の custom_hashtags(店舗マスタ・業種マスタ由来の静的タグ)
         if (!empty($post->custom_hashtags)) {
             $lines = array_filter(array_map('trim', explode("\n", str_replace("\r\n", "\n", $post->custom_hashtags))));
-            $tags = [];
             foreach ($lines as $line) {
                 $tag = ltrim($line, '#');
                 if ($tag) $tags[] = $tag;
             }
-            if (!empty($tags)) {
-                return implode(' ', array_map(fn($tag) => '#' . $tag, array_unique($tags)));
+        }
+
+        // 2. カテゴリ + 「(カテゴリ)買取」
+        if ($post->category) {
+            $cat = str_replace(['・', ' ', '　'], '', $post->category);
+            if ($cat) {
+                $tags[] = $cat;
+                $tags[] = $cat . '買取';
             }
         }
 
-        // フォールバック：自動生成
-        $bt = $post->store?->businessType;
-        $tags = [];
-
-        // カテゴリ
-        if ($post->category) {
-            $tags[] = str_replace(['・', ' ', '　'], '', $post->category);
-        }
-
-        // ブランド名
+        // 3. ブランド名 + 「(ブランド)買取」
         if ($post->brand_name) {
-            $tags[] = str_replace([' ', '　'], '', $post->brand_name);
+            $brand = str_replace([' ', '　'], '', $post->brand_name);
+            if ($brand) {
+                $tags[] = $brand;
+                $tags[] = $brand . '買取';
+            }
         }
 
-        // 店舗名
-        if ($post->store) {
+        // 4. 商品名(型番込み)
+        if ($post->product_name) {
+            $product = str_replace([' ', '　'], '', $post->product_name);
+            if ($product) {
+                $tags[] = $product;
+            }
+        }
+
+        // フォールバック: 何もなければ店舗名
+        if (empty($tags) && $post->store) {
             $tags[] = str_replace([' ', '　', '　'], '', $post->store->name);
         }
 
-        // 重複除去
-        $tags = array_unique($tags);
-
-        return implode(' ', array_map(fn($tag) => '#' . $tag, $tags));
+        return implode(' ', array_map(fn($tag) => '#' . $tag, array_unique($tags)));
     }
 }
