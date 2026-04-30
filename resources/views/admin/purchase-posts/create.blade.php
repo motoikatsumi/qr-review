@@ -949,6 +949,20 @@
     }
 
     // ========================================
+    // 全店舗が pawn-system 連携対応の業種であれば、店舗未選択でも管理番号セクションを表示
+    // (質屋専業テナント等では最初から見えていた方が便利)
+    // ========================================
+    (function() {
+        var values = Object.values(storeData);
+        if (!values.length) return;
+        var allPawn = values.every(function(s) { return s && s.use_pawn_system; });
+        if (allPawn) {
+            var pawnSection = document.getElementById('pawnSystemSection');
+            if (pawnSection) pawnSection.classList.remove('hidden');
+        }
+    })();
+
+    // ========================================
     // イベントリスナー
     // ========================================
     document.getElementById('store_id').addEventListener('change', onStoreChange);
