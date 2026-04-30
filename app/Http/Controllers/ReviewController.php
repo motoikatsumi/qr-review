@@ -113,10 +113,20 @@ class ReviewController extends Controller
         // アップロード済み画像（ファイル名のみ受け取り、実存するものだけ採用）
         $uploadedImages = $this->getValidUploadedImages($slug, (array) $request->input('uploaded_images', []));
 
-        // 「修正する」ボタンからの戻り
+        // 「修正する」ボタンからの戻り（ポリシーチェックはスキップしてフォームに戻すだけ）
         if ($request->has('_back')) {
             $allKeys = array_merge(['rating', 'comment', 'is_ai_generated', 'uploaded_images'], array_column($reviewGroups, 'key'));
             return redirect('/review/' . $slug)->withInput($request->only($allKeys));
+        }
+
+        // Google口コミポリシー違反チェック（無意味な文字列・スパム等を確認画面に進む前に弾く）
+        $gemini = new GeminiService();
+        $policyError = $gemini->validateGooglePolicy($validated['comment'], $store);
+        if ($policyError) {
+            $allKeys = array_merge(['rating', 'comment', 'is_ai_generated', 'uploaded_images'], array_column($reviewGroups, 'key'));
+            return redirect('/review/' . $slug)
+                ->withInput($request->only($allKeys))
+                ->withErrors(['comment' => $policyError]);
         }
 
         // 確認画面用の二重送信防止トークン
@@ -200,17 +210,9 @@ class ReviewController extends Controller
             : $this->defaultReviewGroups();
         $persona = $this->collectPersonaInput($request, $reviewGroups);
 
-        // Google口コミポリシー違反チェック（二重送信防止トークン消費前に実行）
-        $gemini = new GeminiService();
-        $policyError = $gemini->validateGooglePolicy($validated['comment'], $store);
-        
-        if ($policyError) {
-            return back()
-                ->withInput()
-                ->withErrors(['comment' => $policyError]);
-        }
+        // ポリシーチェックは confirm() で実施済み(API呼び出し節約のためここでは行わない)
 
-        // 二重送信防止チェック（ポリシーチェック通過後にトークンを消費）
+        // 二重送信防止チェック
         $sessionToken = session()->pull('review_submit_token');
         if (!$sessionToken || $sessionToken !== $validated['submit_token']) {
             $this->cleanupUploadDir($slug);

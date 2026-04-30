@@ -4,6 +4,10 @@
 
 @push('styles')
 <style>
+    /* レビューフォーム全体の縦間隔を圧縮(なるべくスクロールせずに評価入力に到達) */
+    .card { padding-top: 12px; padding-bottom: 12px; }
+    .card .subtitle { margin-bottom: 10px; }
+
     .store-name {
         font-size: 1.1rem;
         color: #764ba2;
@@ -13,12 +17,12 @@
     }
     .rating-section {
         text-align: center;
-        margin: 12px 0 8px;
+        margin: 4px 0 6px;
     }
     .rating-label {
         font-size: 0.9rem;
         color: #555;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
     }
     .stars {
         display: flex;
@@ -66,6 +70,26 @@
         padding: 12px;
         border-radius: 12px;
         border: 1px solid #e5e7eb;
+    }
+    /* 低評価(1〜3星)向けの案内 */
+    .low-rating-notice {
+        margin: 0 0 12px;
+        padding: 14px 16px;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 12px;
+    }
+    .low-rating-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #92400e;
+        margin: 0 0 6px;
+    }
+    .low-rating-desc {
+        font-size: 0.82rem;
+        color: #78350f;
+        line-height: 1.55;
+        margin: 0;
     }
 
     /* 画像アップロードエリア（折りたたみ式） */
@@ -458,7 +482,7 @@
     }
 
     .comment-section {
-        margin: 12px 0 20px;
+        margin: 12px 0;
     }
     .comment-section label {
         display: block;
@@ -492,7 +516,18 @@
         margin-top: 6px;
     }
     .submit-section {
-        margin-top: 24px;
+        margin-top: 12px;
+    }
+    .consent-note {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        line-height: 1.55;
+        color: #6b7280;
+        text-align: left;
     }
     .btn:disabled {
         opacity: 0.5;
@@ -552,8 +587,16 @@
             @enderror
         </div>
 
-        {{-- 口コミ提案ボタン --}}
-        <div class="suggestion-section">
+        {{-- 低評価(1〜3星)の時に表示する案内 --}}
+        <div class="low-rating-notice" id="lowRatingNotice" style="display:none;">
+            <p class="low-rating-title">改善のためのご意見をお聞かせください</p>
+            <p class="low-rating-desc">
+                ご期待に沿えず申し訳ございませんでした。気になった点を直接お書きいただけると、店舗の改善にとても役立ちます。
+            </p>
+        </div>
+
+        {{-- 口コミ提案ボタン（高評価時のみ表示） --}}
+        <div class="suggestion-section" id="suggestionSection">
             <p class="suggestion-label">
                 口コミのテーマを選ぶ
                 <span>✨ AIが自動入力</span>
@@ -590,9 +633,10 @@
                     </div>
                     @if ($allowOther)
                         <div class="other-input-wrap" data-group-key="{{ $gKey }}" style="display: {{ $isOtherSelected ? 'block' : 'none' }}; margin-top: -4px;">
+                            <p style="font-size:0.72rem;color:#6b7280;margin:0 0 4px 2px;">※ 任意入力欄です(未記入のままご投稿いただけます)</p>
                             <input type="text" name="{{ $gKey }}_other" value="{{ $oldOther }}" maxlength="50"
-                                   placeholder="選択肢にない場合はこちらに自由入力（任意）"
-                                   style="width:100%;padding:9px 12px;border:2px solid #d1d5db;border-radius:8px;font-size:0.9rem;color:#4b5563;outline:none;font-family:inherit;">
+                                   placeholder="任意でご記入ください"
+                                   style="width:100%;padding:9px 12px;border:1px dashed #d1d5db;border-radius:8px;font-size:0.9rem;color:#4b5563;outline:none;font-family:inherit;background:#fafafa;">
                         </div>
                     @endif
                 @endforeach
@@ -616,9 +660,9 @@
         {{-- 画像アップロード（折りたたみ） --}}
         <details class="image-upload-section" id="imageUploadSection" {{ !empty($existingImages) ? 'open' : '' }}>
             <summary class="image-upload-summary">
-                <span class="summary-title">📷 写真を追加</span>
+                <span class="summary-title">📷 写真も添えてみませんか？(任意)</span>
                 <span class="image-count-badge {{ !empty($existingImages) ? 'show' : '' }}" id="imageCountBadge">{{ !empty($existingImages) ? count($existingImages) . '枚' : '' }}</span>
-                <span class="badge-optional">任意・最大5枚</span>
+                <span class="badge-optional">最大5枚</span>
                 <span class="chevron">▼</span>
             </summary>
             <div class="image-upload-body">
@@ -659,6 +703,10 @@
                 <span id="submitText">確認</span>
                 <div class="loading-spinner" id="loadingSpinner"></div>
             </button>
+            <p class="consent-note">
+                ※本文はAIによる提案を含みます。<br>
+                ご自身の感想としてご納得のうえ投稿してください。
+            </p>
         </div>
     </form>
 </div>
@@ -674,10 +722,36 @@
         5: 'とても満足'
     };
 
+    // 通知しきい値以下を低評価扱い(AI提案テーマ非表示 + 直接記入を促す案内)
+    var notifyThreshold = {{ (int) ($store->notify_threshold ?? 3) }};
+
+    function applyRatingMode(rating) {
+        var suggSec = document.getElementById('suggestionSection');
+        var lowNotice = document.getElementById('lowRatingNotice');
+        var commentTa = document.getElementById('comment');
+        var imageSec = document.getElementById('imageUploadSection');
+        if (!suggSec || !lowNotice) return;
+
+        if (rating > 0 && rating <= notifyThreshold) {
+            // 低評価: テーマ&画像アップロード非表示、案内を表示
+            suggSec.style.display = 'none';
+            lowNotice.style.display = '';
+            if (imageSec) imageSec.style.display = 'none';
+            if (commentTa) commentTa.placeholder = '気になった点や改善してほしい点をご自由にお書きください...';
+        } else {
+            // 高評価 or 未選択: テーマ&画像アップロード表示
+            suggSec.style.display = '';
+            lowNotice.style.display = 'none';
+            if (imageSec) imageSec.style.display = '';
+            if (commentTa) commentTa.placeholder = '上のボタンでテーマを選ぶか、直接ご感想をお書きください...';
+        }
+    }
+
     document.querySelectorAll('.stars input').forEach(function(radio) {
         radio.addEventListener('change', function() {
             document.getElementById('ratingText').textContent =
                 this.value + '星 - ' + ratingLabels[this.value];
+            applyRatingMode(parseInt(this.value, 10));
         });
     });
 
@@ -687,9 +761,8 @@
         if (checkedRating) {
             document.getElementById('ratingText').textContent =
                 checkedRating.value + '星 - ' + ratingLabels[checkedRating.value];
+            applyRatingMode(parseInt(checkedRating.value, 10));
         }
-        // 年代selectの状態復元
-        // (年代はラジオボタンなので自動復元)
     })();
 
     // 質問項目ラジオの「再クリックで解除」+「その他」入力欄のトグル
