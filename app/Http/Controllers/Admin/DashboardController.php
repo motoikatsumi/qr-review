@@ -64,8 +64,27 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        // 月別推移（直近12ヶ月）と前月比
-        $monthlyReviews = $this->buildMonthlyTrend(Review::class, 'created_at', $storeId, 12);
+        // システム口コミの最古年(年度セレクター用)
+        $sMinYear = (int) Review::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereNotNull('created_at')
+            ->min(DB::raw('YEAR(created_at)'));
+        $sCurrentYear = (int) now()->format('Y');
+        $sAvailableYears = [];
+        if ($sMinYear) {
+            for ($y = $sCurrentYear; $y >= $sMinYear; $y--) {
+                $sAvailableYears[] = $y;
+            }
+        }
+        $sSelectedYear = $request->filled('system_year') ? (int) $request->input('system_year') : null;
+        if ($sSelectedYear && (!$sMinYear || $sSelectedYear < $sMinYear || $sSelectedYear > $sCurrentYear)) {
+            $sSelectedYear = null;
+        }
+
+        // 月別推移
+        $monthlyReviews = $sSelectedYear
+            ? $this->buildMonthlyTrendForYear(Review::class, 'created_at', $storeId, $sSelectedYear)
+            : $this->buildMonthlyTrend(Review::class, 'created_at', $storeId, 12);
 
         // 年別推移（直近5年）と前年比
         $yearlyReviews = $this->buildYearlyTrend(Review::class, 'created_at', $storeId, 5);
@@ -292,6 +311,7 @@ class DashboardController extends Controller
             'totalReviews', 'avgRating',
             'ratingCounts', 'statusDistribution',
             'dailyReviews', 'monthlyReviews', 'yearlyReviews',
+            'sAvailableYears', 'sSelectedYear',
             'highRatingRate', 'googleRate',
             'genderDistribution', 'ageDistribution',
             'gTotalReviews', 'gAvgRating', 'gRatingCounts',
@@ -305,6 +325,29 @@ class DashboardController extends Controller
             // 請求書
             'unpaidInvoices'
         ));
+    }
+
+    /**
+     * 月別推移グラフのHTMLフラグメントを返す(年度セレクター用 AJAX エンドポイント)
+     */
+    public function monthlyTrend(Request $request)
+    {
+        $type = $request->input('type', 'system');
+        $storeId = $request->filled('store_id') ? (int) $request->input('store_id') : null;
+        $year = $request->filled('year') ? (int) $request->input('year') : null;
+
+        $modelClass = $type === 'google' ? GoogleReview::class : Review::class;
+        $dateColumn = $type === 'google' ? 'reviewed_at' : 'created_at';
+        $color = $type === 'google' ? 'green' : 'purple';
+
+        $bars = $year
+            ? $this->buildMonthlyTrendForYear($modelClass, $dateColumn, $storeId, $year)
+            : $this->buildMonthlyTrend($modelClass, $dateColumn, $storeId, 12);
+
+        return response()->view('admin.dashboard._monthly_bars', [
+            'bars' => $bars,
+            'color' => $color,
+        ]);
     }
 
     /**
