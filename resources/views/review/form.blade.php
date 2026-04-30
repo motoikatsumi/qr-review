@@ -682,7 +682,7 @@
                 <input type="file" id="imageFileInput" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple style="display:none;">
                 <p class="image-upload-hint">
                     💡 写真があると <strong>Google検索でお店が目立ちやすく</strong> なります🌟<br>
-                    <span style="color:#9a3412;">📱 iPhoneの方は <strong>カメラアプリで撮影</strong> → 「写真ライブラリから選択」がおすすめ</span><br>
+                    <span style="color:#9a3412;">📱 iPhoneの方は <strong>「+ 追加」ボタン → 「写真を撮る」</strong>でその場で撮影 → 添付できます</span><br>
                     ※5MBまで・jpg / png / webp / heic
                 </p>
                 <p class="image-error" id="imageError"></p>
