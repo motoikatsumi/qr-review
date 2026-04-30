@@ -59,11 +59,20 @@
             border: none;
             font-family: inherit;
         }
-        .navbar-nav a:hover, .navbar-nav a.active,
+        /* hover はうっすら背景を出す程度 */
+        .navbar-nav a:hover,
         .navbar-nav .nav-dropdown-toggle:hover,
         .navbar-nav li:hover > .nav-dropdown-toggle {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.12);
             color: white;
+        }
+        /* active(現在のページ)は白背景でしっかり強調する */
+        .navbar-nav a.active,
+        .navbar-nav .nav-dropdown-toggle.active {
+            background: rgba(255,255,255,0.95);
+            color: #4338ca !important;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
         .nav-dropdown-toggle::after {
             content: ' ▾';

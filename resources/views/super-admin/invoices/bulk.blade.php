@@ -33,9 +33,16 @@
             </div>
             <div class="two-col">
                 <div class="form-group">
-                    <label>支払期限（発行日からの日数）</label>
-                    <input type="number" name="due_days" value="30" min="0" max="90" required>
-                    <p class="form-hint">発行日 + N日 が支払期限</p>
+                    <label>支払期限</label>
+                    <select name="due_preset" required>
+                        <option value="next_month_end" selected>翌月末</option>
+                        <option value="this_month_end">当月末</option>
+                        <option value="next_next_month_end">翌々月末</option>
+                        <option value="days_15">発行日から15日後</option>
+                        <option value="days_30">発行日から30日後</option>
+                        <option value="days_60">発行日から60日後</option>
+                    </select>
+                    <p class="form-hint">支払期限の設定方法</p>
                 </div>
                 <div class="form-group">
                     <label>消費税率（％）</label>

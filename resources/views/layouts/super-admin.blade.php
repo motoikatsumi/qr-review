@@ -36,6 +36,25 @@
             font-size: 0.9rem;
         }
         .navbar-right a:hover { color: white; }
+        /* ナビゲーションリンク(super-admin) */
+        .sa-nav-link {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .sa-nav-link:hover {
+            background: rgba(255,255,255,0.12);
+            color: white;
+        }
+        .sa-nav-link.active {
+            background: rgba(255,255,255,0.95);
+            color: #c2410c !important;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
         .container {
             max-width: 1200px;
             margin: 24px auto;
@@ -138,9 +157,10 @@
         <div style="display:flex;align-items:center;gap:24px;">
             <a href="{{ url('/super-admin/dashboard') }}" class="navbar-brand">🛡️ QRレビュー 運営管理</a>
             @auth('super_admin')
-                <a href="{{ url('/super-admin/dashboard') }}" style="color:rgba(255,255,255,0.8);text-decoration:none;font-size:0.85rem;">ダッシュボード</a>
-                <a href="{{ url('/super-admin/tenants') }}" style="color:rgba(255,255,255,0.8);text-decoration:none;font-size:0.85rem;">テナント一覧</a>
-                <a href="{{ url('/super-admin/invoices') }}" style="color:rgba(255,255,255,0.8);text-decoration:none;font-size:0.85rem;">📄 請求書</a>
+                <a href="{{ url('/super-admin/dashboard') }}" class="sa-nav-link {{ request()->is('super-admin/dashboard*') ? 'active' : '' }}">ダッシュボード</a>
+                <a href="{{ url('/super-admin/tenants') }}" class="sa-nav-link {{ request()->is('super-admin/tenants*') ? 'active' : '' }}">テナント一覧</a>
+                <a href="{{ url('/super-admin/invoices') }}" class="sa-nav-link {{ request()->is('super-admin/invoices*') ? 'active' : '' }}">📄 請求書</a>
+                <a href="{{ url('/super-admin/manual') }}" class="sa-nav-link {{ request()->is('super-admin/manual*') ? 'active' : '' }}">📖 マニュアル</a>
             @endauth
         </div>
         <div class="navbar-right">

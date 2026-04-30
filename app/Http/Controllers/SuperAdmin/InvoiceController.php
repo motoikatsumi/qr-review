@@ -215,7 +215,8 @@ class InvoiceController extends Controller
             'period_year' => 'required|integer|min:2020|max:2100',
             'period_month' => 'required|integer|min:1|max:12',
             'issue_date' => 'required|date',
-            'due_days' => 'required|integer|min:0|max:90',
+            'due_preset' => 'nullable|in:this_month_end,next_month_end,next_next_month_end,days_15,days_30,days_60',
+            'due_days' => 'nullable|integer|min:0|max:90', // 旧バージョン互換
             'tax_rate' => 'required|numeric|min:0|max:100',
             'tenant_ids' => 'required|array|min:1',
             'tenant_ids.*' => 'integer|exists:master.tenants,id',
@@ -223,7 +224,19 @@ class InvoiceController extends Controller
 
         $period = Carbon::createFromDate($validated['period_year'], $validated['period_month'], 1);
         $issue = Carbon::parse($validated['issue_date']);
-        $due = $issue->copy()->addDays($validated['due_days']);
+
+        // 支払期限の決定: due_preset があればそれで、無ければ due_days(旧)、両方無ければ翌月末
+        $due = match ($validated['due_preset'] ?? null) {
+            'this_month_end'      => $issue->copy()->endOfMonth(),
+            'next_month_end'      => $issue->copy()->addMonthNoOverflow()->endOfMonth(),
+            'next_next_month_end' => $issue->copy()->addMonthsNoOverflow(2)->endOfMonth(),
+            'days_15'             => $issue->copy()->addDays(15),
+            'days_30'             => $issue->copy()->addDays(30),
+            'days_60'             => $issue->copy()->addDays(60),
+            default               => isset($validated['due_days'])
+                ? $issue->copy()->addDays($validated['due_days'])
+                : $issue->copy()->addMonthNoOverflow()->endOfMonth(),
+        };
 
         $created = 0;
         $skipped = 0;

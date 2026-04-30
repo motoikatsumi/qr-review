@@ -442,7 +442,38 @@
     .flow { flex-direction: column; }
     .flow-arrow { transform: rotate(90deg); }
   }
-</style>
+
+    /* マニュアル用スクリーンショット */
+    .manual-screenshot {
+      margin: 18px 0 24px;
+      text-align: center;
+    }
+    .manual-screenshot a {
+      display: inline-block;
+      max-width: 100%;
+    }
+    .manual-screenshot img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .manual-screenshot a:hover img {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    .manual-screenshot figcaption {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    @media print {
+      .manual-screenshot img { box-shadow: none; }
+    }
+
+  </style>
 </head>
 <body>
 <div class="container">
@@ -560,19 +591,6 @@
       <a href="#customer-flow">来店客から見た画面の流れ</a>
     </li>
     <li>
-      <a href="#super-admin">Super Admin（テナント管理） <span class="new-badge">NEW</span></a>
-      <ul class="toc-sub">
-        <li><a href="#super-admin-about">Super Adminとは</a></li>
-        <li><a href="#super-admin-login">ログイン</a></li>
-        <li><a href="#super-admin-dashboard">ダッシュボード</a></li>
-        <li><a href="#super-admin-tenants">テナント管理</a></li>
-        <li><a href="#super-admin-impersonate">代理ログイン</a></li>
-        <li><a href="#super-admin-ai-usage">AI利用ログ</a></li>
-        <li><a href="#super-admin-password">パスワード変更</a></li>
-        <li><a href="#super-admin-setup">初期セットアップ手順</a></li>
-      </ul>
-    </li>
-    <li>
       <a href="#faq">よくある質問（FAQ）</a>
     </li>
   </ol>
@@ -684,6 +702,12 @@
      ==================================================================== -->
 <div class="section" id="login">
   <h2>2. ログインする</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/01-login.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/01-login.png" alt="ログイン画面" loading="lazy">
+    </a>
+    <figcaption>ログイン画面</figcaption>
+  </figure>
 
   <p>管理画面にアクセスするには、ログインが必要です。</p>
 
@@ -748,6 +772,12 @@
      ==================================================================== -->
 <div class="section" id="dashboard">
   <h2>3. ダッシュボード（トップ画面）</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/02-dashboard.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/02-dashboard.png" alt="ダッシュボード(管理画面トップ)" loading="lazy">
+    </a>
+    <figcaption>ダッシュボード(管理画面トップ)</figcaption>
+  </figure>
 
   <p>
     ログイン直後に表示される画面です。口コミの全体状況をひと目で確認できます。<br>
@@ -895,6 +925,12 @@
      ==================================================================== -->
 <div class="section" id="business-types">
   <h2>4. 業種を管理する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/07-business-types-list.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/07-business-types-list.png" alt="業種一覧画面" loading="lazy">
+    </a>
+    <figcaption>業種一覧画面</figcaption>
+  </figure>
 
   <p>
     このシステムは<strong>多業種対応</strong>です。店舗を登録する前に、その店舗が属する「業種」を設定しておくと、
@@ -1049,6 +1085,12 @@
   </div>
 
   <h3 id="business-types-edit">4-3. 業種を編集する</h3>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/08-business-type-edit.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/08-business-type-edit.png" alt="業種編集画面(投稿機能設定タブを含む)" loading="lazy">
+    </a>
+    <figcaption>業種編集画面(投稿機能設定タブを含む)</figcaption>
+  </figure>
 
   <ol class="steps">
     <li>
@@ -1073,6 +1115,12 @@
      ==================================================================== -->
 <div class="section" id="stores">
   <h2>5. 店舗を登録・管理する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/03-stores-list.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/03-stores-list.png" alt="店舗一覧画面" loading="lazy">
+    </a>
+    <figcaption>店舗一覧画面</figcaption>
+  </figure>
 
   <p>
     口コミを集めるには、まず<strong>店舗の登録</strong>が必要です。<br>
@@ -1142,6 +1190,12 @@
 
   <!-- 店舗編集 -->
   <h3 id="stores-edit">5-2. 店舗情報を編集する</h3>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/04-store-edit-basic.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/04-store-edit-basic.png" alt="店舗編集画面(基本タブ)" loading="lazy">
+    </a>
+    <figcaption>店舗編集画面(基本タブ)</figcaption>
+  </figure>
 
   <p>店舗の編集画面は<strong>3つのタブ</strong>に分かれています。</p>
 
@@ -1186,6 +1240,12 @@
 
   <!-- AI設定 -->
   <h3 id="stores-ai">5-3. AI設定をカスタマイズする</h3>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/05-store-edit-ai.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/05-store-edit-ai.png" alt="店舗編集画面(AI設定タブ)" loading="lazy">
+    </a>
+    <figcaption>店舗編集画面(AI設定タブ)</figcaption>
+  </figure>
 
   <p>
     店舗ごとにAIの動作を細かく調整できます。店舗の編集画面の<strong>「🤖 AI設定」タブ</strong>で以下の項目を設定してください。
@@ -1373,6 +1433,12 @@
   <h2>6. 外部連携を設定する（Instagram・Facebook・WordPress）</h2>
 
   <h3 id="integrations-about">6-1. 外部連携とは</h3>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/06-store-edit-integrations.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/06-store-edit-integrations.png" alt="店舗編集画面(連携タブ)" loading="lazy">
+    </a>
+    <figcaption>店舗編集画面(連携タブ)</figcaption>
+  </figure>
 
   <p>
     店舗ごとに<strong>Instagram・Facebook・WordPress</strong>との連携を設定できます。<br>
@@ -1560,6 +1626,12 @@
   <p>上部メニューの <span class="menu-path">口コミ <span class="sep">›</span> 口コミ一覧</span> をクリックすると、QRコード経由で集まった口コミの一覧が表示されます。</p>
 
   <h3 id="reviews-list">7-1. 口コミ一覧を見る</h3>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/11-reviews-list.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/11-reviews-list.png" alt="口コミ一覧画面" loading="lazy">
+    </a>
+    <figcaption>口コミ一覧画面</figcaption>
+  </figure>
 
   <p>各口コミには以下の情報が表示されます。</p>
 
@@ -1641,6 +1713,12 @@
      ==================================================================== -->
 <div class="section" id="themes">
   <h2>8. 口コミテーマを設定する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/09-suggestion-themes.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/09-suggestion-themes.png" alt="口コミテーマ管理画面(2カラム表示)" loading="lazy">
+    </a>
+    <figcaption>口コミテーマ管理画面(2カラム表示)</figcaption>
+  </figure>
 
   <h3 id="themes-about">8-1. テーマとは</h3>
 
@@ -1771,6 +1849,12 @@
      ==================================================================== -->
 <div class="section" id="google-settings">
   <h2>9. Google連携を設定する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/16-google-settings.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/16-google-settings.png" alt="Google連携設定画面" loading="lazy">
+    </a>
+    <figcaption>Google連携設定画面</figcaption>
+  </figure>
 
   <div class="google-required">
     この章の内容は、Googleビジネスプロフィールとの連携機能を使う場合に必要です。<br>
@@ -1891,6 +1975,12 @@
      ==================================================================== -->
 <div class="section" id="google-reviews">
   <h2>10. Googleの口コミを管理する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/12-google-reviews.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/12-google-reviews.png" alt="Google口コミ管理画面" loading="lazy">
+    </a>
+    <figcaption>Google口コミ管理画面</figcaption>
+  </figure>
 
   <div class="google-required">
     この機能はGoogle連携の設定（第9章）が完了している必要があります。
@@ -2006,6 +2096,12 @@
      ==================================================================== -->
 <div class="section" id="reply-categories">
   <h2>11. 返信カテゴリを管理する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/10-reply-categories.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/10-reply-categories.png" alt="返信カテゴリ管理画面" loading="lazy">
+    </a>
+    <figcaption>返信カテゴリ管理画面</figcaption>
+  </figure>
 
   <p>
     上部メニューの <span class="menu-path">設定 <span class="sep">›</span> 返信カテゴリ</span> をクリックすると設定画面が開きます。<br>
@@ -2074,6 +2170,12 @@
      ==================================================================== -->
 <div class="section" id="purchase-posts">
   <h2>12. 投稿を作成する</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/13-purchase-posts-list.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/13-purchase-posts-list.png" alt="投稿一覧画面" loading="lazy">
+    </a>
+    <figcaption>投稿一覧画面</figcaption>
+  </figure>
 
   <div class="google-required">
     一部の配信先（Google・Facebook・Instagram）を使うには外部連携の設定（<a href="#integrations">第6章</a>）が必要です。<br>
@@ -2122,6 +2224,12 @@
   </table>
 
   <h3 id="purchase-posts-create">12-2. 投稿の作成手順</h3>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/14-purchase-post-create.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/14-purchase-post-create.png" alt="投稿作成画面" loading="lazy">
+    </a>
+    <figcaption>投稿作成画面</figcaption>
+  </figure>
 
   <div class="info">
     <strong>💡 画面上部に 5 ステップの進捗表示があります</strong><br>
@@ -2402,6 +2510,12 @@
      ==================================================================== -->
 <div class="section" id="customer-flow">
   <h2>14. 来店客から見た画面の流れ</h2>
+  <figure class="manual-screenshot">
+    <a href="manual-assets/images/30-customer-review-form.png" target="_blank" rel="noopener">
+      <img src="manual-assets/images/30-customer-review-form.png" alt="顧客向け口コミ投稿フォーム(スマホ表示)" loading="lazy">
+    </a>
+    <figcaption>顧客向け口コミ投稿フォーム(スマホ表示)</figcaption>
+  </figure>
 
   <p>
     お客様がQRコードを読み取ったとき、どのような画面が表示されるかをご説明します。<br>
@@ -2457,244 +2571,6 @@
   <div class="info">
     このように、<strong>高評価のお客様だけをGoogleマップに誘導する</strong>ことで、Googleの評価が自然に上がっていく仕組みです。<br>
     低評価のお客様には、お礼をしつつ内部で改善に活かす形になります。
-  </div>
-</div>
-
-<!-- ====================================================================
-     15. Super Admin（テナント管理）
-     ==================================================================== -->
-<div class="section" id="super-admin">
-  <h2>15. Super Admin（テナント管理）</h2>
-
-  <h3 id="super-admin-about">15-1. Super Adminとは</h3>
-  <p>
-    Super Adminは、<strong>システム全体を管理するための最上位の管理者画面</strong>です。<br>
-    契約テナント（利用企業）の追加・編集・削除、AI利用量の監視、代理ログインなどを行います。
-  </p>
-  <p>
-    通常の管理画面（Admin）とは<strong>完全に別のログイン画面</strong>を使用します。<br>
-    Super Adminのデータはマスターデータベース（<code>qr_master</code>）に保存されており、各テナントのデータとは分離されています。
-  </p>
-
-  <table>
-    <thead>
-      <tr><th>項目</th><th>Super Admin</th><th>テナント管理者（Admin）</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>ログインURL</td><td><code>/super-admin/login</code></td><td><code>/admin/login</code></td></tr>
-      <tr><td>管理範囲</td><td>全テナント</td><td>自社テナントのみ</td></tr>
-      <tr><td>データベース</td><td>マスターDB</td><td>テナント専用DB</td></tr>
-      <tr><td>主な操作</td><td>テナント追加・削除・監視</td><td>店舗・口コミ・連携管理</td></tr>
-    </tbody>
-  </table>
-
-  <hr>
-
-  <h3 id="super-admin-login">15-2. ログイン</h3>
-  <div class="step-box">
-    <h4>Super Adminログイン手順</h4>
-    <ol class="steps">
-      <li>ブラウザで <code>https://{ドメイン}/super-admin/login</code> にアクセスします。<br>
-          ローカル環境の場合は <code>http://127.0.0.1:8000/super-admin/login</code> です。</li>
-      <li>メールアドレスとパスワードを入力してログインします。</li>
-      <li>ログイン成功後、<strong>ダッシュボード</strong>が表示されます。</li>
-    </ol>
-  </div>
-  <div class="warning">
-    セキュリティのため、ログインは<strong>1分間に5回まで</strong>に制限されています。連続で失敗した場合は、1分待ってから再試行してください。
-  </div>
-
-  <hr>
-
-  <h3 id="super-admin-dashboard">15-3. ダッシュボード</h3>
-  <p>
-    ログイン後最初に表示される画面です。システム全体の状況を一目で確認できます。
-  </p>
-
-  <h4>統計カード</h4>
-  <table>
-    <thead>
-      <tr><th>カード</th><th>表示内容</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>総テナント数</td><td>登録されている全テナントの数</td></tr>
-      <tr><td>有効テナント</td><td>現在アクティブなテナントの数</td></tr>
-      <tr><td>停止テナント</td><td>無効化されているテナントの数</td></tr>
-      <tr><td>総店舗数</td><td>全テナントの店舗数合計</td></tr>
-      <tr><td>AI利用合計（今月）</td><td>全テナントの今月のAI利用回数合計</td></tr>
-    </tbody>
-  </table>
-
-  <h4>AI利用状況</h4>
-  <p>テナントごとのAI利用回数・上限・利用率がランキング形式で表示されます。利用率が高いテナントが上に表示され、<span style="color:#dc2626;">90%以上は赤</span>、<span style="color:#f59e0b;">70%以上は黄色</span>のバーで警告されます。</p>
-
-  <h4>契約終了まもなく</h4>
-  <p>契約終了日が30日以内のテナントが一覧表示されます。残日数が7日以下のテナントは赤字で強調されます。</p>
-
-  <h4>プラン別テナント数</h4>
-  <p>ライト・スタンダード・プロの各プランに何社が契約しているかを表示します。</p>
-
-  <hr>
-
-  <h3 id="super-admin-tenants">15-4. テナント管理</h3>
-
-  <h4>テナント一覧</h4>
-  <p>ナビバーの「テナント一覧」をクリックすると、全テナントの一覧が表示されます。</p>
-  <table>
-    <thead>
-      <tr><th>列</th><th>内容</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>会社名</td><td>テナントの会社名</td></tr>
-      <tr><td>サブドメイン</td><td>テナントのサブドメイン（URL識別子）</td></tr>
-      <tr><td>プラン</td><td>ライト / スタンダード / プロ</td></tr>
-      <tr><td>店舗</td><td>登録店舗数（ホバーで店舗名一覧を表示）</td></tr>
-      <tr><td>AI利用（今月）</td><td>今月の利用回数 / 月間上限</td></tr>
-      <tr><td>状態</td><td>有効 / 停止</td></tr>
-      <tr><td>契約開始</td><td>契約開始日</td></tr>
-      <tr><td>操作</td><td>編集・AI詳細・代理ログイン</td></tr>
-    </tbody>
-  </table>
-
-  <h4>テナントを追加する</h4>
-  <div class="step-box">
-    <h4>追加手順</h4>
-    <ol class="steps">
-      <li>テナント一覧画面で「<strong>＋ 新規テナント追加</strong>」ボタンをクリック。</li>
-      <li>以下の情報を入力します：
-        <ul>
-          <li><strong>会社名</strong>（必須）</li>
-          <li><strong>サブドメイン</strong>（必須）：英小文字・数字・ハイフンのみ</li>
-          <li><strong>データベース名</strong>（必須）：テナント専用DB名</li>
-          <li><strong>プラン</strong>（必須）：ライト / スタンダード / プロ</li>
-          <li><strong>連絡先メール</strong>（必須）</li>
-          <li>担当者名、契約開始日・終了日、AI月間上限、備考（任意）</li>
-        </ul>
-      </li>
-      <li>「追加」ボタンをクリック。</li>
-      <li>追加後、テナント専用データベースの作成とマイグレーションが必要です（→「<a href="#super-admin-setup">初期セットアップ手順</a>」参照）。</li>
-    </ol>
-  </div>
-
-  <h4>テナントを編集する</h4>
-  <p>テナント一覧の「編集」ボタンから、会社名・プラン・AI上限・契約情報などを変更できます。「テナント有効」のチェックを外すと、そのテナントのシステムへのアクセスが停止されます。</p>
-
-  <h4>テナントを削除する</h4>
-  <p>テナント編集画面の下部「⚠️ 危険な操作」エリアから削除できます。</p>
-  <div class="warning">
-    <strong>削除するとマスターDBからテナント情報が除去されます。</strong><br>
-    安全のため、テナントのデータベース自体は削除されません。データベースの削除が必要な場合は、別途手動で行ってください。
-  </div>
-
-  <hr>
-
-  <h3 id="super-admin-impersonate">15-5. 代理ログイン</h3>
-  <p>
-    テナント一覧の「<strong>代理ログイン</strong>」ボタンをクリックすると、そのテナントの管理者としてログインできます。
-  </p>
-  <div class="step-box">
-    <h4>使い方</h4>
-    <ol class="steps">
-      <li>テナント一覧で対象テナントの「代理ログイン」をクリック。</li>
-      <li>確認ダイアログで「OK」をクリック。</li>
-      <li>テナントの管理画面（<code>/admin/stores</code>）に自動でリダイレクトされます。</li>
-      <li>テナント内の操作（店舗追加、ユーザー作成、連携設定など）を行えます。</li>
-    </ol>
-  </div>
-  <div class="info">
-    代理ログイン中はテナントの管理者として操作しています。Super Adminに戻るには、ログアウトしてから <code>/super-admin/login</code> に再度アクセスしてください。
-  </div>
-
-  <hr>
-
-  <h3 id="super-admin-ai-usage">15-6. AI利用ログ</h3>
-  <p>テナント一覧の「<strong>AI詳細</strong>」ボタンから、テナントのAI利用状況を詳しく確認できます。</p>
-
-  <h4>表示内容</h4>
-  <table>
-    <thead>
-      <tr><th>セクション</th><th>内容</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>サマリーカード</td><td>今月の利用回数・月間上限・利用率</td></tr>
-      <tr><td>日別利用数</td><td>過去30日間の日ごとの利用回数（バーグラフ付き）</td></tr>
-      <tr><td>アクション別</td><td>今月の利用をアクションタイプ別に集計</td></tr>
-      <tr><td>最近のログ</td><td>直近50件のAI利用ログ（日時・アクション・店舗ID・トークン数）</td></tr>
-    </tbody>
-  </table>
-
-  <hr>
-
-  <h3 id="super-admin-password">15-7. パスワード変更</h3>
-  <div class="step-box">
-    <h4>パスワード変更手順</h4>
-    <ol class="steps">
-      <li>ナビバー右側の「<strong>パスワード変更</strong>」をクリック。</li>
-      <li>現在のパスワードを入力。</li>
-      <li>新しいパスワード（8文字以上）を入力。</li>
-      <li>新しいパスワード（確認）を再入力。</li>
-      <li>「パスワードを変更」ボタンをクリック。</li>
-    </ol>
-  </div>
-  <div class="warning">
-    初期パスワード（<code>password</code>）は必ず変更してください。
-  </div>
-
-  <hr>
-
-  <h3 id="super-admin-setup">15-8. 初期セットアップ手順</h3>
-  <p>新しくシステムを導入する際の手順です。サーバーへのSSH接続が必要です。</p>
-
-  <div class="step-box">
-    <h4>ステップ1：マスターDBの作成</h4>
-    <pre><code>mysql -u root -p -e "CREATE DATABASE qr_master CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"</code></pre>
-  </div>
-
-  <div class="step-box">
-    <h4>ステップ2：.env に設定追加</h4>
-    <p><code>.env</code> ファイルに以下を追加します：</p>
-    <pre><code>DB_MASTER_DATABASE=qr_master</code></pre>
-  </div>
-
-  <div class="step-box">
-    <h4>ステップ3：マスターDBのマイグレーション</h4>
-    <pre><code>php artisan migrate --database=master --path=database/migrations/2026_04_10_182354_create_tenants_table.php</code></pre>
-  </div>
-
-  <div class="step-box">
-    <h4>ステップ4：Super Admin初期アカウント作成</h4>
-    <pre><code>php artisan db:seed --class=SuperAdminSeeder</code></pre>
-    <p>以下のアカウントが作成されます：</p>
-    <table>
-      <tbody>
-        <tr><td>メールアドレス</td><td><code>admin@example.com</code></td></tr>
-        <tr><td>パスワード</td><td><code>password</code></td></tr>
-      </tbody>
-    </table>
-    <p>⚠️ ログイン後、必ずパスワードを変更してください。</p>
-  </div>
-
-  <div class="step-box">
-    <h4>ステップ5：テナント追加後のDB作成</h4>
-    <p>Super Admin画面でテナントを追加した後、テナント専用DBを作成してマイグレーションを実行します：</p>
-    <pre><code># テナントDB作成
-mysql -u root -p -e "CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# マイグレーション実行（.envのDB_DATABASEを一時的にテナントDB名に変更）
-php artisan migrate --force
-
-# 初期データ投入
-php artisan db:seed --class=BusinessTypeSeeder
-php artisan db:seed --class=SuggestionThemeSeeder</code></pre>
-  </div>
-
-  <div class="step-box">
-    <h4>ステップ6：テナント管理ユーザーの作成</h4>
-    <p>以下のいずれかの方法でテナントの管理ユーザーを作成します：</p>
-    <ul>
-      <li>Super Admin画面から「<strong>代理ログイン</strong>」→ テナント管理画面の「ユーザー管理」から追加</li>
-      <li>artisan tinker で直接作成</li>
-    </ul>
   </div>
 </div>
 

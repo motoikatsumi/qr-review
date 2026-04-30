@@ -23,6 +23,7 @@ Route::prefix('super-admin')->group(function () {
 
     Route::middleware('auth:super_admin')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'index']);
+        Route::get('/manual', function () { return view('super-admin.manual'); });
         Route::get('/password', [\App\Http\Controllers\SuperAdmin\AuthController::class, 'showPasswordForm']);
         Route::put('/password', [\App\Http\Controllers\SuperAdmin\AuthController::class, 'changePassword']);
         Route::get('/tenants', [\App\Http\Controllers\SuperAdmin\TenantController::class, 'index']);
