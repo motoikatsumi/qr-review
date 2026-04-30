@@ -82,7 +82,9 @@
             padding: 6px 0;
             z-index: 1000;
             margin-top: 0;
+            list-style: none;
         }
+        .nav-dropdown li { list-style: none; }
         .nav-dropdown::before {
             content: '';
             position: absolute;
@@ -378,7 +380,7 @@
                 <ul class="nav-dropdown">
                     <li><a href="/admin/suggestion-themes" class="{{ request()->is('admin/suggestion-themes*') ? 'active' : '' }}">🏷️ 口コミテーマ</a></li>
                     <li><a href="/admin/reply-categories" class="{{ request()->is('admin/reply-categories*') ? 'active' : '' }}">💬 返信カテゴリ</a></li>
-                    <li><a href="/admin/business-types" class="{{ request()->is('admin/business-types*') ? 'active' : '' }}">🏢 業種マスタ</a></li>
+                    <li><a href="/admin/business-types" class="{{ request()->is('admin/business-types*') ? 'active' : '' }}">🏢 業種</a></li>
                     @if(Auth::user() && Auth::user()->isAdmin())
                     <li><a href="/admin/google-settings" class="{{ request()->is('admin/google-settings*') ? 'active' : '' }}">🌐 Google 連携</a></li>
                     <li><a href="/admin/users" class="{{ request()->is('admin/users*') ? 'active' : '' }}">👥 ユーザー管理</a></li>

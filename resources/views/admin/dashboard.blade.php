@@ -601,7 +601,7 @@
             <div class="todo-card-icon">📦</div>
             <div class="todo-card-body">
                 <div class="todo-card-count">{{ $failedPostCount }}<span style="font-size:0.85rem;font-weight:normal;margin-left:4px;">件</span></div>
-                <div class="todo-card-label">投稿失敗の買取投稿</div>
+                <div class="todo-card-label">投稿失敗の投稿</div>
                 <div class="todo-card-link">→ リトライ</div>
             </div>
         </a>
@@ -646,7 +646,7 @@
         </a>
         <a href="/admin/purchase-posts/create" class="quick-action">
             <span class="quick-action-icon">📦</span>
-            <span>買取投稿を作る</span>
+            <span>投稿を作る</span>
         </a>
         <a href="/admin/stores" class="quick-action">
             <span class="quick-action-icon">🏪</span>
