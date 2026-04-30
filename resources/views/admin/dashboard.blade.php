@@ -528,21 +528,7 @@
 @section('content')
 <div class="page-header">
     <h1>🏠 ホーム</h1>
-    @if(\App\Http\Controllers\Admin\OnboardingController::isCompleted())
-        <a href="/admin/onboarding" class="btn btn-secondary btn-sm" style="font-size:0.78rem;">🚀 セットアップを再表示</a>
-    @endif
 </div>
-
-@if(!\App\Http\Controllers\Admin\OnboardingController::isCompleted())
-<div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:14px;padding:22px 26px;margin-bottom:20px;color:white;display:flex;align-items:center;gap:18px;box-shadow:0 6px 20px rgba(102,126,234,0.25);">
-    <div style="font-size:2.6rem;">🚀</div>
-    <div style="flex:1;">
-        <div style="font-size:1.1rem;font-weight:600;margin-bottom:4px;">初期セットアップウィザードを開始しましょう</div>
-        <div style="font-size:0.88rem;opacity:0.9;">5 ステップで「業種選択 → 店舗作成 → 連携 → AI 設定 → 動作確認」までガイドします。</div>
-    </div>
-    <a href="/admin/onboarding" class="btn" style="background:white;color:#667eea;font-weight:600;padding:10px 20px;flex-shrink:0;">セットアップを開始 →</a>
-</div>
-@endif
 
 {{-- 未払い請求書アラート --}}
 @if(isset($unpaidInvoices) && $unpaidInvoices->count() > 0)

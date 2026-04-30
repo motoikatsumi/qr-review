@@ -193,12 +193,6 @@ Route::middleware(['ip.restrict', 'auth', 'redirect.store_owner'])->prefix('admi
     Route::post('/reply-categories/ai-suggest', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'aiSuggest']);
     Route::post('/reply-categories/ai-apply', [\App\Http\Controllers\Admin\ReplyCategoryController::class, 'aiApply']);
 
-    // 初期セットアップウィザード
-    Route::get('/onboarding', [\App\Http\Controllers\Admin\OnboardingController::class, 'index']);
-    Route::post('/onboarding/complete', [\App\Http\Controllers\Admin\OnboardingController::class, 'complete']);
-    Route::post('/onboarding/skip', [\App\Http\Controllers\Admin\OnboardingController::class, 'skip']);
-    Route::post('/onboarding/reset', [\App\Http\Controllers\Admin\OnboardingController::class, 'reset']);
-
     // AI 返信プレビュー＆フィードバック
     Route::get('/ai-reply-preview', [\App\Http\Controllers\Admin\AiReplyPreviewController::class, 'index']);
     Route::post('/ai-reply-preview/generate', [\App\Http\Controllers\Admin\AiReplyPreviewController::class, 'generate']);
