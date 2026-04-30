@@ -240,7 +240,7 @@ EOT;
      * @param array  $personaExtra カスタム質問を含む全 persona（key => value のマップ）
      * @return string|null
      */
-    public function generateSuggestion(Store $store, $keywords, string $gender = '', string $age = '', string $visitType = '', string $item = '', array $personaExtra = []): ?string
+    public function generateSuggestion(Store $store, $keywords, string $gender = '', string $age = '', string $visitType = '', string $item = '', array $personaExtra = [], int $rating = 5): ?string
     {
         // 月間利用上限チェック
         $limitError = $this->checkMonthlyLimit();
@@ -255,7 +255,9 @@ EOT;
         $styles         = $presets['styles'];
         $ngWords        = $presets['ngWords'];
         $tonePreference = $presets['tonePreference'];
+        $baseContext    = $presets['baseContext'];
         $storeName      = $store->name;
+        $businessTypeName = $store->businessType ? $store->businessType->name : '';
 
         // キーワードを統一的に扱う
         if (is_array($keywords)) {
@@ -472,6 +474,45 @@ EOT;
         }
         $ngWordLines .= '- 盗品や不正を連想させる表現（例：「もらったもの」「拾った」「見つけた」）' . "\n";
 
+        // 低評価(星1〜3)の場合は別プロンプトで「丁寧な不満コメント」を生成
+        // ※低評価レビューは Google には投稿せず店舗オーナーへメール通知される改善フィードバック用
+        $isLowRatingSuggestion = ($rating > 0 && $rating <= 3);
+        if ($isLowRatingSuggestion) {
+            $businessLine = $businessTypeName ? "【業種】{$businessTypeName}\n" : '';
+            $prompt = <<<EOT
+お店への改善フィードバックとなる短い不満コメントを1つ生成してください。
+このコメントはお店のオーナーに直接届く改善要望として扱われます(Googleには投稿されません)。
+
+★★★ 絶対厳守ルール ★★★
+- 40〜70文字以内の短い文章にする(1〜2文)
+- 「{$keyword}」について、不満や残念だった点を控えめに伝える
+- 過度に攻撃的・侮辱的な表現は使わない。冷静で建設的なトーン
+- お店全否定はせず、改善してほしいという前向きな姿勢で書く
+- 業種コンテキスト「{$baseContext}」に沿った内容にする。業種にそぐわない要素(例:質屋に「料理提供」、美容室に「査定」など)は絶対に書かない
+★★★ ここまで ★★★
+
+【店舗名】{$storeName}
+{$businessLine}【業種コンテキスト】{$baseContext}
+【テーマ(不満の対象)】{$keyword}
+【書き手のペルソナ】{$persona}
+{$customInstruction}
+条件:
+- 「期待していたが残念だった」「もう少し〇〇していただけると助かります」のような口調
+- 「ひどい」「最悪」「二度と行きません」のような強い否定表現は使わない
+- 最後は「。」で終わる
+- 「」(カギ括弧)は一切使わない
+- 女性語・役割語(「〜わ」「〜のよ」「〜かしら」等)は性別問わず禁止
+- 不自然な語尾延ばし(「〜ねぇ」「〜なぁ」等)は禁止
+- 絵文字・説明文・前置き不要。コメント本文のみ出力
+
+【NGワード・禁止表現】
+- 具体的な金額(「〇〇円」等)
+- スタッフの個人名・フルネーム
+- 個人情報(住所、電話番号等)
+- 他店名・競合店の名前
+EOT;
+            $prompt .= $ngWordLines;
+        } else {
         $prompt = <<<EOT
 Googleマップに投稿する口コミ文を1つ生成してください。
 
@@ -508,6 +549,7 @@ Googleマップに投稿する口コミ文を1つ生成してください。
 - 不自然な語尾延ばし（例：「〜ねぇ」「〜ねー」「〜よぉ」「〜なぁ」「〜かなぁ」「〜とはねぇ」）。年配者風の口調にしないこと
 EOT;
         $prompt .= $ngWordLines;
+        }
 
 
         $payload = [

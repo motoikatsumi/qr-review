@@ -4,11 +4,18 @@
 
 @push('styles')
 <style>
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+    @media (max-width: 1100px) {
+        .categories-grid { grid-template-columns: 1fr; }
+    }
     .category-card {
         background: white;
         border-radius: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
         overflow: hidden;
     }
     .category-header {
@@ -160,6 +167,12 @@
         font-family: inherit;
         outline: none;
         transition: border-color 0.2s;
+        box-sizing: border-box;
+        line-height: 1.4;
+    }
+    .modal-body .form-group input,
+    .modal-body .form-group select {
+        height: 40px;
     }
     .modal-body .form-group input:focus,
     .modal-body .form-group select:focus,
@@ -368,6 +381,7 @@
 @endif
 
 @if(!$showTrashed)
+<div class="categories-grid">
 @foreach ($categories as $category)
 <div class="category-card">
     <div class="category-header">
@@ -381,10 +395,13 @@
             @if(!$category->is_active)
                 <span class="badge badge-gray">非表示</span>
             @endif
+            @if($category->is_for_low_rating)
+                <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">⚠️ 低評価向け</span>
+            @endif
             <span class="badge badge-green">{{ $category->themes->count() }}件</span>
         </div>
         <div class="category-actions">
-            <button class="btn btn-sm btn-secondary" onclick="openCategoryEditModal({{ $category->id }}, '{{ e($category->name) }}', {{ $category->business_type_id ?? 'null' }}, {{ $category->sort_order }}, {{ $category->is_active ? 'true' : 'false' }})">編集</button>
+            <button class="btn btn-sm btn-secondary" onclick="openCategoryEditModal({{ $category->id }}, '{{ e($category->name) }}', {{ $category->business_type_id ?? 'null' }}, {{ $category->sort_order }}, {{ $category->is_active ? 'true' : 'false' }}, {{ $category->is_for_low_rating ? 'true' : 'false' }})">編集</button>
             <form method="POST" action="/admin/suggestion-themes/categories/{{ $category->id }}" style="display:inline;" onsubmit="return confirm('このカテゴリと全テーマを削除します。\nこの操作は元に戻せません。よろしいですか？')">
                 @csrf
                 @method('DELETE')
@@ -424,6 +441,7 @@
     </div>
 </div>
 @endforeach
+</div>
 @endif {{-- /!showTrashed --}}
 @endif {{-- /showTrashed branch --}}
 
@@ -444,6 +462,20 @@
                     @endforeach
                 </select>
                 <p style="font-size:0.72rem;color:#999;margin-top:3px;">業種を選ぶと、その業種に合わせたテーマが生成されます</p>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                    <label for="ai_target_rating">表示タイミング</label>
+                    <select id="ai_target_rating">
+                        <option value="high">😀 高評価向け（星4〜5）</option>
+                        <option value="low">⚠️ 低評価向け（星1〜3。改善要望テーマ）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ai_theme_count">生成テーマ数（最大10）</label>
+                    <input type="number" id="ai_theme_count" min="1" max="10" value="6">
+                    <p style="font-size:0.72rem;color:#999;margin-top:3px;">既存テーマと重複しない内容で生成します。<br>※AIの判断により実際の生成数は±1〜2件前後する場合があります。</p>
+                </div>
             </div>
             <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
                 <button type="button" class="btn btn-primary" id="aiGenerateBtn" onclick="generateAiThemes()">🤖 候補を生成する</button>
@@ -486,6 +518,14 @@
                     </select>
                     <p style="font-size:0.72rem;color:#999;margin-top:3px;">未選択の場合、すべての業種の口コミフォームに表示されます</p>
                 </div>
+                <div class="form-group">
+                    <label for="cat_target_rating">表示タイミング <span style="color:#ef4444">*</span></label>
+                    <select name="is_for_low_rating" id="cat_target_rating">
+                        <option value="0">😀 高評価向け(星4〜5でテーマ表示)</option>
+                        <option value="1">⚠️ 低評価向け(星1〜3でテーマ表示。不満コメント用)</option>
+                    </select>
+                    <p style="font-size:0.72rem;color:#999;margin-top:3px;">高評価ならポジティブなコメント生成、低評価なら改善要望コメント生成に使われます。</p>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('categoryModal')">キャンセル</button>
@@ -525,10 +565,19 @@
                     <input type="number" name="sort_order" id="cat_edit_order" min="0" required>
                 </div>
                 <div class="form-group">
-                    <div class="status-toggle">
-                        <input type="checkbox" name="is_active" id="cat_edit_active" value="1">
-                        <label for="cat_edit_active">有効（顧客フォームに表示）</label>
-                    </div>
+                    <label for="cat_edit_active">公開状態 <span style="color:#ef4444">*</span></label>
+                    <select name="is_active" id="cat_edit_active">
+                        <option value="1">✅ 公開中(顧客フォームに表示)</option>
+                        <option value="0">⛔ 非公開(顧客フォームに表示しない)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cat_edit_target_rating">表示タイミング <span style="color:#ef4444">*</span></label>
+                    <select name="is_for_low_rating" id="cat_edit_target_rating">
+                        <option value="0">😀 高評価向け(星4〜5でテーマ表示)</option>
+                        <option value="1">⚠️ 低評価向け(星1〜3でテーマ表示。不満コメント用)</option>
+                    </select>
+                    <p style="font-size:0.72rem;color:#999;margin-top:3px;">高評価ならポジティブなコメント生成、低評価なら改善要望コメント生成に使われます。</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -576,7 +625,7 @@
                 <div class="form-group">
                     <label for="theme_keyword">AIキーワード <span style="color:#ef4444">*</span></label>
                     <textarea name="keyword" id="theme_keyword" rows="2" required placeholder="例: 査定価格が高くて満足、高価買取"></textarea>
-                    <p style="font-size:0.72rem;color:#999;margin-top:3px;">AI生成時にプロンプトへ渡されるキーワード</p>
+                    <p style="font-size:0.72rem;color:#999;margin-top:3px;">AI生成時にプロンプトへ渡されるキーワード。低評価/高評価の区別は配属カテゴリの設定に従います。</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -630,10 +679,11 @@
                     <input type="number" name="sort_order" id="theme_edit_order" min="0" required>
                 </div>
                 <div class="form-group">
-                    <div class="status-toggle">
-                        <input type="checkbox" name="is_active" id="theme_edit_active" value="1">
-                        <label for="theme_edit_active">有効（顧客フォームに表示）</label>
-                    </div>
+                    <label for="theme_edit_active">公開状態 <span style="color:#ef4444">*</span></label>
+                    <select name="is_active" id="theme_edit_active">
+                        <option value="1">✅ 公開中(顧客フォームに表示)</option>
+                        <option value="0">⛔ 非公開(顧客フォームに表示しない)</option>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -662,6 +712,8 @@
         const btn = document.getElementById('aiGenerateBtn');
         const status = document.getElementById('aiStatus');
         const businessTypeId = document.getElementById('ai_business_type').value;
+        const targetRating = document.getElementById('ai_target_rating').value;
+        const themeCount = parseInt(document.getElementById('ai_theme_count').value, 10) || 6;
         btn.disabled = true;
         btn.textContent = '生成中…';
         status.textContent = '🤖 AI が考えています（10〜30 秒）…';
@@ -676,7 +728,11 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ business_type_id: businessTypeId || null }),
+                body: JSON.stringify({
+                    business_type_id: businessTypeId || null,
+                    target_rating: targetRating,
+                    theme_count: Math.min(10, Math.max(1, themeCount)),
+                }),
             });
             const json = await res.json();
             if (!json.success) throw new Error(json.error || '生成に失敗しました');
@@ -727,6 +783,8 @@
     async function applyAiThemes() {
         if (!aiData) return;
         const businessTypeId = document.getElementById('ai_business_type').value;
+        const targetRating = document.getElementById('ai_target_rating').value;
+        const isForLowRating = targetRating === 'low';
         const selected = [];
 
         aiData.categories.forEach(function(cat, ci) {
@@ -757,7 +815,11 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ business_type_id: businessTypeId || null, categories: selected }),
+                body: JSON.stringify({
+                    business_type_id: businessTypeId || null,
+                    is_for_low_rating: isForLowRating,
+                    categories: selected,
+                }),
             });
             const json = await res.json();
             if (!json.success) throw new Error(json.error || '保存に失敗しました');
@@ -780,12 +842,13 @@
         document.getElementById('categoryModal').classList.add('active');
     }
 
-    function openCategoryEditModal(id, name, businessTypeId, sortOrder, isActive) {
+    function openCategoryEditModal(id, name, businessTypeId, sortOrder, isActive, isForLowRating) {
         document.getElementById('categoryEditForm').action = '/admin/suggestion-themes/categories/' + id;
         document.getElementById('cat_edit_name').value = name;
         document.getElementById('cat_edit_business_type').value = businessTypeId || '';
         document.getElementById('cat_edit_order').value = sortOrder;
-        document.getElementById('cat_edit_active').checked = isActive;
+        document.getElementById('cat_edit_active').value = isActive ? '1' : '0';
+        document.getElementById('cat_edit_target_rating').value = isForLowRating ? '1' : '0';
         document.getElementById('categoryEditModal').classList.add('active');
     }
 
@@ -801,7 +864,7 @@
         document.getElementById('theme_edit_label').value = theme.label;
         document.getElementById('theme_edit_keyword').value = theme.keyword;
         document.getElementById('theme_edit_order').value = theme.sort_order;
-        document.getElementById('theme_edit_active').checked = theme.is_active;
+        document.getElementById('theme_edit_active').value = theme.is_active ? '1' : '0';
         document.getElementById('themeEditModal').classList.add('active');
     }
 

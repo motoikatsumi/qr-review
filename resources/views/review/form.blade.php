@@ -89,7 +89,67 @@
         font-size: 0.82rem;
         color: #78350f;
         line-height: 1.55;
-        margin: 0;
+        margin: 0 0 12px;
+    }
+    .low-rating-themes {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .low-rating-theme-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 8px 10px;
+        border: 2px solid #f59e0b;
+        background: #fff;
+        color: #92400e;
+        border-radius: 24px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        white-space: nowrap;
+    }
+    .low-rating-theme-btn:hover {
+        background: #fef3c7;
+        transform: translateY(-1px);
+    }
+    .low-rating-theme-btn.loading {
+        background: #f3f4f6;
+        color: #aaa;
+        border-color: #e5e7eb;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+    .low-rating-theme-btn.selected {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        border-color: transparent;
+    }
+    .low-rating-theme-btn .btn-spinner {
+        display: none;
+        width: 13px;
+        height: 13px;
+        border: 2px solid rgba(0,0,0,0.15);
+        border-top-color: #aaa;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    .low-rating-theme-btn.loading .btn-spinner {
+        display: inline-block;
+    }
+    .low-rating-theme-btn.loading .btn-icon {
+        display: none;
+    }
+    #lowRatingAiError {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 0.78rem;
+        color: #ef4444;
+        display: none;
     }
 
     /* 画像アップロードエリア（折りたたみ式） */
@@ -587,12 +647,26 @@
             @enderror
         </div>
 
-        {{-- 低評価(1〜3星)の時に表示する案内 --}}
+        {{-- 低評価(1〜3星)の時に表示するテーマ + 案内 --}}
         <div class="low-rating-notice" id="lowRatingNotice" style="display:none;">
             <p class="low-rating-title">改善のためのご意見をお聞かせください</p>
             <p class="low-rating-desc">
-                ご期待に沿えず申し訳ございませんでした。気になった点を直接お書きいただけると、店舗の改善にとても役立ちます。
+                ご期待に沿えず申し訳ございませんでした。気になったテーマを選ぶと AI が下書きを作成しますので、ご自身の状況に合わせて編集してください。
             </p>
+            <div class="low-rating-themes" id="lowRatingThemes">
+                @foreach (($lowRatingThemes ?? []) as $theme)
+                    <button type="button" class="low-rating-theme-btn" data-keyword="{{ $theme->keyword }}">
+                        <span class="btn-icon">{{ $theme->icon }}</span>
+                        <div class="btn-spinner"></div>
+                        {{ $theme->label }}
+                    </button>
+                @endforeach
+                <button type="button" class="low-rating-theme-btn" data-keyword="" data-manual="1">
+                    <span class="btn-icon">✏️</span>
+                    その他(自由記入)
+                </button>
+            </div>
+            <p class="ai-error" id="lowRatingAiError">下書きの生成に失敗しました。コメント欄に直接ご記入ください。</p>
         </div>
 
         {{-- 口コミ提案ボタン（高評価時のみ表示） --}}
@@ -644,12 +718,13 @@
 
             <div class="suggestion-buttons">
                 @foreach ($suggestionCategories as $category)
+                    @if ($category->is_for_low_rating) @continue @endif
                     @foreach ($category->activeThemes as $theme)
-                    <button type="button" class="suggestion-btn" data-keyword="{{ $theme->keyword }}" data-category="{{ $category->id }}">
-                        <span class="btn-icon">{{ $theme->icon }}</span>
-                        <div class="btn-spinner"></div>
-                        {{ $theme->label }}
-                    </button>
+                        <button type="button" class="suggestion-btn" data-keyword="{{ $theme->keyword }}" data-category="{{ $category->id }}">
+                            <span class="btn-icon">{{ $theme->icon }}</span>
+                            <div class="btn-spinner"></div>
+                            {{ $theme->label }}
+                        </button>
                     @endforeach
                 @endforeach
             </div>
@@ -1079,6 +1154,9 @@
 
             // persona: 動的に各 radio-group の選択値を集める
             const personaBody = { keywords: keywords };
+            // 評価をAIに渡す(低評価判定はサーバー側で実施)
+            const ratingChecked = document.querySelector('input[name="rating"]:checked');
+            if (ratingChecked) personaBody.rating = parseInt(ratingChecked.value, 10);
             document.querySelectorAll('.persona-selects input[type="radio"]:checked').forEach(inp => {
                 personaBody[inp.name] = inp.value;
             });
@@ -1126,6 +1204,70 @@
             } finally {
                 // ローディング解除
                 document.querySelectorAll('.suggestion-btn').forEach(b => {
+                    b.disabled = false;
+                    b.classList.remove('loading');
+                });
+            }
+        });
+    });
+
+    // 低評価(1〜3星)向けテーマボタン:
+    // 通常テーマと違い、選んだテーマで「丁寧な不満コメント」を AI に書かせる(80〜120文字)。
+    // 「その他」(data-manual=1) はAI起動せず、コメント欄にフォーカスして手動入力を促す。
+    document.querySelectorAll('.low-rating-theme-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            const isManual = this.dataset.manual === '1';
+            const keyword = (this.dataset.keyword || '').trim();
+            const errEl = document.getElementById('lowRatingAiError');
+            errEl.style.display = 'none';
+            const commentTa = document.getElementById('comment');
+
+            if (isManual || !keyword) {
+                // その他 → 手動入力モード
+                commentTa.value = '';
+                document.getElementById('is_ai_generated').value = '0';
+                commentTa.focus();
+                document.querySelectorAll('.low-rating-theme-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                return;
+            }
+
+            // テーマ選択でAI生成
+            document.querySelectorAll('.low-rating-theme-btn').forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected', 'loading');
+            document.querySelectorAll('.low-rating-theme-btn').forEach(b => b.disabled = true);
+
+            const ratingChecked = document.querySelector('input[name="rating"]:checked');
+            const body = {
+                keywords: [keyword],
+                rating: ratingChecked ? parseInt(ratingChecked.value, 10) : 2,
+            };
+            // persona も付与(年代/性別等が低評価プロンプトでは概ね使われないが互換性のため)
+            document.querySelectorAll('.persona-selects input[type="radio"]:checked').forEach(inp => {
+                body[inp.name] = inp.value;
+            });
+
+            try {
+                const res = await fetch(suggestUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || '生成エラー');
+
+                commentTa.value = data.text;
+                document.getElementById('is_ai_generated').value = '1';
+                commentTa.focus();
+                document.getElementById('aiHint').style.display = 'block';
+            } catch (e) {
+                errEl.style.display = 'block';
+            } finally {
+                document.querySelectorAll('.low-rating-theme-btn').forEach(b => {
                     b.disabled = false;
                     b.classList.remove('loading');
                 });

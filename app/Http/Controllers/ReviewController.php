@@ -44,6 +44,16 @@ class ReviewController extends Controller
 
         $suggestionCategories = $suggestionQuery->get();
 
+        // 低評価(星1〜3)向けテーマ: カテゴリ自体が is_for_low_rating=true のものを抜き出す
+        // (高評価向けテーマは Blade 側で同フラグの ON カテゴリを @continue でスキップ)
+        $lowRatingThemes = collect();
+        foreach ($suggestionCategories as $cat) {
+            if (!$cat->is_for_low_rating) continue;
+            foreach ($cat->activeThemes as $t) {
+                $lowRatingThemes->push($t);
+            }
+        }
+
         $themeDisplayCount = (int) SiteSetting::get('suggestion_display_count', '6');
 
         // 業種から動的にレビュー質問グループを取得
@@ -61,7 +71,7 @@ class ReviewController extends Controller
             ];
         }
 
-        return view('review.form', compact('store', 'suggestionCategories', 'themeDisplayCount', 'reviewGroups', 'existingImages'));
+        return view('review.form', compact('store', 'suggestionCategories', 'lowRatingThemes', 'themeDisplayCount', 'reviewGroups', 'existingImages'));
     }
 
     /**
@@ -277,6 +287,7 @@ class ReviewController extends Controller
         $validated = $request->validate([
             'keywords' => 'required|array|min:1',
             'keywords.*' => 'required|string|max:100',
+            'rating' => 'nullable|integer|min:1|max:5',
         ]);
 
         // 動的な persona を収集
@@ -293,7 +304,8 @@ class ReviewController extends Controller
             $persona['age']        ?? '',
             $persona['visit_type'] ?? '',
             $persona['item']       ?? '',
-            $persona  // 全 persona（カスタム質問対応）
+            $persona,  // 全 persona（カスタム質問対応）
+            (int) ($validated['rating'] ?? 5)
         );
 
         if (!$text) {

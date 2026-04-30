@@ -94,6 +94,7 @@ class SuggestionThemeController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:50',
             'business_type_id' => 'nullable|exists:business_types,id',
+            'is_for_low_rating' => 'nullable|boolean',
         ]);
 
         $maxOrder = SuggestionCategory::max('sort_order') ?? 0;
@@ -101,6 +102,7 @@ class SuggestionThemeController extends Controller
             'name' => $validated['name'],
             'business_type_id' => $validated['business_type_id'] ?? null,
             'sort_order' => $maxOrder + 1,
+            'is_for_low_rating' => $request->boolean('is_for_low_rating'),
         ]);
 
         return redirect('/admin/suggestion-themes')->with('success', 'カテゴリを追加しました。');
@@ -116,13 +118,15 @@ class SuggestionThemeController extends Controller
             'business_type_id' => 'nullable|exists:business_types,id',
             'sort_order' => 'required|integer|min:0',
             'is_active' => 'nullable|boolean',
+            'is_for_low_rating' => 'nullable|boolean',
         ]);
 
         $category->update([
             'name' => $validated['name'],
             'business_type_id' => $validated['business_type_id'] ?? null,
             'sort_order' => $validated['sort_order'],
-            'is_active' => $request->has('is_active'),
+            'is_active' => $request->boolean('is_active'),
+            'is_for_low_rating' => $request->boolean('is_for_low_rating'),
         ]);
 
         return redirect('/admin/suggestion-themes')->with('success', 'カテゴリを更新しました。');
@@ -147,6 +151,7 @@ class SuggestionThemeController extends Controller
             'icon' => 'required|string|max:10',
             'label' => 'required|string|max:50',
             'keyword' => 'required|string|max:200',
+            'is_for_low_rating' => 'nullable|boolean',
         ]);
 
         $maxOrder = SuggestionTheme::where('category_id', $validated['category_id'])->max('sort_order') ?? 0;
@@ -156,6 +161,7 @@ class SuggestionThemeController extends Controller
             'label' => $validated['label'],
             'keyword' => $validated['keyword'],
             'sort_order' => $maxOrder + 1,
+            'is_for_low_rating' => $request->boolean('is_for_low_rating'),
         ]);
 
         return redirect('/admin/suggestion-themes')->with('success', 'テーマを追加しました。');
@@ -173,6 +179,7 @@ class SuggestionThemeController extends Controller
             'keyword' => 'required|string|max:200',
             'sort_order' => 'required|integer|min:0',
             'is_active' => 'nullable|boolean',
+            'is_for_low_rating' => 'nullable|boolean',
         ]);
 
         $theme->update([
@@ -181,7 +188,8 @@ class SuggestionThemeController extends Controller
             'label' => $validated['label'],
             'keyword' => $validated['keyword'],
             'sort_order' => $validated['sort_order'],
-            'is_active' => $request->has('is_active'),
+            'is_active' => $request->boolean('is_active'),
+            'is_for_low_rating' => $request->boolean('is_for_low_rating'),
         ]);
 
         return redirect('/admin/suggestion-themes')->with('success', 'テーマを更新しました。');
@@ -204,26 +212,63 @@ class SuggestionThemeController extends Controller
     {
         $validated = $request->validate([
             'business_type_id' => 'nullable|exists:business_types,id',
+            'target_rating' => 'nullable|in:high,low',
+            'theme_count' => 'nullable|integer|min:1|max:10',
         ]);
 
         $businessType = !empty($validated['business_type_id'])
             ? BusinessType::find($validated['business_type_id'])
             : null;
         $industry = $businessType?->name ?? '一般的なお店';
+        $isLow = ($validated['target_rating'] ?? 'high') === 'low';
+        $themeCount = (int) ($validated['theme_count'] ?? 6);
 
         $apiKey = config('services.gemini.api_key') ?: env('GEMINI_API_KEY');
         if (!$apiKey) {
             return response()->json(['success' => false, 'error' => 'GEMINI_API_KEY が未設定です'], 500);
         }
 
-        $prompt = "業種『{$industry}』のお客様が口コミを書く時に使う『口コミテーマ』を生成してください。\n\n"
-            . "■カテゴリ：4〜6 個（例：『価格・金額』『接客』『商品・サービス』『店内の雰囲気』）\n"
-            . "■各カテゴリのテーマ：4〜6 個。それぞれに以下を含める：\n"
-            . "  - icon: 1文字の絵文字（💰😊⭐🍖など）\n"
-            . "  - label: 顧客がボタンとしてタップする短い表示名（最大 12 文字）\n"
-            . "  - keyword: AI 生成プロンプトに渡すキーワード（最大 50 文字、口コミ本文に含めたい言葉）\n\n"
-            . "【出力】JSON のみ。例：\n"
-            . '{"categories":[{"name":"価格・金額","themes":[{"icon":"💰","label":"高価買取","keyword":"査定価格が高くて満足、高価買取"}]}]}';
+        // 既存テーマの label/keyword を抽出して重複回避指示に使う
+        $existingThemes = SuggestionTheme::with('category')
+            ->whereHas('category', function ($q) use ($validated, $isLow) {
+                $q->where('is_for_low_rating', $isLow);
+                if (!empty($validated['business_type_id'])) {
+                    $q->where(function ($q2) use ($validated) {
+                        $q2->where('business_type_id', $validated['business_type_id'])
+                           ->orWhereNull('business_type_id');
+                    });
+                } else {
+                    $q->whereNull('business_type_id');
+                }
+            })->get();
+        $existingList = $existingThemes
+            ->map(fn($t) => $t->label . '(' . mb_substr($t->keyword, 0, 30) . ')')
+            ->implode(' / ');
+        $existingLine = $existingList !== ''
+            ? "\n■既に登録済みのテーマ（これらと意味的・表現的に被らないもののみ生成）：\n  {$existingList}\n"
+            : '';
+
+        if ($isLow) {
+            $prompt = "業種『{$industry}』のお客様が【星1〜3の低評価】口コミを書く時に使う『改善要望テーマ』を生成してください。\n\n"
+                . "■カテゴリ：1個のみ（例：『改善要望（低評価）』のような名前）\n"
+                . "■そのカテゴリのテーマ：{$themeCount} 個（または出来る範囲で）。それぞれに以下を含める：\n"
+                . "  - icon: 1文字の絵文字（😞⏱️💸💬🙇など）\n"
+                . "  - label: 顧客がボタンとしてタップする短い表示名（最大 12 文字、不満の対象。例「査定額」「待ち時間」）\n"
+                . "  - keyword: AI 生成プロンプトに渡すキーワード（最大 50 文字、不満の具体内容）\n"
+                . "{$existingLine}"
+                . "\n【出力】JSON のみ。例：\n"
+                . '{"categories":[{"name":"改善要望（低評価）","themes":[{"icon":"💰","label":"査定額","keyword":"査定額に納得できなかった点"}]}]}';
+        } else {
+            $prompt = "業種『{$industry}』のお客様が【星4〜5の高評価】口コミを書く時に使う『口コミテーマ』を生成してください。\n\n"
+                . "■カテゴリ：1〜4 個（テーマ合計が約 {$themeCount} 件になるよう調整）\n"
+                . "■各カテゴリのテーマ：合計で {$themeCount} 個程度。それぞれに以下を含める：\n"
+                . "  - icon: 1文字の絵文字（💰😊⭐🍖など）\n"
+                . "  - label: 顧客がボタンとしてタップする短い表示名（最大 12 文字）\n"
+                . "  - keyword: AI 生成プロンプトに渡すキーワード（最大 50 文字、口コミ本文に含めたい言葉）\n"
+                . "{$existingLine}"
+                . "\n【出力】JSON のみ。例：\n"
+                . '{"categories":[{"name":"価格・金額","themes":[{"icon":"💰","label":"高価買取","keyword":"査定価格が高くて満足、高価買取"}]}]}';
+        }
 
         try {
             $text = $this->callGemini($prompt, true);
@@ -268,6 +313,7 @@ class SuggestionThemeController extends Controller
     {
         $validated = $request->validate([
             'business_type_id' => 'nullable|exists:business_types,id',
+            'is_for_low_rating' => 'nullable|boolean',
             'categories' => 'required|array|min:1',
             'categories.*.name' => 'required|string|max:50',
             'categories.*.themes' => 'required|array|min:1',
@@ -277,6 +323,7 @@ class SuggestionThemeController extends Controller
         ]);
 
         $businessTypeId = $validated['business_type_id'] ?? null;
+        $isForLowRating = $request->boolean('is_for_low_rating');
         $maxCatOrder = SuggestionCategory::max('sort_order') ?? 0;
         $createdCategories = 0;
         $createdThemes = 0;
@@ -288,6 +335,7 @@ class SuggestionThemeController extends Controller
                 'business_type_id' => $businessTypeId,
                 'sort_order' => $maxCatOrder,
                 'is_active' => true,
+                'is_for_low_rating' => $isForLowRating,
             ]);
             $createdCategories++;
 
