@@ -263,9 +263,8 @@
         <span style="font-size:0.75rem;color:#0369a1;margin-left:6px;">（業種に合わせてフォームの項目とプリセットが自動で切り替わります）</span>
     </div>
 
-    {{-- pawn-system連携（管理番号API連携が有効な場合のみ表示） --}}
-    @if(\App\Models\SiteSetting::get('pawn_system_enabled'))
-    <div class="card" style="margin-bottom:20px;" id="pawnSystemSection">
+    {{-- 管理番号API連携（業種マスタ側の use_pawn_system が true の業種で表示） --}}
+    <div class="card dynamic-section hidden" style="margin-bottom:20px;" id="pawnSystemSection">
         <div class="card-header">🔗 管理番号API連携</div>
         <div class="card-body">
             <div style="display:flex;gap:8px;align-items:flex-end;">
@@ -280,7 +279,6 @@
             <div id="fetchResult" style="margin-top:8px;font-size:0.85rem;display:none;"></div>
         </div>
     </div>
-    @endif
 
     {{-- 基本情報 + 画像 --}}
     <div class="card step-target" id="step-1" style="margin-bottom:20px;">
