@@ -82,8 +82,15 @@
             </span>
             <div class="persona">
                 <span class="{{ $review->gender === '男性' ? 'persona-male' : ($review->gender === '女性' ? 'persona-female' : 'persona-other') }}">{{ $review->gender ?: '-' }}</span>
-                @php $ageClass = match($review->age) { '10' => 'persona-age-10', '20' => 'persona-age-20', '30' => 'persona-age-30', '40' => 'persona-age-40', '50' => 'persona-age-50', '60' => 'persona-age-60', default => 'persona-age-default' }; @endphp
-                <span class="{{ $ageClass }}">{{ $review->age ? $review->age . '代' : '-' }}</span>
+                @php
+                    // 年代は新旧データ両対応:旧形式は "20"(数値のみ)、新形式は "20代"/"60代~"。
+                    // 表示は必ず "20代" / "60代~" 形式に正規化して 代代 重複を防ぐ。
+                    $rawAge = (string) ($review->age ?? '');
+                    $ageDigits = preg_match('/^(\d+)/u', $rawAge, $m) ? $m[1] : '';
+                    $ageClass = match($ageDigits) { '10' => 'persona-age-10', '20' => 'persona-age-20', '30' => 'persona-age-30', '40' => 'persona-age-40', '50' => 'persona-age-50', '60' => 'persona-age-60', default => 'persona-age-default' };
+                    $ageDisplay = $rawAge === '' ? '-' : (str_contains($rawAge, '代') ? $rawAge : $rawAge . '代');
+                @endphp
+                <span class="{{ $ageClass }}">{{ $ageDisplay }}</span>
                 @if($review->visit_type)
                 <span class="{{ $review->visit_type === '新規' ? 'persona-new' : 'persona-repeat' }}">{{ $review->visit_type }}</span>
                 @endif

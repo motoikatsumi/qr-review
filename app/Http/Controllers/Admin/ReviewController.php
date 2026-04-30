@@ -83,7 +83,7 @@ class ReviewController extends Controller
                     $review->store->name,
                     $review->rating,
                     $review->gender ?: '',
-                    $review->age ? $review->age . '代' : '',
+                    $review->age ? (str_contains((string)$review->age, '代') ? $review->age : $review->age . '代') : '',
                     $review->visit_type ?: '',
                     $review->comment,
                     $review->ai_generated_text,
