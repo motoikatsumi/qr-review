@@ -85,9 +85,18 @@ class PurchasePostController extends Controller
         $posts = $query->paginate(30);
         $stores = Store::where('is_active', true)->orderBy('name')->get();
         $wpUrl = config('services.wordpress.url');
+
+        // SNS プロフィールURL(列ヘッダーリンク用)。SiteSetting > 推測の優先順。
+        $facebookUrl = \App\Models\SiteSetting::get('facebook_page_url');
+        if (!$facebookUrl) {
+            $fbPageId = \App\Models\SiteSetting::get('facebook_page_id');
+            if ($fbPageId) $facebookUrl = 'https://www.facebook.com/profile.php?id=' . $fbPageId;
+        }
+        $instagramUrl = \App\Models\SiteSetting::get('instagram_account_url');
+
         $trashedCount = PurchasePost::onlyTrashed()->count();
 
-        return view('admin.purchase-posts.index', compact('posts', 'stores', 'wpUrl', 'showTrashed', 'trashedCount'));
+        return view('admin.purchase-posts.index', compact('posts', 'stores', 'wpUrl', 'facebookUrl', 'instagramUrl', 'showTrashed', 'trashedCount'));
     }
 
     /**
