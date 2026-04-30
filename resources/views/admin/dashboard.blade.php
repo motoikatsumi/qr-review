@@ -239,6 +239,8 @@
         align-items: center;
         height: 100%;
         justify-content: flex-end;
+        position: relative;
+        padding-bottom: 44px; /* 日付ラベル領域を予約 → 全棒で底位置を統一 */
     }
     .daily-bar-count {
         font-size: 0.72rem;
@@ -261,10 +263,14 @@
     .daily-bar-date {
         font-size: 0.68rem;
         color: #aaa;
-        margin-top: 4px;
         writing-mode: vertical-rl;
         text-orientation: mixed;
-        height: 36px;
+        height: 40px;
+        margin-top: 0;
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
     }
     .daily-tooltip {
         display: none;
@@ -340,6 +346,9 @@
     .daily-bar-diff.flat { color: #9ca3af; }
 
     /* 月別/年別はバー数が少ないので横書き表示 */
+    .period-panel:not([id$="-day"]) .daily-bar-wrapper {
+        padding-bottom: 22px; /* 横書きの日付高さに合わせて縮める */
+    }
     .period-panel:not([id$="-day"]) .daily-bar-date {
         writing-mode: horizontal-tb;
         text-orientation: unset;
@@ -986,6 +995,18 @@
 
             {{-- 月別 --}}
             <div class="period-panel" id="period-google-month">
+                @if(!empty($gAvailableYears))
+                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:10px;font-size:0.85rem;">
+                        <label for="googleYearSelect" style="color:#374151;">表示年:</label>
+                        <select id="googleYearSelect" onchange="onGoogleYearChange(this.value)"
+                            style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.85rem;">
+                            <option value="" {{ $gSelectedYear === null ? 'selected' : '' }}>直近12ヶ月</option>
+                            @foreach($gAvailableYears as $y)
+                                <option value="{{ $y }}" {{ $gSelectedYear === $y ? 'selected' : '' }}>{{ $y }}年(1〜12月)</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 @php $gMonthMax = collect($gMonthlyReviews)->max('count') ?: 1; @endphp
                 <div class="daily-chart">
                     <div class="daily-bars">
@@ -1080,6 +1101,19 @@ function switchPeriod(group, period, btn) {
     });
     var target = document.getElementById('period-' + group + '-' + period);
     if (target) target.classList.add('active');
+}
+
+// Google口コミ月別グラフの年度切替(URL クエリで再読み込み)
+function onGoogleYearChange(year) {
+    var url = new URL(window.location.href);
+    if (year) {
+        url.searchParams.set('google_year', year);
+    } else {
+        url.searchParams.delete('google_year');
+    }
+    // タブが「月別」のままになるよう hash で誘導(任意)
+    url.hash = 'period-google-month';
+    window.location.href = url.toString();
 }
 </script>
 @endpush

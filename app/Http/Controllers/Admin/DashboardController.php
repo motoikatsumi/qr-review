@@ -152,11 +152,36 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Google口コミ 月別推移（直近12ヶ月）と前月比
-        $gMonthlyReviews = $this->buildMonthlyTrend(GoogleReview::class, 'reviewed_at', $storeId, 12);
+        // Google口コミの最古年(年度セレクター・年別グラフの起点に使用)
+        $gMinYear = (int) GoogleReview::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereNotNull('reviewed_at')
+            ->min(DB::raw('YEAR(reviewed_at)'));
+        $gCurrentYear = (int) now()->format('Y');
+        $gAvailableYears = [];
+        if ($gMinYear) {
+            for ($y = $gCurrentYear; $y >= $gMinYear; $y--) {
+                $gAvailableYears[] = $y;
+            }
+        }
 
-        // Google口コミ 年別推移（直近5年）と前年比
-        $gYearlyReviews = $this->buildYearlyTrend(GoogleReview::class, 'reviewed_at', $storeId, 5);
+        // 月別グラフの対象年(クエリパラメータ google_year で指定 / 未指定 = 直近12ヶ月)
+        $gSelectedYear = $request->filled('google_year') ? (int) $request->input('google_year') : null;
+        if ($gSelectedYear && (!$gMinYear || $gSelectedYear < $gMinYear || $gSelectedYear > $gCurrentYear)) {
+            $gSelectedYear = null; // 範囲外指定はリセット
+        }
+
+        // Google口コミ 月別推移
+        $gMonthlyReviews = $gSelectedYear
+            ? $this->buildMonthlyTrendForYear(GoogleReview::class, 'reviewed_at', $storeId, $gSelectedYear)
+            : $this->buildMonthlyTrend(GoogleReview::class, 'reviewed_at', $storeId, 12);
+
+        // Google口コミ 年別推移(最古年 〜 現在まで全年表示)
+        $gYearlyReviews = $this->buildYearlyTrend(
+            GoogleReview::class, 'reviewed_at', $storeId,
+            $gMinYear ? max(1, $gCurrentYear - $gMinYear + 1) : 5,
+            $gMinYear // 起点年指定で 2026 cap を回避
+        );
 
         // =============================================
         // 今日やること（Todo 系）
@@ -272,6 +297,7 @@ class DashboardController extends Controller
             'gTotalReviews', 'gAvgRating', 'gRatingCounts',
             'gReplyRate', 'gRepliedCount', 'gHighRatingRate',
             'gDailyReviews', 'gMonthlyReviews', 'gYearlyReviews',
+            'gAvailableYears', 'gSelectedYear',
             // 今日やること
             'unrepliedGoogleCount', 'lowRatingReviewCount', 'failedPostCount',
             'todayReviewCount', 'todayGoogleReviewCount',
@@ -328,14 +354,60 @@ class DashboardController extends Controller
     }
 
     /**
-     * 直近 N 年の年別件数・平均評価・前年差分を返す
-     * システム稼働開始年（2026年）より前は表示しない
+     * 指定年の 1〜12月 の月別件数・平均評価・前月差分を返す
      */
-    private function buildYearlyTrend(string $modelClass, string $dateColumn, ?int $storeId, int $years): array
+    private function buildMonthlyTrendForYear(string $modelClass, string $dateColumn, ?int $storeId, int $year): array
+    {
+        $start = \Carbon\Carbon::create($year, 1, 1)->startOfMonth();
+        $end   = \Carbon\Carbon::create($year, 12, 31)->endOfMonth();
+
+        $rows = $modelClass::query()
+            ->when($storeId, fn($q) => $q->where('store_id', $storeId))
+            ->whereBetween($dateColumn, [$start, $end])
+            ->select(
+                DB::raw("DATE_FORMAT($dateColumn, '%Y-%m') as ym"),
+                DB::raw('count(*) as count'),
+                DB::raw('AVG(rating) as avg_rating')
+            )
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get()
+            ->keyBy('ym');
+
+        $result = [];
+        $prevCount = null;
+        for ($m = 1; $m <= 12; $m++) {
+            $date = \Carbon\Carbon::create($year, $m, 1);
+            $key = $date->format('Y-m');
+            $row = $rows->get($key);
+            $count = $row ? (int) $row->count : 0;
+            $avg = $row && $row->count > 0 ? (float) $row->avg_rating : null;
+            $diff = $prevCount === null ? null : $count - $prevCount;
+            $result[] = [
+                'label' => $date->format('Y年n月'),
+                'short' => $date->format('Y/n'),
+                'count' => $count,
+                'avg_rating' => $avg,
+                'diff' => $diff,
+            ];
+            $prevCount = $count;
+        }
+        return $result;
+    }
+
+    /**
+     * 直近 N 年の年別件数・平均評価・前年差分を返す
+     * $explicitStartYear が指定されればそれを起点に、それ以外は 2026 を最古とする
+     */
+    private function buildYearlyTrend(string $modelClass, string $dateColumn, ?int $storeId, int $years, ?int $explicitStartYear = null): array
     {
         $systemStartYear = 2026;
         $currentYear = (int) now()->format('Y');
-        $startYear = max($systemStartYear, $currentYear - ($years - 1));
+        if ($explicitStartYear) {
+            $startYear = max(1, $explicitStartYear);
+        } else {
+            $startYear = max($systemStartYear, $currentYear - ($years - 1));
+        }
         $start = \Carbon\Carbon::create($startYear, 1, 1)->startOfYear();
 
         $rows = $modelClass::query()
