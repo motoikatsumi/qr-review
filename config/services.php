@@ -51,6 +51,12 @@ return [
         'app_secret' => env('FACEBOOK_APP_SECRET'),
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME', ''),
+        'api_key'    => env('CLOUDINARY_API_KEY', ''),
+        'api_secret' => env('CLOUDINARY_API_SECRET', ''),
+    ],
+
     'pawn_system' => [
         'url' => env('PAWN_SYSTEM_API_URL', ''),
         'token' => env('PAWN_SYSTEM_API_TOKEN', ''),

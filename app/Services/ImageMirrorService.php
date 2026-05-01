@@ -15,9 +15,11 @@ class ImageMirrorService
 
     public function __construct()
     {
-        $this->cloudName = env('CLOUDINARY_CLOUD_NAME', '');
-        $this->apiKey    = env('CLOUDINARY_API_KEY', '');
-        $this->apiSecret = env('CLOUDINARY_API_SECRET', '');
+        // config('services.cloudinary.*') 経由で読む。
+        // env() を直接使うと config:cache 後のリクエストで空になる(Laravel 仕様)。
+        $this->cloudName = config('services.cloudinary.cloud_name', '');
+        $this->apiKey    = config('services.cloudinary.api_key', '');
+        $this->apiSecret = config('services.cloudinary.api_secret', '');
     }
 
     /**
