@@ -842,6 +842,7 @@ EOT;
         // 取扱商品カテゴリ(返信での言及用)を選ぶ。
         // 業種マスタの reply_category_groups (テーマ別グループ)からランダムに1グループ選び、
         // その中から 3〜4 件抽出する。「ブランド品/時計/貴金属」のように関連性ある品目セットになる。
+        // ただし お客様の口コミに含まれる品目があれば、それを含むグループを優先 + 必ず picks に含める。
         // reply_category_groups 未設定時は post_categories からシャッフル(従来動作)。
         $productCategoriesPicked = [];
         if (!$isLowRating && $bt) {
@@ -850,10 +851,39 @@ EOT;
                 // 各グループは品目名の配列。空グループ除外
                 $groups = array_values(array_filter($groups, fn($g) => is_array($g) && !empty($g)));
                 if (!empty($groups)) {
-                    $group = $groups[array_rand($groups)];
-                    shuffle($group);
+                    // お客様の口コミに登場する品目を抽出
+                    $mentioned = [];
+                    if ($reviewComment !== '') {
+                        foreach ($groups as $g) {
+                            foreach ($g as $cat) {
+                                if (mb_strpos($reviewComment, $cat) !== false && !in_array($cat, $mentioned, true)) {
+                                    $mentioned[] = $cat;
+                                }
+                            }
+                        }
+                    }
+                    // 言及品目があれば、それを含むグループを優先候補に
+                    if (!empty($mentioned)) {
+                        $candidateGroups = array_values(array_filter($groups, function ($g) use ($mentioned) {
+                            foreach ($mentioned as $m) if (in_array($m, $g, true)) return true;
+                            return false;
+                        }));
+                        $group = !empty($candidateGroups)
+                            ? $candidateGroups[array_rand($candidateGroups)]
+                            : $groups[array_rand($groups)];
+                    } else {
+                        $group = $groups[array_rand($groups)];
+                    }
                     $pickCount = mt_rand(3, 4);
-                    $productCategoriesPicked = array_slice($group, 0, min($pickCount, count($group)));
+                    // 言及された品目はこのグループに含まれるものだけを必ず採用
+                    $forced = array_values(array_filter($mentioned, fn($m) => in_array($m, $group, true)));
+                    // 残りはグループから(言及済みを除いて)シャッフルして補充
+                    $remaining = array_values(array_diff($group, $forced));
+                    shuffle($remaining);
+                    $needed = max(0, $pickCount - count($forced));
+                    $productCategoriesPicked = array_values(array_unique(
+                        array_merge($forced, array_slice($remaining, 0, $needed))
+                    ));
                 }
             }
             // フォールバック: post_categories からシャッフル
