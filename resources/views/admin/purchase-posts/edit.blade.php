@@ -73,6 +73,33 @@ var currentCategory = @json(old('category', $purchasePost->category));
 var currentStatus = @json(old('product_status', $purchasePost->product_status));
 </script>
 
+{{-- 投稿失敗があればリトライボタンを表示(編集フォームとは別フォームにする) --}}
+@php
+    $failedTargets = collect([
+        'WordPress' => $purchasePost->wp_status === 'failed',
+        'Googleビジネス投稿' => $purchasePost->google_post_status === 'failed',
+        'Googleビジネス写真' => ($purchasePost->google_photo_status ?? null) === 'failed',
+        'Instagram' => $purchasePost->instagram_status === 'failed',
+        'Facebook' => $purchasePost->facebook_status === 'failed',
+    ])->filter()->keys();
+@endphp
+@if($failedTargets->count() > 0)
+<div class="card" style="margin-bottom:20px;border-left:4px solid #ef4444;background:#fef2f2;">
+    <div class="card-body" style="padding:16px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:240px;">
+            <div style="font-weight:600;color:#991b1b;margin-bottom:4px;">⚠️ 投稿失敗があります</div>
+            <div style="font-size:0.85rem;color:#7f1d1d;">失敗した投稿先: <strong>{{ $failedTargets->implode(' / ') }}</strong></div>
+        </div>
+        <form method="POST" action="{{ route('admin.purchase-posts.retry', $purchasePost) }}" style="margin:0;">
+            @csrf
+            <button type="submit" class="btn btn-primary" style="padding:10px 24px;background:#dc2626;border-color:#dc2626;">
+                🔄 失敗分をリトライ
+            </button>
+        </form>
+    </div>
+</div>
+@endif
+
 <form method="POST" action="{{ route('admin.purchase-posts.update', $purchasePost) }}" enctype="multipart/form-data" id="editForm">
     @csrf
     @method('PUT')
