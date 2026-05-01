@@ -51,6 +51,71 @@ class MentionedCategoryInclusionTest extends TestCase
     }
 
     /**
+     * 様々な品目が口コミに登場するパターン全てで、当該品目が picks に含まれる
+     */
+    public function test_various_categories_are_included_when_mentioned(): void
+    {
+        $groups = [
+            ['ブランド品', '時計', '貴金属', '宝石'],
+            ['お酒', 'ゲーム', '楽器', '電化製品'],
+            ['切手', '記念硬貨', '骨董品', '工芸品'],
+            ['カメラ', 'パソコン', 'スマホ', 'タブレット'],
+        ];
+
+        $cases = [
+            'お酒'     => '父が集めていたお酒を買い取ってもらいました。査定が早くて助かりました。',
+            'ゲーム'   => '子供が遊ばなくなったゲーム機を持ち込みました。',
+            '楽器'     => 'ギターと楽器の付属品を売却しました。',
+            '電化製品' => '使わなくなった電化製品を引き取ってもらえました。',
+            '宝石'     => '結婚指輪と宝石を査定していただきました。',
+            'ブランド品' => 'ブランド品のバッグを高く買ってもらえて嬉しいです。',
+            '貴金属'   => '父から譲り受けた貴金属を持ち込みました。',
+            '切手'     => '古い切手のコレクションを売りました。',
+            'カメラ'   => '古いカメラを買取してもらいました。',
+            'パソコン' => 'パソコンの査定が思ったより高かったです。',
+            '骨董品'   => '蔵にあった骨董品を持ち込みました。',
+        ];
+
+        foreach ($cases as $expectedCat => $reviewComment) {
+            // 各ケース 30 回試行
+            for ($i = 0; $i < 30; $i++) {
+                $picks = $this->pickCategories($groups, $reviewComment);
+                $this->assertContains(
+                    $expectedCat,
+                    $picks,
+                    "「{$reviewComment}」に対して『{$expectedCat}』が picks に含まれなかった (試行={$i}, picks=" . implode(',', $picks) . ')'
+                );
+                // 選ばれたグループは expectedCat を含むはず
+                $this->assertGreaterThanOrEqual(3, count($picks), 'picks は 3 件以上');
+                $this->assertLessThanOrEqual(4, count($picks), 'picks は 4 件以下');
+            }
+        }
+    }
+
+    /**
+     * 異なるグループに跨る複数品目が口コミに登場した場合の挙動
+     * (実装は1グループしか選ばないので、優先候補グループのいずれかが選ばれる)
+     */
+    public function test_cross_group_mentions_pick_one_candidate_group(): void
+    {
+        $groups = [
+            ['ブランド品', '時計', '貴金属', '宝石'],
+            ['お酒', 'ゲーム', '楽器', '電化製品'],
+        ];
+        // 時計(group0) と お酒(group1) の両方に言及
+        $reviewComment = '時計とお酒を一緒に査定してもらいました。';
+
+        for ($i = 0; $i < 50; $i++) {
+            $picks = $this->pickCategories($groups, $reviewComment);
+            // 少なくとも片方は含まれているべき(選ばれたグループに属する方)
+            $this->assertTrue(
+                in_array('時計', $picks, true) || in_array('お酒', $picks, true),
+                "試行={$i}: 時計とお酒のどちらも含まれない: " . implode(',', $picks)
+            );
+        }
+    }
+
+    /**
      * 口コミに品目が含まれない場合、いずれかのグループから 3〜4 件抽出される
      */
     public function test_no_mention_picks_random_group(): void
