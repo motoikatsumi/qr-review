@@ -669,6 +669,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <hr style="margin:24px 0;border-color:#e5e7eb;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:10px;">
+    <h3 style="font-size:1rem;color:#0891b2;margin:0;">💬 Google返信生成の設定</h3>
+</div>
+<p class="form-hint" style="margin-bottom:16px;">Google口コミに自動返信する際の AI 生成パラメータです。</p>
+
+<div class="form-group">
+    @php
+        $replyGroupsText = $isEdit && !empty($businessType->reply_category_groups)
+            ? collect($businessType->reply_category_groups)->map(fn($g) => implode("\n", $g))->implode("\n\n")
+            : '';
+    @endphp
+    <label for="reply_category_groups_raw">
+        商品テーマグループ
+        <span class="help-icon" data-help="Google口コミの返信文で言及する商品カテゴリをテーマ別にグループ化。各グループ間は空行で区切ります。返信ごとにランダムでグループを1つ選び、そこから3〜4品目だけが返信文に登場します。「ブランド品/時計/貴金属」のように関連性ある品目セットになるので、毎回同じ列挙パターンになる単調さを回避できます。">?</span>
+    </label>
+    <textarea id="reply_category_groups_raw" name="reply_category_groups_raw" rows="14"
+        placeholder="ブランド品&#10;時計&#10;貴金属&#10;宝石&#10;&#10;スマホ・タブレット&#10;カメラ・レンズ&#10;パソコン&#10;電化製品&#10;&#10;ゲーム&#10;楽器&#10;お酒&#10;&#10;電動工具&#10;金券">{{ old('reply_category_groups_raw', $replyGroupsText) }}</textarea>
+    <p class="form-hint">🎯 1グループ = 連続する行(空行で次グループに区切る)。未設定時は投稿機能のカテゴリからシャッフルされます。</p>
+</div>
+
+<hr style="margin:24px 0;border-color:#e5e7eb;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:10px;">
     <h3 style="font-size:1rem;color:#4338ca;margin:0;">📦 投稿機能の設定</h3>
     <button type="button" class="ai-regen-btn" onclick="_regeneratePostSettings()" title="この投稿機能ぜんぶ AI で再生成">🔄 投稿設定を AI 再生成</button>
 </div>
@@ -712,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </label>
     @if($isPawnType)
         <textarea id="post_categories_raw" name="post_categories_raw" rows="6" placeholder="時計|時計|/items/clock&#10;ブランド品|ブランド品|/items/brand">{{ old('post_categories_raw', $categoriesText) }}</textarea>
-        <p class="form-hint">📁 1行 = 1カテゴリ。形式: <code>表示名|WPスラッグ|WPパス</code>（質屋アシスト専用の詳細形式）</p>
+        <p class="form-hint">📁 1行 = 1カテゴリ。形式: <code>表示名|WPスラッグ|WPパス</code>(質屋アシスト専用の詳細形式)</p>
     @else
         <textarea id="post_categories_raw" name="post_categories_raw" rows="6" placeholder="軽自動車&#10;SUV&#10;セダン">{{ old('post_categories_raw', $categoriesText) }}</textarea>
         <p class="form-hint">📁 1行 = 1カテゴリ名。WordPress 連携時はこの名前のカテゴリが自動で割り当てられます。</p>

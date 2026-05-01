@@ -71,6 +71,7 @@ class BusinessTypeController extends Controller
             'post_title_template' => 'nullable|string|max:500',
             'post_status_options_raw'    => 'nullable|string',
             'post_categories_raw'        => 'nullable|string',
+            'reply_category_groups_raw'  => 'nullable|string',
             'post_reason_presets_raw'    => 'nullable|string',
             'post_accessory_presets_raw' => 'nullable|string',
             'post_default_hashtags'      => 'nullable|string',
@@ -110,6 +111,7 @@ class BusinessTypeController extends Controller
             'post_title_template' => 'nullable|string|max:500',
             'post_status_options_raw'    => 'nullable|string',
             'post_categories_raw'        => 'nullable|string',
+            'reply_category_groups_raw'  => 'nullable|string',
             'post_reason_presets_raw'    => 'nullable|string',
             'post_accessory_presets_raw' => 'nullable|string',
             'post_default_hashtags'      => 'nullable|string',
@@ -388,6 +390,7 @@ class BusinessTypeController extends Controller
             'post_title_template' => $validated['post_title_template'] ?? null,
             'post_status_options'    => $this->splitLines($validated['post_status_options_raw'] ?? ''),
             'post_categories'        => $this->parseCategoryLines($validated['post_categories_raw'] ?? ''),
+            'reply_category_groups'  => $this->parseGroupedLines($validated['reply_category_groups_raw'] ?? ''),
             'post_reason_presets'    => $this->splitLines($validated['post_reason_presets_raw'] ?? ''),
             'post_accessory_presets' => $this->splitLines($validated['post_accessory_presets_raw'] ?? ''),
             'post_default_hashtags' => $validated['post_default_hashtags'] ?? null,
@@ -423,6 +426,28 @@ class BusinessTypeController extends Controller
         return array_values(array_filter(
             array_map('trim', explode("\n", str_replace("\r\n", "\n", $text)))
         ));
+    }
+
+    /**
+     * 空行で区切られた複数のテキストブロックを「配列の配列」にパース。
+     * Google返信のテーマ別商品グループ用(reply_category_groups)。
+     * 例:
+     *   ブランド品
+     *   時計
+     *
+     *   ゲーム
+     *   楽器
+     * → [['ブランド品','時計'], ['ゲーム','楽器']]
+     */
+    private function parseGroupedLines(string $text): array
+    {
+        $blocks = preg_split('/\n\s*\n+/', trim(str_replace("\r\n", "\n", $text)));
+        $groups = [];
+        foreach ($blocks ?: [] as $block) {
+            $items = $this->splitLines($block);
+            if (!empty($items)) $groups[] = $items;
+        }
+        return $groups;
     }
 
     /**
