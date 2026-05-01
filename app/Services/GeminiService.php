@@ -81,8 +81,8 @@ class GeminiService
             '待ち時間が短くスムーズだったことを中心に',
             '無理な営業がなく安心だったことを中心に',
             '納得のいく説明をしてもらえたことを中心に',
-            '想像よりカジュアルで入りやすかったことを中心に',
-            '帰り際の気持ちの良さを中心に',
+            '安心して大切な品物を任せられたと感じたことを中心に',
+            '不安だった気持ちが解消されたことを中心に',
         ];
     }
 
@@ -839,6 +839,40 @@ EOT;
         }
         $serviceKw = !empty($serviceKeywords) ? $serviceKeywords[array_rand($serviceKeywords)] : '';
 
+        // 取扱商品カテゴリ(返信での言及用)を選ぶ。
+        // 業種マスタの reply_category_groups (テーマ別グループ)からランダムに1グループ選び、
+        // その中から 3〜4 件抽出する。「ブランド品/時計/貴金属」のように関連性ある品目セットになる。
+        // reply_category_groups 未設定時は post_categories からシャッフル(従来動作)。
+        $productCategoriesPicked = [];
+        if (!$isLowRating && $bt) {
+            $groups = $bt->reply_category_groups ?? null;
+            if (is_array($groups) && !empty($groups)) {
+                // 各グループは品目名の配列。空グループ除外
+                $groups = array_values(array_filter($groups, fn($g) => is_array($g) && !empty($g)));
+                if (!empty($groups)) {
+                    $group = $groups[array_rand($groups)];
+                    shuffle($group);
+                    $pickCount = mt_rand(3, 4);
+                    $productCategoriesPicked = array_slice($group, 0, min($pickCount, count($group)));
+                }
+            }
+            // フォールバック: post_categories からシャッフル
+            if (empty($productCategoriesPicked) && !empty($bt->post_categories)) {
+                $cats = collect($bt->post_categories)
+                    ->pluck('name')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+                if (!empty($cats)) {
+                    shuffle($cats);
+                    $pickCount = mt_rand(3, 4);
+                    $productCategoriesPicked = array_slice($cats, 0, min($pickCount, count($cats)));
+                }
+            }
+        }
+        $productCategoryHint = implode('、', $productCategoriesPicked);
+
         // トーン設定（店舗設定から取得）— 強い指示で確実に反映
         $tonePreference = $store->ai_tone_preference ?? 'auto';
         if ($tonePreference === 'casual') {
@@ -929,6 +963,10 @@ EOT;
                 }
             } else {
                 $prompt .= "\n- 取扱商品キーワードが未指定のため、口コミ内容に即した一般的な返信にする。ただし店舗の業種（{$baseContext}）に関連する表現で自然な返信にする";
+            }
+            // 取扱商品カテゴリの言及制約: 毎回同じ商品列挙を避けるためランダム抽出した品目に限定する
+            if ($productCategoryHint !== '') {
+                $prompt .= "\n- 【商品の言及】商品カテゴリに言及する際は「{$productCategoryHint}」のリストから自然な文脈で挙げる。これ以外の商品カテゴリ(例:この一覧に含まれない品目)は文中に書かない";
             }
         }
 
