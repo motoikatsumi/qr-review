@@ -786,7 +786,7 @@
                     @foreach($ageDistribution as $age => $count)
                         @php $pct = $ageTotal > 0 ? ($count / $ageTotal * 100) : 0; @endphp
                         <div class="rating-bar-row">
-                            <span class="rating-bar-label" style="min-width:44px;">{{ str_contains((string)$age, '代') ? $age : ($age . '代') }}</span>
+                            <span class="rating-bar-label" style="min-width:44px;">{{ $age }}</span>
                             <div class="rating-bar-track">
                                 <div class="rating-bar-fill" style="width: {{ $pct }}%; background: linear-gradient(135deg, #8b5cf6, #6d28d9);"></div>
                             </div>

@@ -114,15 +114,31 @@ class DashboardController extends Controller
             ->toArray();
 
         // 年代分布
-        $ageDistribution = Review::query()
+        // 過去データに「20」と「20代」のような同義の重複表記が混在するため、
+        // 先頭の数字を抽出して "XX代" 形式に正規化してから合算する。
+        $ageRaw = Review::query()
             ->when($storeId, fn($q) => $q->where('store_id', $storeId))
             ->whereNotNull('age')
             ->where('age', '!=', '')
             ->select('age', DB::raw('count(*) as count'))
             ->groupBy('age')
-            ->orderBy('age')
             ->pluck('count', 'age')
             ->toArray();
+        $ageDistribution = [];
+        foreach ($ageRaw as $rawAge => $count) {
+            if (preg_match('/^\d+/', (string)$rawAge, $m)) {
+                $key = $m[0] . '代';
+            } else {
+                $key = (string)$rawAge;
+            }
+            $ageDistribution[$key] = ($ageDistribution[$key] ?? 0) + $count;
+        }
+        // 数字昇順でソート(数字を含まないものは末尾)
+        uksort($ageDistribution, function ($a, $b) {
+            $na = preg_match('/^\d+/', $a, $ma) ? (int)$ma[0] : PHP_INT_MAX;
+            $nb = preg_match('/^\d+/', $b, $mb) ? (int)$mb[0] : PHP_INT_MAX;
+            return $na <=> $nb;
+        });
 
         // =============================================
         // Google口コミ統計
