@@ -19,7 +19,7 @@ class StoreController extends Controller
     {
         $showTrashed = $request->input('show') === 'trashed';
         $query = $showTrashed ? Store::onlyTrashed() : Store::query();
-        $stores = $query->withCount('reviews')
+        $stores = $query->withCount(['reviews', 'googleReviews'])
             ->withAvg('reviews', 'rating')
             ->orderBy('id', 'asc')
             ->get();

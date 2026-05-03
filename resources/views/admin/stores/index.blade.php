@@ -41,7 +41,8 @@
                 <th>店舗名</th>
                 <th>URL識別名</th>
                 <th>通知先メール</th>
-                <th>口コミ数</th>
+                <th>システム口コミ</th>
+                <th>Google口コミ</th>
                 <th>平均評価</th>
                 <th>ステータス</th>
                 {{-- <th>MEO比率</th> --}}
@@ -56,6 +57,7 @@
                 <td style="color:#888;font-size:0.8rem;">{{ $store->slug }}</td>
                 <td style="font-size:0.85rem;">{{ $store->notify_email }}</td>
                 <td>{{ $store->reviews_count }}</td>
+                <td>{{ $store->google_reviews_count }}</td>
                 <td>
                     @if($store->reviews_count > 0)
                         <span class="stars">{{ number_format($store->reviews_avg_rating, 1) }}</span>
@@ -99,7 +101,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" style="text-align:center;padding:40px;color:#888;">
+                <td colspan="9" style="text-align:center;padding:40px;color:#888;">
                     @if($showTrashed)
                         🗑 ゴミ箱は空です。
                     @else
