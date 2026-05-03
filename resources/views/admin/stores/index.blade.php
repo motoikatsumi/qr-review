@@ -41,8 +41,8 @@
                 <th>店舗名</th>
                 <th>URL識別名</th>
                 <th>通知先メール</th>
-                <th>システム口コミ</th>
-                <th>Google口コミ</th>
+                <th style="text-align:center;">システム口コミ</th>
+                <th style="text-align:center;">Google口コミ</th>
                 <th>平均評価</th>
                 <th>ステータス</th>
                 {{-- <th>MEO比率</th> --}}
@@ -56,8 +56,8 @@
                 <td><strong>{{ $store->name }}</strong></td>
                 <td style="color:#888;font-size:0.8rem;">{{ $store->slug }}</td>
                 <td style="font-size:0.85rem;">{{ $store->notify_email }}</td>
-                <td>{{ $store->reviews_count }}</td>
-                <td>{{ $store->google_reviews_count }}</td>
+                <td style="text-align:center;">{{ $store->reviews_count }}</td>
+                <td style="text-align:center;">{{ $store->google_reviews_count }}</td>
                 <td>
                     @if($store->reviews_count > 0)
                         <span class="stars">{{ number_format($store->reviews_avg_rating, 1) }}</span>
